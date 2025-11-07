@@ -365,3 +365,10 @@ FodyWeavers.xsd
 
 # NPC Terminal embedding cache files
 .embeddings_cache.json
+
+AGENTS.md
+BarsNPCs/
+docs/
+MyFirstMod/
+S1API/
+S1NotesApp/

@@ -18,6 +18,29 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="S1API\**" />
+    <EmbeddedResource Remove="S1API\**" />
+    <None Remove="S1API\**" />
+    <Page Remove="S1API\**" />
+    <Resource Remove="S1API\**" />
+    <Compile Remove="S1NotesApp\**" />
+    <EmbeddedResource Remove="S1NotesApp\**" />
+    <None Remove="S1NotesApp\**" />
+    <Page Remove="S1NotesApp\**" />
+    <Resource Remove="S1NotesApp\**" />
+    <Compile Remove="BarsNPCs\**" />
+    <EmbeddedResource Remove="BarsNPCs\**" />
+    <None Remove="BarsNPCs\**" />
+    <Page Remove="BarsNPCs\**" />
+    <Resource Remove="BarsNPCs\**" />
+    <Compile Remove="MyFirstMod\**" />
+    <EmbeddedResource Remove="MyFirstMod\**" />
+    <None Remove="MyFirstMod\**" />
+    <Page Remove="MyFirstMod\**" />
+    <Resource Remove="MyFirstMod\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\MelonLoader\net35\0Harmony.dll</HintPath>
     </Reference>

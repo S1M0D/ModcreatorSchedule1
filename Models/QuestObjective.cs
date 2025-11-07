@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 
@@ -84,6 +85,26 @@ namespace Schedule1ModdingTool.Models
         public override string ToString()
         {
             return $"{Title} ({Name})";
+        }
+
+        public void CopyFrom(QuestObjective source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            Name = source.Name;
+            Title = source.Title;
+            RequiredProgress = source.RequiredProgress;
+            HasLocation = source.HasLocation;
+            LocationX = source.LocationX;
+            LocationY = source.LocationY;
+            LocationZ = source.LocationZ;
+        }
+
+        public QuestObjective DeepCopy()
+        {
+            var copy = new QuestObjective();
+            copy.CopyFrom(this);
+            return copy;
         }
     }
 }

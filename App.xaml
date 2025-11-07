@@ -13,6 +13,7 @@
             <utils:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <utils:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
             <utils:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <utils:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

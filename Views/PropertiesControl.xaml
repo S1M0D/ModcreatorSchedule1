@@ -31,7 +31,47 @@
                              Height="60" 
                              TextWrapping="Wrap" 
                              AcceptsReturn="True" 
-                             VerticalScrollBarVisibility="Auto"/>
+                     VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Mod Metadata Section -->
+            <Border Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="4" Margin="0,0,0,8">
+                <StackPanel Margin="8">
+                    <TextBlock Text="Mod &amp; Build Metadata" FontWeight="Bold" FontSize="14" Margin="0,0,0,8"/>
+
+                    <Label Content="Namespace:" Style="{StaticResource LabelStyle}"/>
+                    <TextBox Text="{Binding SelectedQuest.Namespace, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"/>
+
+                    <Label Content="Mod Name:" Style="{StaticResource LabelStyle}"/>
+                    <TextBox Text="{Binding SelectedQuest.ModName, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                            <Label Content="Version:" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding SelectedQuest.ModVersion, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource TextBoxStyle}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                            <Label Content="Author:" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding SelectedQuest.ModAuthor, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource TextBoxStyle}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Label Content="Game Developer:" Style="{StaticResource LabelStyle}"/>
+                    <TextBox Text="{Binding SelectedQuest.GameDeveloper, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"/>
+
+                    <Label Content="Game Name:" Style="{StaticResource LabelStyle}"/>
+                    <TextBox Text="{Binding SelectedQuest.GameName, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"/>
                 </StackPanel>
             </Border>
             
@@ -161,18 +201,18 @@
                 </StackPanel>
             </Border>
             
-            <!-- Code Generation Actions -->
+            <!-- Build Actions -->
             <Border Background="#E3F2FD" BorderBrush="#2196F3" BorderThickness="1" CornerRadius="4" Margin="0,0,0,8">
                 <StackPanel Margin="8">
-                    <TextBlock Text="Code Generation" FontWeight="Bold" FontSize="14" Margin="0,0,0,8"/>
+                    <TextBlock Text="Build &amp; Export" FontWeight="Bold" FontSize="14" Margin="0,0,0,8"/>
                     
-                    <Button Content="Regenerate Code" 
-                            Command="{Binding RegenerateCodeCommand}" 
+                    <Button Content="Export Mod Project" 
+                            Command="{Binding ExportModProjectCommand}" 
                             Style="{StaticResource IconButtonStyle}"
                             Margin="0,2"/>
                     
-                    <Button Content="Compile to DLL" 
-                            Command="{Binding CompileCommand}" 
+                    <Button Content="Build Mod" 
+                            Command="{Binding BuildModCommand}" 
                             Style="{StaticResource IconButtonStyle}"
                             Margin="0,2"/>
                 </StackPanel>

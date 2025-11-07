@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -19,6 +20,13 @@ namespace Schedule1ModdingTool.Models
         private bool _questRewards = true;
         private bool _generateDataClass = false;
         private QuestBlueprintType _blueprintType = QuestBlueprintType.Standard;
+        private string _namespace = "Schedule1Mods.Quests";
+        private string _modName = "Schedule 1 Quest Pack";
+        private string _modVersion = "1.0.0";
+        private string _modAuthor = "Quest Creator";
+        private string _gameDeveloper = "TVGS";
+        private string _gameName = "Schedule I";
+        private QuestStartCondition _startCondition = new QuestStartCondition();
 
         [Required(ErrorMessage = "Class name is required")]
         [JsonProperty("className")]
@@ -49,6 +57,52 @@ namespace Schedule1ModdingTool.Models
         {
             get => _questDescription;
             set => SetProperty(ref _questDescription, value);
+        }
+
+        [Required(ErrorMessage = "Namespace is required")]
+        [JsonProperty("namespace")]
+        public string Namespace
+        {
+            get => _namespace;
+            set => SetProperty(ref _namespace, value);
+        }
+
+        [Required(ErrorMessage = "Mod name is required")]
+        [JsonProperty("modName")]
+        public string ModName
+        {
+            get => _modName;
+            set => SetProperty(ref _modName, value);
+        }
+
+        [Required(ErrorMessage = "Mod version is required")]
+        [JsonProperty("modVersion")]
+        public string ModVersion
+        {
+            get => _modVersion;
+            set => SetProperty(ref _modVersion, value);
+        }
+
+        [Required(ErrorMessage = "Mod author is required")]
+        [JsonProperty("modAuthor")]
+        public string ModAuthor
+        {
+            get => _modAuthor;
+            set => SetProperty(ref _modAuthor, value);
+        }
+
+        [JsonProperty("gameDeveloper")]
+        public string GameDeveloper
+        {
+            get => _gameDeveloper;
+            set => SetProperty(ref _gameDeveloper, value);
+        }
+
+        [JsonProperty("gameName")]
+        public string GameName
+        {
+            get => _gameName;
+            set => SetProperty(ref _gameName, value);
         }
 
         [JsonProperty("autoBegin")]
@@ -89,6 +143,13 @@ namespace Schedule1ModdingTool.Models
         [JsonProperty("objectives")]
         public ObservableCollection<QuestObjective> Objectives { get; } = new ObservableCollection<QuestObjective>();
 
+        [JsonProperty("startCondition")]
+        public QuestStartCondition StartCondition
+        {
+            get => _startCondition;
+            set => SetProperty(ref _startCondition, value);
+        }
+
         [JsonIgnore]
         public string DisplayName => string.IsNullOrEmpty(QuestTitle) ? ClassName : QuestTitle;
 
@@ -124,6 +185,46 @@ namespace Schedule1ModdingTool.Models
             {
                 Objectives.Remove(objective);
             }
+        }
+
+        public void CopyFrom(QuestBlueprint source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            ClassName = source.ClassName;
+            QuestId = source.QuestId;
+            QuestTitle = source.QuestTitle;
+            QuestDescription = source.QuestDescription;
+            AutoBegin = source.AutoBegin;
+            CustomIcon = source.CustomIcon;
+            QuestRewards = source.QuestRewards;
+            GenerateDataClass = source.GenerateDataClass;
+            BlueprintType = source.BlueprintType;
+            Namespace = source.Namespace;
+            ModName = source.ModName;
+            ModVersion = source.ModVersion;
+            ModAuthor = source.ModAuthor;
+            GameDeveloper = source.GameDeveloper;
+            GameName = source.GameName;
+            StartCondition = source.StartCondition != null ? new QuestStartCondition
+            {
+                TriggerType = source.StartCondition.TriggerType,
+                NpcId = source.StartCondition.NpcId,
+                SceneName = source.StartCondition.SceneName
+            } : new QuestStartCondition();
+
+            Objectives.Clear();
+            foreach (var objective in source.Objectives)
+            {
+                Objectives.Add(objective.DeepCopy());
+            }
+        }
+
+        public QuestBlueprint DeepCopy()
+        {
+            var copy = new QuestBlueprint();
+            copy.CopyFrom(this);
+            return copy;
         }
 
         public override string ToString()

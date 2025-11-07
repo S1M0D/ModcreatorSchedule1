@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:Schedule1ModdingTool.Views"
         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+        xmlns:utils="clr-namespace:Schedule1ModdingTool.Utils"
         mc:Ignorable="d"
         Title="{Binding CurrentProject.DisplayTitle, StringFormat='Schedule 1 Modding Tool - {0}'}"
         Height="800" Width="1200"
@@ -75,7 +76,14 @@
                         <TextBlock Text="🔄" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="_Compile DLL" Command="{Binding CompileCommand}" InputGestureText="F6">
+            </MenuItem>
+            <MenuItem Header="_Build">
+                <MenuItem Header="_Export Mod Project" Command="{Binding ExportModProjectCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📦" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Build Mod" Command="{Binding BuildModCommand}" InputGestureText="F6">
                     <MenuItem.Icon>
                         <TextBlock Text="⚙️" FontSize="14"/>
                     </MenuItem.Icon>
@@ -85,6 +93,13 @@
                 <MenuItem Header="Toggle _Code View" Command="{Binding ToggleCodeViewCommand}" IsCheckable="True" IsChecked="{Binding IsCodeVisible}">
                     <MenuItem.Icon>
                         <TextBlock Text="👁️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Settings" Command="{Binding OpenSettingsCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⚙️" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
@@ -112,7 +127,11 @@
             <Button Command="{Binding RegenerateCodeCommand}" ToolTip="Regenerate Code (F5)">
                 <TextBlock Text="🔄" FontSize="16"/>
             </Button>
-            <Button Command="{Binding CompileCommand}" ToolTip="Compile to DLL (F6)">
+            <Separator/>
+            <Button Command="{Binding ExportModProjectCommand}" ToolTip="Export Mod Project">
+                <TextBlock Text="📦" FontSize="16"/>
+            </Button>
+            <Button Command="{Binding BuildModCommand}" ToolTip="Build Mod (F6)">
                 <TextBlock Text="⚙️" FontSize="16"/>
             </Button>
         </ToolBar>
@@ -174,8 +193,14 @@
                         <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4">
                             <TextBlock Text="Generated C# Code" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left"/>
                             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                                <Button Content="Export" Style="{StaticResource IconButtonStyle}" Margin="4,0,0,0"/>
-                                <Button Content="Copy" Style="{StaticResource IconButtonStyle}" Margin="4,0,0,0"/>
+                                <Button Content="Export"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="4,0,0,0"
+                                        Command="{Binding ExportCodeCommand}"/>
+                                <Button Content="Copy"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="4,0,0,0"
+                                        Command="{Binding CopyCodeCommand}"/>
                             </StackPanel>
                         </DockPanel>    
                         <avalonEdit:TextEditor
@@ -183,7 +208,7 @@
                             FontFamily="Consolas"
                             FontSize="12"
                             ShowLineNumbers="True"
-                            Text="{Binding GeneratedCode}"
+                            utils:TextEditorHelper.BindableText="{Binding GeneratedCode}"
                             IsReadOnly="True"
                             Margin="8,0,8,8"/>
                     </DockPanel>

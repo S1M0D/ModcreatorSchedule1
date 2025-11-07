@@ -22,6 +22,19 @@ namespace Schedule1ModdingTool.Views
             {
                 CodeEditor.SyntaxHighlighting = ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("C#");
             }
+
+            // Show wizard on startup if no project is loaded
+            Loaded += MainWindow_Loaded;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            var vm = DataContext as MainViewModel;
+            if (vm != null && string.IsNullOrWhiteSpace(vm.CurrentProject.ProjectName))
+            {
+                // Show wizard on startup
+                vm.NewProjectCommand.Execute(null);
+            }
         }
 
         private void SetupKeyBindings()
@@ -45,8 +58,8 @@ namespace Schedule1ModdingTool.Views
             // F5 - Regenerate Code
             InputBindings.Add(new KeyBinding(vm.RegenerateCodeCommand, Key.F5, ModifierKeys.None));
             
-            // F6 - Compile
-            InputBindings.Add(new KeyBinding(vm.CompileCommand, Key.F6, ModifierKeys.None));
+            // F6 - Build Mod
+            InputBindings.Add(new KeyBinding(vm.BuildModCommand, Key.F6, ModifierKeys.None));
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

@@ -3,8 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="New Mod Project Wizard" Height="450" Width="600"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
-    <Grid Margin="20">
+        ResizeMode="NoResize"
+        Background="{StaticResource DarkBackgroundBrush}"
+        Foreground="{StaticResource LightTextBrush}">
+    <Border Margin="20"
+            Background="{StaticResource DarkPanelBrush}"
+            BorderBrush="{StaticResource DarkBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="6"
+            Padding="20">
+        <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -64,7 +72,7 @@
                         <Button Grid.Column="2" Content="Browse..." Command="{Binding BrowsePathCommand}" Padding="10,0"/>
                     </Grid>
                     <TextBlock Text="{Binding FullProjectPath, StringFormat='Project will be created at: {0}'}" 
-                               Foreground="Gray" 
+                               Foreground="{StaticResource DimTextBrush}" 
                                Margin="0,10,0,0"
                                TextWrapping="Wrap"
                                Visibility="{Binding FullProjectPath, Converter={StaticResource StringToVisibilityConverter}}"/>
@@ -76,6 +84,7 @@
             <Button Content="Create Project" Command="{Binding CreateCommand}" Padding="20,5" Margin="0,0,10,0" MinWidth="100" IsDefault="True"/>
             <Button Content="Cancel" Command="{Binding CancelCommand}" Padding="20,5" MinWidth="100" IsCancel="True"/>
         </StackPanel>
-    </Grid>
+        </Grid>
+    </Border>
 </Window>
 

@@ -10,10 +10,10 @@
             MouseLeftButtonDown="Border_MouseLeftButtonDown"
             AllowDrop="False">
         <StackPanel Orientation="Horizontal">
-            <TextBlock Text="📋" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBlock Text="📋" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource LightTextBrush}"/>
             <StackPanel>
-                <TextBlock Text="{Binding QuestTitle}" FontWeight="SemiBold" FontSize="12"/>
-                <TextBlock Text="{Binding ClassName}" FontSize="10" Foreground="Gray"/>
+                <TextBlock Text="{Binding QuestTitle}" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource LightTextBrush}"/>
+                <TextBlock Text="{Binding ClassName}" FontSize="10" Foreground="{StaticResource DimTextBrush}"/>
             </StackPanel>
         </StackPanel>
     </Border>

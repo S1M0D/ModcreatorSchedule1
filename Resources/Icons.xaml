@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- MaterialDesign PackIconKind Resources using x:Static -->
+    <x:Static x:Key="PlusIcon" Member="materialDesign:PackIconKind.Plus"/>
+    <x:Static x:Key="FolderIcon" Member="materialDesign:PackIconKind.Folder"/>
+    <x:Static x:Key="PadlockIcon" Member="materialDesign:PackIconKind.Lock"/>
+    <x:Static x:Key="GlobeIcon" Member="materialDesign:PackIconKind.Web"/>
+    <x:Static x:Key="SearchIcon" Member="materialDesign:PackIconKind.Magnify"/>
+    <x:Static x:Key="FilterIcon" Member="materialDesign:PackIconKind.Filter"/>
+    <x:Static x:Key="SortIcon" Member="materialDesign:PackIconKind.Sort"/>
+    <x:Static x:Key="SettingsIcon" Member="materialDesign:PackIconKind.Cog"/>
+    <x:Static x:Key="BuildIcon" Member="materialDesign:PackIconKind.Hammer"/>
+    <x:Static x:Key="SaveIcon" Member="materialDesign:PackIconKind.ContentSave"/>
+    <x:Static x:Key="DocumentIcon" Member="materialDesign:PackIconKind.FileDocument"/>
+    <x:Static x:Key="FolderOpenIcon" Member="materialDesign:PackIconKind.FolderOpen"/>
+    <x:Static x:Key="CubeIcon" Member="materialDesign:PackIconKind.Cube"/>
+    <x:Static x:Key="QuestIcon" Member="materialDesign:PackIconKind.Flag"/>
+    <x:Static x:Key="DeleteIcon" Member="materialDesign:PackIconKind.Delete"/>
+    <x:Static x:Key="EditIcon" Member="materialDesign:PackIconKind.Pencil"/>
+    <x:Static x:Key="RefreshIcon" Member="materialDesign:PackIconKind.Refresh"/>
+    <x:Static x:Key="ExportIcon" Member="materialDesign:PackIconKind.Download"/>
+    <x:Static x:Key="CopyIcon" Member="materialDesign:PackIconKind.ContentCopy"/>
+    <x:Static x:Key="EyeIcon" Member="materialDesign:PackIconKind.Eye"/>
+    <x:Static x:Key="NPCsIcon" Member="materialDesign:PackIconKind.AccountGroup"/>
+    <x:Static x:Key="PhoneAppsIcon" Member="materialDesign:PackIconKind.Cellphone"/>
+    <x:Static x:Key="ItemsIcon" Member="materialDesign:PackIconKind.Package"/>
+    <x:Static x:Key="NewProjectIcon" Member="materialDesign:PackIconKind.FileDocumentPlus"/>
+    <x:Static x:Key="SaveAsIcon" Member="materialDesign:PackIconKind.ContentSaveAll"/>
+    <x:Static x:Key="CodeRefreshIcon" Member="materialDesign:PackIconKind.FileRefresh"/>
+
+</ResourceDictionary>

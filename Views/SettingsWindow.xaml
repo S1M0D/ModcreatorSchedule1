@@ -1,10 +1,18 @@
 <Window x:Class="Schedule1ModdingTool.Views.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Settings" Height="400" Width="500"
+        Title="Settings" Height="425" Width="500"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
-    <Grid Margin="15">
+        ResizeMode="NoResize"
+        Background="{StaticResource DarkBackgroundBrush}"
+        Foreground="{StaticResource LightTextBrush}">
+    <Border Margin="15"
+            Background="{StaticResource DarkPanelBrush}"
+            BorderBrush="{StaticResource DarkBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="6"
+            Padding="20">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -63,5 +71,6 @@
             <Button Content="Cancel" Command="{Binding CancelCommand}" Padding="15,5" MinWidth="75"/>
         </StackPanel>
     </Grid>
+    </Border>
 </Window>
 

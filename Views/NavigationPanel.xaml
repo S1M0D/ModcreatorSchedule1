@@ -1,0 +1,42 @@
+<UserControl x:Class="Schedule1ModdingTool.Views.NavigationPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:utils="clr-namespace:Schedule1ModdingTool.Utils"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="80">
+    
+    <Border Background="{StaticResource DarkPanelBrush}" 
+            BorderBrush="{StaticResource DarkBorderBrush}" 
+            BorderThickness="0,0,1,0">
+        <StackPanel Orientation="Vertical">
+            <ItemsControl ItemsSource="{Binding NavigationItems}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Command="{Binding DataContext.SelectNavigationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                ToolTip="{Binding Tooltip}"
+                                Style="{Binding IsSelected, Converter={StaticResource BooleanToNavigationItemStyleConverter}}"
+                                IsEnabled="{Binding IsEnabled}"
+                                Opacity="{Binding IsEnabled, Converter={StaticResource BooleanToOpacityConverter}}">
+                            <StackPanel Orientation="Vertical" Margin="4">
+                                <materialDesign:PackIcon Kind="{Binding IconKey, Converter={StaticResource IconKeyToPackIconKindConverter}}"
+                                      Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                      Width="24" Height="24"
+                                      HorizontalAlignment="Center"
+                                      Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding DisplayName}"
+                                           FontSize="11"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</UserControl>

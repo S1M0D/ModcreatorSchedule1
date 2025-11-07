@@ -3,31 +3,36 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Build Log" Height="600" Width="800"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize">
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+        ResizeMode="CanResize"
+        Background="{StaticResource DarkBackgroundBrush}"
+        Foreground="{StaticResource LightTextBrush}">
+    <Border Margin="10"
+            Background="{StaticResource DarkPanelBrush}"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+            <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
 
-        <TextBox Grid.Row="1" 
-                 Text="{Binding LogContent, Mode=OneWay}" 
-                 IsReadOnly="True"
-                 TextWrapping="Wrap"
-                 VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto"
-                 FontFamily="Consolas"
-                 FontSize="11"
-                 Background="#F5F5F5"
-                 Padding="5"/>
+            <TextBox Grid.Row="1" 
+                     Text="{Binding LogContent, Mode=OneWay}" 
+                     IsReadOnly="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"
+                     FontFamily="Consolas"
+                     FontSize="11"
+                     Padding="8"/>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="Save Log..." Command="{Binding SaveLogCommand}" Padding="15,5" Margin="0,0,10,0" MinWidth="100"/>
-            <Button Content="Close" Command="{Binding CloseCommand}" Padding="15,5" MinWidth="100" IsCancel="True"/>
-        </StackPanel>
-    </Grid>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                <Button Content="Save Log..." Command="{Binding SaveLogCommand}" Padding="15,5" Margin="0,0,10,0" MinWidth="100"/>
+                <Button Content="Close" Command="{Binding CloseCommand}" Padding="15,5" MinWidth="100" IsCancel="True"/>
+            </StackPanel>
+        </Grid>
+    </Border>
 </Window>
 

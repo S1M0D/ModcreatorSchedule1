@@ -8,9 +8,11 @@
         Height="700" Width="900"
         MinHeight="600" MinWidth="800"
         WindowStartupLocation="CenterOwner"
-        ShowInTaskbar="False">
+        ShowInTaskbar="False"
+        Background="{StaticResource DarkBackgroundBrush}"
+        Foreground="{StaticResource LightTextBrush}">
 
-    <Grid>
+    <Grid Background="{StaticResource DarkPanelBrush}" Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -24,13 +26,18 @@
             </Grid.ColumnDefinitions>
 
             <!-- Quest Properties Panel -->
-            <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Margin="5">
+            <Border Grid.Column="0"
+                    Background="{StaticResource DarkPanelBrush}"
+                    BorderBrush="{StaticResource DarkBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Margin="5">
                 <DockPanel>
-                    <TextBlock Text="Quest Properties" FontSize="16" FontWeight="SemiBold" Foreground="#424242" Margin="12,12,12,8" DockPanel.Dock="Top"/>
+                    <TextBlock Text="Quest Properties" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" Margin="12,12,12,8" DockPanel.Dock="Top"/>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="12">
                         <StackPanel>
                             <!-- Quest Details Section -->
-                            <Border Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
+                            <Border Background="{StaticResource DarkBackgroundBrush}" BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Quest Details" FontWeight="Bold" FontSize="14" Margin="0,0,0,12"/>
                                     
@@ -55,7 +62,7 @@
                             </Border>
                             
                             <!-- MelonLoader Mod Settings Section -->
-                            <Border Background="#E8F5E8" BorderBrush="#C3E6C3" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
+                            <Border Background="{StaticResource DarkBackgroundBrush}" BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
                                 <StackPanel Margin="12">
                                     <TextBlock Text="MelonLoader Mod Settings" FontWeight="Bold" FontSize="14" Margin="0,0,0,12"/>
                                     
@@ -80,7 +87,7 @@
                             </Border>
                             
                             <!-- Quest Settings Section -->
-                            <Border Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
+                            <Border Background="{StaticResource DarkBackgroundBrush}" BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Quest Settings" FontWeight="Bold" FontSize="14" Margin="0,0,0,12"/>
                                     
@@ -107,7 +114,7 @@
                             </Border>
                             
                             <!-- Quest Objectives Section -->
-                            <Border Background="#F8F9FA" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
+                            <Border Background="{StaticResource DarkBackgroundBrush}" BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,12">
                                 <StackPanel Margin="12">
                                     <DockPanel Margin="0,0,0,12">
                                         <TextBlock Text="Quest Objectives" FontWeight="Bold" FontSize="14" DockPanel.Dock="Left"/>
@@ -122,8 +129,8 @@
                                     <ItemsControl ItemsSource="{Binding Quest.Objectives}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Background="White" 
-                                                        BorderBrush="#CED4DA" 
+                                                <Border Background="{StaticResource DarkBackgroundBrush}" 
+                                                        BorderBrush="{StaticResource DarkBorderBrush}" 
                                                         BorderThickness="1" 
                                                         CornerRadius="3" 
                                                         Margin="0,3" 
@@ -166,13 +173,22 @@
             </Border>
 
             <!-- Vertical Splitter -->
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#E0E0E0" BorderBrush="#BDBDBD" BorderThickness="1"/>
+            <GridSplitter Grid.Column="1"
+                          Width="5"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch"
+                          Style="{StaticResource SplitterStyle}"/>
 
             <!-- Code Preview Panel -->
-            <Border Grid.Column="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Margin="5">
+            <Border Grid.Column="2"
+                    Background="{StaticResource DarkPanelBrush}"
+                    BorderBrush="{StaticResource DarkBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Margin="5">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="12,12,12,8">
-                        <TextBlock Text="Generated C# Code" FontSize="16" FontWeight="SemiBold" Foreground="#424242" DockPanel.Dock="Left"/>
+                        <TextBlock Text="Generated C# Code" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" DockPanel.Dock="Left"/>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
                             <Button Content="Regenerate" 
                                     Command="{Binding RegenerateCodeCommand}" 
@@ -197,14 +213,18 @@
                         HorizontalScrollBarVisibility="Auto"
                         AcceptsReturn="True"
                         TextWrapping="NoWrap"
-                        Background="#1E1E1E"
-                        Foreground="#D4D4D4"/>
+                        Background="{StaticResource DarkBackgroundBrush}"
+                        Foreground="{StaticResource LightTextBrush}"/>
                 </DockPanel>
             </Border>
         </Grid>
 
         <!-- Bottom Button Panel -->
-        <Border Grid.Row="1" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="12">
+        <Border Grid.Row="1"
+                Background="{StaticResource DarkPanelBrush}"
+                BorderBrush="{StaticResource DarkBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Apply Changes" 
                         Command="{Binding ApplyChangesCommand}" 

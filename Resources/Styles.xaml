@@ -2,17 +2,128 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit">
 
-    <!-- Colors -->
-    <SolidColorBrush x:Key="PrimaryBrush" Color="#2196F3"/>
-    <SolidColorBrush x:Key="AccentBrush" Color="#FF9800"/>
-    <SolidColorBrush x:Key="DarkBrush" Color="#424242"/>
-    <SolidColorBrush x:Key="LightBrush" Color="#F5F5F5"/>
-    <SolidColorBrush x:Key="BorderBrush" Color="#E0E0E0"/>
+    <!-- Legacy color aliases for backward compatibility -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource DarkSelectedColor}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentOrangeColor}"/>
+    <SolidColorBrush x:Key="DarkBrush" Color="{StaticResource DarkPanelColor}"/>
+    <SolidColorBrush x:Key="LightBrush" Color="{StaticResource DarkHoverColor}"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource DarkBorderColor}"/>
+
+    <!-- Base Element Styles -->
+    <Style TargetType="Window">
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+    </Style>
+
+    <Style TargetType="UserControl">
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+    </Style>
+
+    <Style TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+    </Style>
+
+    <Style TargetType="Label">
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="Margin" Value="0,4,0,2"/>
+    </Style>
+
+    <Style TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Margin" Value="0,2,0,2"/>
+    </Style>
+
+    <Style TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Margin" Value="0,2,0,2"/>
+    </Style>
+
+    <Style x:Key="BaseTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Margin" Value="0,2,0,4"/>
+    </Style>
+
+    <Style TargetType="TextBox" BasedOn="{StaticResource BaseTextBoxStyle}">
+        <Style.Triggers>
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="6,4"/>
+    </Style>
+
+    <Style TargetType="GroupBox">
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
+    <Style TargetType="ListBox">
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+    </Style>
+
+    <Style TargetType="ListView">
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+    </Style>
+
+    <Style TargetType="ContextMenu">
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+    </Style>
+
+    <Style TargetType="ToolTip">
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+    </Style>
+
+    <Style x:Key="BaseButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.5"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}"/>
 
     <!-- Panel Styles -->
     <Style x:Key="PanelStyle" TargetType="Border">
-        <Setter Property="Background" Value="White"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Margin" Value="2"/>
@@ -22,20 +133,50 @@
     <Style x:Key="PanelHeaderStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{StaticResource DarkBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
         <Setter Property="Margin" Value="8,8,8,4"/>
     </Style>
 
     <!-- Button Styles -->
-    <Style x:Key="IconButtonStyle" TargetType="Button">
+    <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderThickness" Value="0"/>  
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    
+    <!-- Toolbar Button Style -->
+    <Style x:Key="ToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="7"/>
+        <Setter Property="MinWidth" Value="32"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Blueprint Item Style -->
     <Style x:Key="BlueprintItemStyle" TargetType="Border">
-        <Setter Property="Background" Value="White"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Margin" Value="4,2"/>
@@ -43,8 +184,8 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource LightBrush}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -53,6 +194,7 @@
     <Style x:Key="QuestItemStyle" TargetType="ListBoxItem">
         <Setter Property="Margin" Value="2"/>
         <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
@@ -65,11 +207,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                            <Setter Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
                             <Setter Property="Foreground" Value="White"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource LightBrush}"/>
+                            <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -80,20 +222,155 @@
     <!-- Input Styles -->
     <Style x:Key="LabelStyle" TargetType="Label">
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{StaticResource DarkBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
         <Setter Property="Margin" Value="0,4,0,2"/>
     </Style>
 
     <Style x:Key="TextBoxStyle" TargetType="TextBox">
         <Setter Property="Padding" Value="6,4"/>
-        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Margin" Value="0,2,0,4"/>
         <Style.Triggers>
             <Trigger Property="IsFocused" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
             </Trigger>
         </Style.Triggers>
+    </Style>
+    
+    <!-- Menu Styles -->
+    <Style x:Key="DarkMenuStyle" TargetType="Menu">
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    </Style>
+    
+    <Style x:Key="DarkMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource DimTextBrush}"/>
+                <Setter Property="Opacity" Value="0.6"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    
+    <!-- Toolbar Style -->
+    <Style x:Key="DarkToolbarStyle" TargetType="ToolBar">
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="Height" Value="36"/>
+    </Style>
+    
+    <!-- Toolbar Separator Style -->
+    <Style x:Key="ToolbarSeparatorStyle" TargetType="Separator">
+        <Setter Property="Margin" Value="4,4"/>
+        <Setter Property="Width" Value="1"/>
+        <Setter Property="Background" Value="{StaticResource DarkBorderBrush}"/>
+    </Style>
+    
+    <!-- StatusBar Style -->
+    <Style x:Key="DarkStatusBarStyle" TargetType="StatusBar">
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+    </Style>
+    
+    <!-- Splitter Style -->
+    <Style x:Key="SplitterStyle" TargetType="GridSplitter">
+        <Setter Property="Background" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    
+    <!-- Tile Style -->
+    <Style x:Key="CategoryTileStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Margin" Value="8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#40000000" Direction="270" ShadowDepth="2" BlurRadius="4" Opacity="0.3"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#60000000" Direction="270" ShadowDepth="4" BlurRadius="8" Opacity="0.5"/>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    
+    <!-- Navigation Item Style -->
+    <Style x:Key="NavigationItemStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    
+    <!-- Tab Control Styles -->
+    <Style x:Key="TabItemStyle" TargetType="TabItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            Margin="2,0">
+                        <ContentPresenter ContentSource="Header" 
+                                        HorizontalAlignment="Center" 
+                                        VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <!-- Selected Navigation Item Style -->
+    <Style x:Key="SelectedNavigationItemStyle" TargetType="Button" BasedOn="{StaticResource NavigationItemStyle}">
+        <Setter Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
     </Style>
 
 </ResourceDictionary>

@@ -1,0 +1,72 @@
+<UserControl x:Class="Schedule1ModdingTool.Views.CategoryTile"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:utils="clr-namespace:Schedule1ModdingTool.Utils"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="150" d:DesignWidth="200">
+    
+    <Border Style="{StaticResource CategoryTileStyle}"
+            Width="200" Height="150"
+            MouseLeftButtonDown="Border_MouseLeftButtonDown"
+            MouseRightButtonDown="Border_MouseRightButtonDown"
+            DataContext="{Binding Category}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Icon -->
+            <materialDesign:PackIcon Grid.Row="0"
+                  Kind="{Binding IconKey, Converter={StaticResource IconKeyToPackIconKindConverter}}"
+                  Foreground="{StaticResource MediumTextBrush}"
+                  Width="48" Height="48"
+                  HorizontalAlignment="Center"
+                  Margin="0,0,0,8"
+                  Opacity="{Binding IsEnabled, Converter={StaticResource BooleanToOpacityConverter}}"/>
+            
+            <!-- Content -->
+            <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                <TextBlock Text="{Binding DisplayName}"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource LightTextBrush}"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding Description}"
+                           FontSize="11"
+                           Foreground="{StaticResource DimTextBrush}"
+                           HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Margin="8,0"/>
+                <TextBlock Text="{Binding Count, StringFormat='{}{0} items'}"
+                           FontSize="10"
+                           Foreground="{StaticResource MediumTextBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,8,0,0"
+                           Visibility="{Binding IsEnabled, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </StackPanel>
+            
+            <!-- Coming Soon Badge -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource DimTextBrush}"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="8"
+                    HorizontalAlignment="Center"
+                    Visibility="{Binding IsEnabled, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                <TextBlock Text="{Binding ComingSoonText}"
+                           FontSize="10"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource LightTextBrush}"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>
+

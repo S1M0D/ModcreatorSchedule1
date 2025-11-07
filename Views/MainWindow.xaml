@@ -6,19 +6,15 @@
         xmlns:views="clr-namespace:Schedule1ModdingTool.Views"
         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
         xmlns:utils="clr-namespace:Schedule1ModdingTool.Utils"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         Title="{Binding CurrentProject.DisplayTitle, StringFormat='Schedule 1 Modding Tool - {0}'}"
         Height="800" Width="1200"
         MinHeight="600" MinWidth="800"
-        WindowStartupLocation="CenterScreen">
-
-    <Window.Resources>
-        <Style x:Key="SplitterStyle" TargetType="GridSplitter">
-            <Setter Property="Background" Value="#E0E0E0"/>
-            <Setter Property="BorderBrush" Value="#BDBDBD"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-    </Window.Resources>
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource DarkBackgroundBrush}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -29,208 +25,299 @@
         </Grid.RowDefinitions>
 
         <!-- Menu Bar -->
-        <Menu Grid.Row="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New Project" Command="{Binding NewProjectCommand}" InputGestureText="Ctrl+N">
+        <Menu Grid.Row="0" Style="{StaticResource DarkMenuStyle}">
+            <MenuItem Header="_File" Style="{StaticResource DarkMenuItemStyle}">
+                <MenuItem Header="_New Project" Command="{Binding NewProjectCommand}" InputGestureText="Ctrl+N" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="📄" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource NewProjectIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="_Open Project..." Command="{Binding OpenProjectCommand}" InputGestureText="Ctrl+O">
+                <MenuItem Header="_Open Project..." Command="{Binding OpenProjectCommand}" InputGestureText="Ctrl+O" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="📂" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Save Project" Command="{Binding SaveProjectCommand}" InputGestureText="Ctrl+S">
-                    <MenuItem.Icon>
-                        <TextBlock Text="💾" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Save Project _As..." Command="{Binding SaveProjectAsCommand}" InputGestureText="Ctrl+Shift+S">
-                    <MenuItem.Icon>
-                        <TextBlock Text="💾" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource FolderOpenIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4">
+                <MenuItem Header="_Save Project" Command="{Binding SaveProjectCommand}" InputGestureText="Ctrl+S" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="❌" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource SaveIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
-            </MenuItem>
-            <MenuItem Header="_Quest">
-                <MenuItem Header="_Add Quest" Command="{Binding AddQuestCommand}">
+                <MenuItem Header="Save Project _As..." Command="{Binding SaveProjectAsCommand}" InputGestureText="Ctrl+Shift+S" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="➕" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="_Remove Quest" Command="{Binding RemoveQuestCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="➖" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource SaveAsIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Regenerate Code" Command="{Binding RegenerateCodeCommand}" InputGestureText="F5">
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4" Style="{StaticResource DarkMenuItemStyle}"/>
+            </MenuItem>
+            <MenuItem Header="_Quest" Style="{StaticResource DarkMenuItemStyle}">
+                <MenuItem Header="_Add Quest" Command="{Binding AddQuestCommand}" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="🔄" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource PlusIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Remove Quest" Command="{Binding RemoveQuestCommand}" Style="{StaticResource DarkMenuItemStyle}">
+                    <MenuItem.Icon>
+                        <materialDesign:PackIcon Kind="{StaticResource DeleteIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Regenerate Code" Command="{Binding RegenerateCodeCommand}" InputGestureText="F5" Style="{StaticResource DarkMenuItemStyle}">
+                    <MenuItem.Icon>
+                        <materialDesign:PackIcon Kind="{StaticResource CodeRefreshIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="_Build">
-                <MenuItem Header="_Export Mod Project" Command="{Binding ExportModProjectCommand}">
+            <MenuItem Header="_Build" Style="{StaticResource DarkMenuItemStyle}">
+                <MenuItem Header="_Export Mod Project" Command="{Binding ExportModProjectCommand}" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="📦" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource ExportIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="_Build Mod" Command="{Binding BuildModCommand}" InputGestureText="F6">
+                <MenuItem Header="_Build Mod" Command="{Binding BuildModCommand}" InputGestureText="F6" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="⚙️" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-            </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem Header="Toggle _Code View" Command="{Binding ToggleCodeViewCommand}" IsCheckable="True" IsChecked="{Binding IsCodeVisible}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="👁️" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource BuildIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="_Tools">
-                <MenuItem Header="_Settings" Command="{Binding OpenSettingsCommand}">
+            <MenuItem Header="_View" Style="{StaticResource DarkMenuItemStyle}">
+                <MenuItem Header="Toggle _Code View" Command="{Binding ToggleCodeViewCommand}" IsCheckable="True" IsChecked="{Binding IsCodeVisible, Mode=OneWay}" Style="{StaticResource DarkMenuItemStyle}">
                     <MenuItem.Icon>
-                        <TextBlock Text="⚙️" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="{StaticResource EyeIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Tools" Style="{StaticResource DarkMenuItemStyle}">
+                <MenuItem Header="_Settings" Command="{Binding OpenSettingsCommand}" Style="{StaticResource DarkMenuItemStyle}">
+                    <MenuItem.Icon>
+                        <materialDesign:PackIcon Kind="{StaticResource SettingsIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}" Width="16" Height="16"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
         </Menu>
 
-        <!-- Toolbar -->
-        <ToolBar Grid.Row="1" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-            <Button Command="{Binding NewProjectCommand}" ToolTip="New Project">
-                <TextBlock Text="📄" FontSize="16"/>
+        <!-- Action Icons Toolbar -->
+        <ToolBar Grid.Row="1" Style="{StaticResource DarkToolbarStyle}">
+            <Button Command="{Binding NewProjectCommand}" ToolTip="New Project" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource NewProjectIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="18" Height="18"/>
             </Button>
-            <Button Command="{Binding OpenProjectCommand}" ToolTip="Open Project">
-                <TextBlock Text="📂" FontSize="16"/>
+            <Button Command="{Binding OpenProjectCommand}" ToolTip="Open Project" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource FolderOpenIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="18" Height="18"/>
             </Button>
-            <Button Command="{Binding SaveProjectCommand}" ToolTip="Save Project">
-                <TextBlock Text="💾" FontSize="16"/>
+            <Button Command="{Binding SaveProjectCommand}" ToolTip="Save Project" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource SaveIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="18" Height="18"/>
             </Button>
-            <Separator/>
-            <Button Command="{Binding AddQuestCommand}" ToolTip="Add Quest">
-                <TextBlock Text="➕" FontSize="16"/>
+            <Separator Style="{StaticResource ToolbarSeparatorStyle}"/>
+            <Button ToolTip="Add Quest" Style="{StaticResource ToolbarButtonStyle}" Click="AddQuestButton_Click">
+                <materialDesign:PackIcon Kind="{StaticResource PlusIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="18" Height="18"/>
             </Button>
-            <Button Command="{Binding RemoveQuestCommand}" ToolTip="Remove Quest">
-                <TextBlock Text="➖" FontSize="16"/>
+            <Button Command="{Binding RemoveQuestCommand}" ToolTip="Remove Quest" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource DeleteIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="18" Height="18"/>
             </Button>
-            <Separator/>
-            <Button Command="{Binding RegenerateCodeCommand}" ToolTip="Regenerate Code (F5)">
-                <TextBlock Text="🔄" FontSize="16"/>
+            <Separator Style="{StaticResource ToolbarSeparatorStyle}"/>
+            <Button Command="{Binding RegenerateCodeCommand}" ToolTip="Regenerate Code (F5)" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource CodeRefreshIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="16" Height="16"/>
             </Button>
-            <Separator/>
-            <Button Command="{Binding ExportModProjectCommand}" ToolTip="Export Mod Project">
-                <TextBlock Text="📦" FontSize="16"/>
+            <Separator Style="{StaticResource ToolbarSeparatorStyle}"/>
+            <Button Command="{Binding ExportModProjectCommand}" ToolTip="Export Mod Project" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource ExportIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="16" Height="16"/>
             </Button>
-            <Button Command="{Binding BuildModCommand}" ToolTip="Build Mod (F6)">
-                <TextBlock Text="⚙️" FontSize="16"/>
+            <Button Command="{Binding BuildModCommand}" ToolTip="Build Mod (F6)" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource BuildIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="16" Height="16"/>
+            </Button>
+            <Separator Style="{StaticResource ToolbarSeparatorStyle}"/>
+            <Button Command="{Binding OpenSettingsCommand}" ToolTip="Settings" Style="{StaticResource ToolbarButtonStyle}">
+                <materialDesign:PackIcon Kind="{StaticResource SettingsIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="16" Height="16"/>
             </Button>
         </ToolBar>
 
         <!-- Main Content Grid -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250" MinWidth="200"/>
+                <ColumnDefinition Width="85" MinWidth="85"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*" MinWidth="300"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="300" MinWidth="250"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Resource Explorer Panel -->
-            <Border Grid.Column="0" Style="{StaticResource PanelStyle}">
-                <DockPanel>
-                    <TextBlock Text="Resource Explorer" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Top"/>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="8">
-                            <TextBlock Text="Blueprints" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                            <ItemsControl ItemsSource="{Binding AvailableBlueprints}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <views:BlueprintControl Blueprint="{Binding}"/>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </ScrollViewer>
-                </DockPanel>
-            </Border>
+            <!-- Left Navigation Panel -->
+            <views:NavigationPanel Grid.Column="0" DataContext="{Binding}"/>
 
             <!-- Vertical Splitter -->
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Style="{StaticResource SplitterStyle}"/>
+            <GridSplitter Grid.Column="1" Width="3" HorizontalAlignment="Center" VerticalAlignment="Stretch" Style="{StaticResource SplitterStyle}"/>
 
-            <!-- Workspace Panel -->
+            <!-- Central Workspace with Tabs -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto" x:Name="CodeViewRow"/>
-                    <RowDefinition Height="*" x:Name="CodeContentRow"/>
+                    <RowDefinition x:Name="CodeContentRow" Height="{Binding IsCodeVisible, Converter={StaticResource BooleanToGridLengthConverter}}"/>
                 </Grid.RowDefinitions>
 
-                <!-- Quest Workspace -->
-                <Border Grid.Row="0" Style="{StaticResource PanelStyle}">
-                    <DockPanel>
-                        <TextBlock Text="Quest Workspace" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Top"/>
-                        <views:WorkspaceControl DataContext="{Binding}"/>
-                    </DockPanel>
+                <Grid Grid.Row="0">
+                    <!-- Tab Control Host -->
+                    <Border Background="{StaticResource DarkPanelBrush}"
+                            BorderBrush="{StaticResource DarkBorderBrush}"
+                            BorderThickness="0,0,0,1">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding OpenTabs.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TabControl ItemsSource="{Binding OpenTabs}"
+                                    SelectedItem="{Binding SelectedTab}"
+                                    Background="Transparent"
+                                    BorderThickness="0">
+                            <TabControl.ItemContainerStyle>
+                                <Style TargetType="TabItem" BasedOn="{StaticResource TabItemStyle}"/>
+                            </TabControl.ItemContainerStyle>
+                            <TabControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" 
+                                                   Text="{Binding Title}"
+                                                   Margin="0,0,4,0"
+                                                   VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1"
+                                                Content="×"
+                                                Width="16" Height="16"
+                                                Padding="0"
+                                                FontSize="12"
+                                                FontWeight="Bold"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Foreground="{StaticResource MediumTextBrush}"
+                                                Cursor="Hand"
+                                                Click="CloseTabButton_Click"
+                                                Tag="{Binding}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+                                                            <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </TabControl.ItemTemplate>
+                            <TabControl.ContentTemplate>
+                                <DataTemplate>
+                                    <views:PropertiesControl DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"/>
+                                </DataTemplate>
+                            </TabControl.ContentTemplate>
+                            <TabControl.Style>
+                                <Style TargetType="TabControl">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="TabControl">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <TabPanel Grid.Row="0" 
+                                                              IsItemsHost="True"
+                                                              Background="{StaticResource DarkPanelBrush}"/>
+                                                    <ContentPresenter Grid.Row="1" 
+                                                                      Content="{TemplateBinding SelectedContent}"
+                                                                      ContentTemplate="{TemplateBinding SelectedContentTemplate}"
+                                                                      VerticalAlignment="Stretch"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TabControl.Style>
+                    </TabControl>
                 </Border>
 
-                <!-- Code View Splitter -->
-                <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" VerticalAlignment="Center" Style="{StaticResource SplitterStyle}" Visibility="{Binding IsCodeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <!-- Workspace View (when no tabs open) -->
+                    <ContentControl>
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="Content">
+                                    <Setter.Value>
+                                        <views:WorkspaceControl DataContext="{Binding}"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding OpenTabs.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding SelectedNavigationItem.Id}" Value="Resources">
+                                        <Setter Property="Content">
+                                            <Setter.Value>
+                                                <views:ResourcesView DataContext="{Binding}"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                </Grid>
 
-                <!-- Generated Code Panel -->
-                <Border Grid.Row="2" Style="{StaticResource PanelStyle}" Visibility="{Binding IsCodeVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <DockPanel>
-                        <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4">
-                            <TextBlock Text="Generated C# Code" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left"/>
-                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                                <Button Content="Export"
-                                        Style="{StaticResource IconButtonStyle}"
-                                        Margin="4,0,0,0"
-                                        Command="{Binding ExportCodeCommand}"/>
-                                <Button Content="Copy"
-                                        Style="{StaticResource IconButtonStyle}"
-                                        Margin="4,0,0,0"
-                                        Command="{Binding CopyCodeCommand}"/>
-                            </StackPanel>
-                        </DockPanel>    
-                        <avalonEdit:TextEditor
-                            x:Name="CodeEditor"
-                            FontFamily="Consolas"
-                            FontSize="12"
-                            ShowLineNumbers="True"
-                            utils:TextEditorHelper.BindableText="{Binding GeneratedCode}"
-                            IsReadOnly="True"
-                            Margin="8,0,8,8"/>
-                    </DockPanel>
-                </Border>
+                <!-- Code View Container -->
+                <Grid Grid.Row="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Code View Splitter -->
+                    <GridSplitter Grid.Row="0" Height="3" HorizontalAlignment="Stretch" VerticalAlignment="Center" Style="{StaticResource SplitterStyle}"/>
+
+                    <!-- Generated Code Panel -->
+                    <Border Grid.Row="1" Style="{StaticResource PanelStyle}">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4">
+                                <TextBlock Text="Generated C# Code" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left"/>
+                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                                    <Button Content="Export"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="4,0,0,0"
+                                            Command="{Binding ExportCodeCommand}"/>
+                                    <Button Style="{StaticResource IconButtonStyle}"
+                                            Margin="4,0,0,0"
+                                            Command="{Binding CopyCodeCommand}"
+                                            ToolTip="Copy">
+                                        <materialDesign:PackIcon Kind="{StaticResource CopyIcon}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" Width="16" Height="16"/>
+                                    </Button>
+                                </StackPanel>
+                            </DockPanel>    
+                            <avalonEdit:TextEditor
+                                x:Name="CodeEditor"
+                                FontFamily="Consolas"
+                                FontSize="12"
+                                ShowLineNumbers="True"
+                                utils:TextEditorHelper.BindableText="{Binding GeneratedCode}"
+                                IsReadOnly="True"
+                                Margin="8,0,8,8"
+                                Background="{StaticResource DarkBackgroundBrush}"
+                                Foreground="{StaticResource LightTextBrush}"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
             </Grid>
-
-            <!-- Vertical Splitter -->
-            <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Center" VerticalAlignment="Stretch" Style="{StaticResource SplitterStyle}"/>
-
-            <!-- Properties Panel -->
-            <Border Grid.Column="4" Style="{StaticResource PanelStyle}">
-                <DockPanel>
-                    <TextBlock Text="Quest Properties" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Top"/>
-                    <views:PropertiesControl DataContext="{Binding}"/>
-                </DockPanel>
-            </Border>
         </Grid>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="3" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+        <StatusBar Grid.Row="3" Style="{StaticResource DarkStatusBarStyle}">
             <StatusBarItem>
-                <TextBlock Text="Ready"/>
+                <TextBlock Text="{Binding ProcessState, FallbackValue='Ready'}"/>
             </StatusBarItem>
             <StatusBarItem HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">

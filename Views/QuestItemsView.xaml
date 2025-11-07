@@ -1,9 +1,8 @@
-<UserControl x:Class="Schedule1ModdingTool.Views.WorkspaceControl"
+<UserControl x:Class="Schedule1ModdingTool.Views.QuestItemsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:views="clr-namespace:Schedule1ModdingTool.Views"
              xmlns:utils="clr-namespace:Schedule1ModdingTool.Utils"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" 
@@ -11,15 +10,21 @@
     
     <UserControl.Resources>
         <!-- Context Menu -->
-        <ContextMenu x:Key="WorkspaceContextMenu">
-            <MenuItem Header="New">
-                <MenuItem Header="Quest" Click="NewQuest_Click">
-                    <MenuItem.Icon>
-                        <materialDesign:PackIcon Kind="{StaticResource QuestIcon}"
-                              Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
-                              Width="16" Height="16"/>
-                    </MenuItem.Icon>
-                </MenuItem>
+        <ContextMenu x:Key="QuestContextMenu">
+            <MenuItem Header="Add Quest" Click="AddQuest_Click">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="{StaticResource PlusIcon}"
+                          Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+                          Width="16" Height="16"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Remove Quest" 
+                      Click="RemoveQuest_Click">
+                <MenuItem.Icon>
+                    <materialDesign:PackIcon Kind="{StaticResource DeleteIcon}"
+                          Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+                          Width="16" Height="16"/>
+                </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
     </UserControl.Resources>
@@ -30,16 +35,29 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
-        <!-- Workspace Header -->
-        <views:WorkspaceHeader Grid.Row="0" DataContext="{Binding WorkspaceViewModel}"/>
+        <!-- Breadcrumb Navigation -->
+        <Border Grid.Row="0"
+                Background="{StaticResource DarkPanelBrush}"
+                BorderBrush="{StaticResource DarkBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,8">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="← Back to Categories"
+                        Click="BackToCategories_Click"
+                        Style="{StaticResource IconButtonStyle}"
+                        Foreground="{StaticResource AccentOrangeBrush}"
+                        Padding="8,4"
+                        Cursor="Hand"/>
+            </StackPanel>
+        </Border>
         
-        <!-- Workspace Content -->
-        <ScrollViewer Grid.Row="1" 
+        <!-- Quest Items Grid -->
+        <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Auto"
                       Background="{StaticResource DarkBackgroundBrush}">
-            <Grid Margin="16" ContextMenu="{StaticResource WorkspaceContextMenu}">
-                <!-- Quest Tiles - Show all quests directly -->
+            <Grid Margin="16" ContextMenu="{StaticResource QuestContextMenu}">
+                <!-- Quest Tiles -->
                 <ItemsControl ItemsSource="{Binding CurrentProject.Quests}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -63,23 +81,29 @@
                                     
                                     <!-- Quest Icon -->
                                     <materialDesign:PackIcon Grid.Row="0"
-                                          Kind="{StaticResource DocumentIcon}"
+                                          Kind="{StaticResource QuestIcon}"
                                           Foreground="{StaticResource MediumTextBrush}"
                                           Width="48" Height="48"
                                           HorizontalAlignment="Center"
                                           Margin="0,0,0,8"/>
                                     
-                                    <!-- Quest Name -->
-                                    <TextBlock Grid.Row="1"
-                                               Text="{Binding DisplayName}"
-                                               FontSize="16"
-                                               FontWeight="SemiBold"
-                                               Foreground="{StaticResource LightTextBrush}"
-                                               HorizontalAlignment="Center"
-                                               TextAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               Margin="8,0"/>
+                                    <!-- Quest Info -->
+                                    <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DisplayName}"
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource LightTextBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   TextAlignment="Center"
+                                                   Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding QuestTitle}"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource DimTextBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   Margin="8,0"/>
+                                    </StackPanel>
                                     
                                     <!-- Quest Type Badge -->
                                     <Border Grid.Row="2"
@@ -113,7 +137,7 @@
                                FontStyle="Italic" 
                                Foreground="{StaticResource DimTextBrush}"
                                FontSize="14"/>
-                    <TextBlock Text="Right-click in the workspace and select New → Quest to create a new quest" 
+                    <TextBlock Text="Right-click in the workspace to add a new quest" 
                                HorizontalAlignment="Center" 
                                FontSize="11" 
                                Foreground="{StaticResource DimTextBrush}"
@@ -123,3 +147,4 @@
         </ScrollViewer>
     </Grid>
 </UserControl>
+

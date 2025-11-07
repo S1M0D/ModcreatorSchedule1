@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using Schedule1ModdingTool.ViewModels;
 
@@ -32,8 +33,31 @@ namespace Schedule1ModdingTool.Views
             var vm = DataContext as MainViewModel;
             if (vm != null && string.IsNullOrWhiteSpace(vm.CurrentProject.ProjectName))
             {
-                // Show wizard on startup
-                vm.NewProjectCommand.Execute(null);
+                // Show startup dialog instead of directly showing wizard
+                var startupDialog = new StartupDialog
+                {
+                    Owner = this
+                };
+
+                var result = startupDialog.ShowDialog();
+                
+                if (startupDialog.SelectedAction == StartupDialog.StartupAction.CreateNew)
+                {
+                    vm.NewProjectCommand.Execute(null);
+                }
+                else if (startupDialog.SelectedAction == StartupDialog.StartupAction.OpenExisting)
+                {
+                    vm.OpenProjectCommand.Execute(null);
+                }
+                else if (startupDialog.SelectedAction == StartupDialog.StartupAction.Exit)
+                {
+                    Application.Current.Shutdown();
+                }
+                else if (result == false)
+                {
+                    // User closed dialog without selecting an option
+                    Application.Current.Shutdown();
+                }
             }
         }
 
@@ -85,6 +109,22 @@ namespace Schedule1ModdingTool.Views
             }
 
             base.OnClosing(e);
+        }
+
+        private void AddQuestButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && vm.AvailableBlueprints.Count > 0)
+            {
+                vm.AddQuestCommand.Execute(vm.AvailableBlueprints[0]);
+            }
+        }
+
+        private void CloseTabButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is OpenElementTab tab && DataContext is MainViewModel vm)
+            {
+                vm.CloseTab(tab);
+            }
         }
     }
 }

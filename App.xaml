@@ -2,10 +2,13 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:utils="clr-namespace:Schedule1ModdingTool.Utils"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              StartupUri="Views/MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/DarkTheme.xaml" />
+                <ResourceDictionary Source="Resources/Icons.xaml" />
                 <ResourceDictionary Source="Resources/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             
@@ -14,6 +17,16 @@
             <utils:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
             <utils:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <utils:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+            <utils:IconKeyToGeometryConverter x:Key="IconKeyToGeometryConverter"/>
+            <utils:IconKeyToPackIconKindConverter x:Key="IconKeyToPackIconKindConverter"/>
+            <utils:BooleanToNavigationItemStyleConverter x:Key="BooleanToNavigationItemStyleConverter"/>
+            <utils:BooleanToOpacityConverter x:Key="BooleanToOpacityConverter"/>
+            <utils:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
+            <utils:NullToBooleanConverter x:Key="NullToBooleanConverter"/>
+            <utils:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <utils:CountToVisibilityInverseConverter x:Key="CountToVisibilityInverseConverter"/>
+            <utils:BooleanToTabForegroundConverter x:Key="BooleanToTabForegroundConverter"/>
+            <utils:BooleanToGridLengthConverter x:Key="BooleanToGridLengthConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -19,7 +19,7 @@ namespace Schedule1ModdingTool.ViewModels
         private QuestProject _currentProject = null!;
         private QuestBlueprint? _selectedQuest;
         private string _generatedCode = "";
-        private bool _isCodeVisible = true;
+        private bool _isCodeVisible = false;
 
         public QuestProject CurrentProject
         {
@@ -39,6 +39,11 @@ namespace Schedule1ModdingTool.ViewModels
                     if (_currentProject != null)
                     {
                         _currentProject.PropertyChanged += CurrentProjectOnPropertyChanged;
+                        if (_workspaceViewModel != null)
+                        {
+                            WorkspaceViewModel.UpdateQuestCount(_currentProject.Quests.Count);
+                            UpdateWorkspaceProjectInfo();
+                        }
                     }
                     CommandManager.InvalidateRequerySuggested();
                 }
@@ -86,6 +91,71 @@ namespace Schedule1ModdingTool.ViewModels
 
         public ObservableCollection<QuestBlueprint> AvailableBlueprints { get; } = new ObservableCollection<QuestBlueprint>();
 
+        // Navigation properties
+        private NavigationItem? _selectedNavigationItem;
+        private WorkspaceViewModel _workspaceViewModel;
+        private OpenElementTab? _selectedTab;
+
+        public ObservableCollection<NavigationItem> NavigationItems { get; } = new ObservableCollection<NavigationItem>();
+        public ObservableCollection<OpenElementTab> OpenTabs { get; } = new ObservableCollection<OpenElementTab>();
+        
+        public NavigationItem? SelectedNavigationItem
+        {
+            get => _selectedNavigationItem;
+            set
+            {
+                if (_selectedNavigationItem != null)
+                {
+                    _selectedNavigationItem.IsSelected = false;
+                }
+                if (SetProperty(ref _selectedNavigationItem, value))
+                {
+                    if (_selectedNavigationItem != null)
+                    {
+                        _selectedNavigationItem.IsSelected = true;
+                    }
+                }
+            }
+        }
+
+        public OpenElementTab? SelectedTab
+        {
+            get => _selectedTab;
+            set
+            {
+                if (_selectedTab != null)
+                {
+                    _selectedTab.IsSelected = false;
+                }
+                if (SetProperty(ref _selectedTab, value))
+                {
+                    if (_selectedTab != null)
+                    {
+                        _selectedTab.IsSelected = true;
+                        SelectedQuest = _selectedTab.Quest;
+                    }
+                    else
+                    {
+                        SelectedQuest = null;
+                    }
+                }
+            }
+        }
+
+        public WorkspaceViewModel WorkspaceViewModel
+        {
+            get => _workspaceViewModel;
+            set => SetProperty(ref _workspaceViewModel, value);
+        }
+
+        private string _processState = "Ready";
+
+        public string ProcessState
+        {
+            get => _processState;
+            set => SetProperty(ref _processState, value);
+        }
+
         // Commands with private backing fields
         private ICommand? _newProjectCommand;
         private ICommand? _openProjectCommand;
@@ -103,6 +173,8 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _exportModProjectCommand;
         private ICommand? _buildModCommand;
         private ICommand? _openSettingsCommand;
+        private ICommand? _selectNavigationCommand;
+        private ICommand? _selectCategoryCommand;
 
         public ICommand NewProjectCommand => _newProjectCommand!;
         public ICommand OpenProjectCommand => _openProjectCommand!;
@@ -120,6 +192,8 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand ExportModProjectCommand => _exportModProjectCommand!;
         public ICommand BuildModCommand => _buildModCommand!;
         public ICommand OpenSettingsCommand => _openSettingsCommand!;
+        public ICommand SelectNavigationCommand => _selectNavigationCommand!;
+        public ICommand SelectCategoryCommand => _selectCategoryCommand!;
 
         private readonly CodeGenerationService _codeGenService;
         private readonly ProjectService _projectService;
@@ -135,12 +209,16 @@ namespace Schedule1ModdingTool.ViewModels
             _modBuildService = new ModBuildService();
             _modSettings = ModSettings.Load();
 
+            // Initialize WorkspaceViewModel BEFORE setting CurrentProject
+            _workspaceViewModel = new WorkspaceViewModel();
+
             // Don't create default project - wait for wizard
             CurrentProject = new QuestProject();
             CurrentProject.ProjectName = ""; // Empty name indicates no project loaded
 
             InitializeCommands();
             InitializeBlueprints();
+            InitializeNavigation();
         }
 
         private void InitializeCommands()
@@ -161,6 +239,71 @@ namespace Schedule1ModdingTool.ViewModels
             _exportModProjectCommand = new RelayCommand(ExportModProject, () => CurrentProject.Quests.Count > 0);
             _buildModCommand = new RelayCommand(BuildMod, () => CurrentProject.Quests.Count > 0);
             _openSettingsCommand = new RelayCommand(OpenSettings);
+            _selectNavigationCommand = new RelayCommand<NavigationItem>(SelectNavigation);
+            _selectCategoryCommand = new RelayCommand<ModCategory>(SelectCategory);
+        }
+
+        private void InitializeNavigation()
+        {
+            NavigationItems.Add(new NavigationItem
+            {
+                Id = "ModElements",
+                DisplayName = "Mod Elements",
+                IconKey = "CubeIcon",
+                IsEnabled = true,
+                IsSelected = true,
+                Tooltip = "Create and manage mod elements (Quests, NPCs, etc.)"
+            });
+
+            NavigationItems.Add(new NavigationItem
+            {
+                Id = "Resources",
+                DisplayName = "Resources",
+                IconKey = "FolderIcon",
+                IsEnabled = true,
+                IsSelected = false,
+                Tooltip = "Manage custom resources (icons, images, etc.)"
+            });
+
+            SelectedNavigationItem = NavigationItems.First();
+        }
+
+        private void SelectNavigation(NavigationItem? item)
+        {
+            if (item != null && item.IsEnabled)
+            {
+                SelectedNavigationItem = item;
+                // Reset category selection when switching navigation
+                WorkspaceViewModel.SelectedCategory = null;
+                // Update workspace title based on selected navigation
+                WorkspaceViewModel.WorkspaceTitle = item.Id switch
+                {
+                    "ModElements" => "MOD ELEMENTS",
+                    "Resources" => "RESOURCES",
+                    _ => "WORKSPACE"
+                };
+            }
+        }
+
+        private void SelectCategory(ModCategory category)
+        {
+            WorkspaceViewModel.SelectedCategory = category;
+            // Update workspace title based on selected category
+            WorkspaceViewModel.WorkspaceTitle = category switch
+            {
+                ModCategory.Quests => "QUESTS",
+                ModCategory.NPCs => "NPCS",
+                ModCategory.PhoneApps => "PHONE APPS",
+                ModCategory.Items => "ITEMS",
+                _ => "MOD ELEMENTS"
+            };
+        }
+
+        private void UpdateWorkspaceProjectInfo()
+        {
+            var projectName = string.IsNullOrEmpty(CurrentProject.ProjectName) ? "Untitled Project" : CurrentProject.ProjectName;
+            var totalElements = CurrentProject.Quests.Count;
+            WorkspaceViewModel.ProjectInfo = $"{projectName}: {totalElements} mod elements";
         }
 
         private void InitializeBlueprints()
@@ -262,13 +405,20 @@ namespace Schedule1ModdingTool.ViewModels
 
         private void OpenProject()
         {
-            if (!ConfirmUnsavedChanges()) return;
+            // Skip confirmation if no project is loaded (empty project on startup)
+            if (!string.IsNullOrWhiteSpace(CurrentProject.ProjectName) && !ConfirmUnsavedChanges())
+                return;
 
             var project = _projectService.OpenProject();
             if (project != null)
             {
                 CurrentProject = project;
                 SelectedQuest = CurrentProject.Quests.FirstOrDefault();
+            }
+            else if (string.IsNullOrWhiteSpace(CurrentProject.ProjectName))
+            {
+                // If user cancelled opening a project and no project is loaded, close the app
+                Application.Current.Shutdown();
             }
         }
 
@@ -309,6 +459,48 @@ namespace Schedule1ModdingTool.ViewModels
 
             CurrentProject.AddQuest(quest);
             SelectedQuest = quest;
+            WorkspaceViewModel.UpdateQuestCount(CurrentProject.Quests.Count);
+            UpdateWorkspaceProjectInfo();
+
+            // Open the quest in a tab automatically
+            OpenQuestInTab(quest);
+        }
+
+        public void OpenQuestInTab(QuestBlueprint quest)
+        {
+            // Check if quest is already open
+            var existingTab = OpenTabs.FirstOrDefault(t => t.Quest == quest);
+            if (existingTab != null)
+            {
+                SelectedTab = existingTab;
+                return;
+            }
+
+            // Create new tab
+            var tab = new OpenElementTab { Quest = quest };
+            OpenTabs.Add(tab);
+            SelectedTab = tab;
+        }
+
+        public void CloseTab(OpenElementTab tab)
+        {
+            if (tab == SelectedTab)
+            {
+                var index = OpenTabs.IndexOf(tab);
+                if (index > 0)
+                {
+                    SelectedTab = OpenTabs[index - 1];
+                }
+                else if (OpenTabs.Count > 1)
+                {
+                    SelectedTab = OpenTabs[1];
+                }
+                else
+                {
+                    SelectedTab = null;
+                }
+            }
+            OpenTabs.Remove(tab);
         }
 
         private void RemoveQuest()
@@ -322,6 +514,8 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 CurrentProject.RemoveQuest(SelectedQuest);
                 SelectedQuest = CurrentProject.Quests.FirstOrDefault();
+                WorkspaceViewModel.UpdateQuestCount(CurrentProject.Quests.Count);
+                UpdateWorkspaceProjectInfo();
             }
         }
 
@@ -421,17 +615,20 @@ namespace Schedule1ModdingTool.ViewModels
 
             try
             {
+                ProcessState = "Exporting...";
                 // Use the project directory directly (where .qproj file is located)
                 var projectDir = Path.GetDirectoryName(CurrentProject.FilePath);
                 if (string.IsNullOrWhiteSpace(projectDir) || !Directory.Exists(projectDir))
                 {
                     AppUtils.ShowError("Project directory not found. Please save the project first.");
+                    ProcessState = "Ready";
                     return;
                 }
 
                 _modSettings = ModSettings.Load(); // Reload settings
                 var result = _modProjectGenerator.GenerateModProject(CurrentProject, projectDir, _modSettings);
 
+                ProcessState = "Ready";
                 if (result.Success)
                 {
                     AppUtils.ShowInfo($"Mod project exported successfully to:\n{result.OutputPath}\n\nGenerated {result.GeneratedFiles.Count} files.");
@@ -443,6 +640,7 @@ namespace Schedule1ModdingTool.ViewModels
             }
             catch (Exception ex)
             {
+                ProcessState = "Error";
                 AppUtils.ShowError($"Export failed: {ex.Message}");
             }
         }
@@ -463,11 +661,13 @@ namespace Schedule1ModdingTool.ViewModels
 
             try
             {
+                ProcessState = "Building...";
                 // Use the project directory directly (where .qproj file is located)
                 var projectDir = Path.GetDirectoryName(CurrentProject.FilePath);
                 if (string.IsNullOrWhiteSpace(projectDir) || !Directory.Exists(projectDir))
                 {
                     AppUtils.ShowError("Project directory not found. Please save the project first.");
+                    ProcessState = "Ready";
                     return;
                 }
 
@@ -477,6 +677,7 @@ namespace Schedule1ModdingTool.ViewModels
                 {
                     // Mod project already exists, build it directly
                     var existingBuildResult = _modBuildService.BuildModProject(projectDir, _modSettings);
+                    ProcessState = existingBuildResult.Success ? "Ready" : "Build failed";
                     ShowBuildResult(existingBuildResult);
                     return;
                 }
@@ -488,22 +689,26 @@ namespace Schedule1ModdingTool.ViewModels
                 
                 if (!genResult.Success)
                 {
+                    ProcessState = "Generation failed";
                     AppUtils.ShowError($"Failed to generate mod project:\n{genResult.ErrorMessage}");
                     return;
                 }
 
                 if (string.IsNullOrEmpty(genResult.OutputPath))
                 {
+                    ProcessState = "Ready";
                     AppUtils.ShowError("Generated project path is empty.");
                     return;
                 }
 
                 // Then build it
                 var buildResult = _modBuildService.BuildModProject(genResult.OutputPath, _modSettings);
+                ProcessState = buildResult.Success ? "Ready" : "Build failed";
                 ShowBuildResult(buildResult);
             }
             catch (Exception ex)
             {
+                ProcessState = "Error";
                 AppUtils.ShowError($"Build failed: {ex.Message}");
             }
         }
@@ -602,6 +807,15 @@ namespace Schedule1ModdingTool.ViewModels
             if (e.PropertyName == nameof(QuestProject.IsModified))
             {
                 CommandManager.InvalidateRequerySuggested();
+            }
+            else if (e.PropertyName == nameof(QuestProject.Quests))
+            {
+                WorkspaceViewModel.UpdateQuestCount(CurrentProject.Quests.Count);
+                UpdateWorkspaceProjectInfo();
+            }
+            else if (e.PropertyName == nameof(QuestProject.ProjectName))
+            {
+                UpdateWorkspaceProjectInfo();
             }
         }
     }

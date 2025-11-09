@@ -307,6 +307,137 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void RenameFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem)
+            {
+                var folder = GetDataContextFromMenuItem<ModFolder>(menuItem);
+                if (folder != null)
+                {
+                    var newName = ShowInputDialog("Rename Folder", "Enter new folder name:", folder.Name);
+                    if (!string.IsNullOrWhiteSpace(newName) && newName != folder.Name)
+                    {
+                        folder.Name = newName;
+                    }
+                }
+            }
+        }
+
+        private void RenameQuest_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem)
+            {
+                var quest = GetDataContextFromMenuItem<QuestBlueprint>(menuItem);
+                if (quest != null)
+                {
+                    var newName = ShowInputDialog("Rename Quest", "Enter new quest title:", quest.QuestTitle);
+                    if (!string.IsNullOrWhiteSpace(newName) && newName != quest.QuestTitle)
+                    {
+                        quest.QuestTitle = newName;
+                    }
+                }
+            }
+        }
+
+        private void RenameNpc_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem)
+            {
+                var npc = GetDataContextFromMenuItem<NpcBlueprint>(menuItem);
+                if (npc != null)
+                {
+                    var currentName = $"{npc.FirstName} {npc.LastName}";
+                    var newName = ShowInputDialog("Rename NPC", "Enter new NPC name:", currentName);
+                    if (!string.IsNullOrWhiteSpace(newName) && newName != currentName)
+                    {
+                        var parts = newName.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                        npc.FirstName = parts.Length > 0 ? parts[0] : newName;
+                        npc.LastName = parts.Length > 1 ? parts[1] : "";
+                    }
+                }
+            }
+        }
+
+        private string? ShowInputDialog(string title, string prompt, string defaultValue)
+        {
+            var dialog = new Window
+            {
+                Title = title,
+                Width = 400,
+                Height = 180,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = Window.GetWindow(this),
+                ResizeMode = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.SingleBorderWindow,
+                Background = Application.Current.TryFindResource("DarkBackgroundBrush") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.White
+            };
+
+            var grid = new Grid
+            {
+                Margin = new Thickness(16)
+            };
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var promptText = new TextBlock
+            {
+                Text = prompt,
+                Margin = new Thickness(0, 0, 0, 8),
+                Foreground = Application.Current.TryFindResource("LightTextBrush") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.Black
+            };
+            Grid.SetRow(promptText, 0);
+
+            var inputBox = new TextBox
+            {
+                Text = defaultValue,
+                Margin = new Thickness(0, 0, 0, 16),
+                VerticalAlignment = VerticalAlignment.Top,
+                Style = Application.Current.TryFindResource("DarkTextBoxStyle") as Style
+            };
+            Grid.SetRow(inputBox, 1);
+
+            var buttonPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            Grid.SetRow(buttonPanel, 2);
+
+            var okButton = new Button
+            {
+                Content = "OK",
+                Width = 80,
+                Margin = new Thickness(0, 0, 8, 0),
+                IsDefault = true,
+                Style = Application.Current.TryFindResource("IconButtonStyle") as Style
+            };
+            okButton.Click += (s, e) => { dialog.DialogResult = true; dialog.Close(); };
+
+            var cancelButton = new Button
+            {
+                Content = "Cancel",
+                Width = 80,
+                IsCancel = true,
+                Style = Application.Current.TryFindResource("IconButtonStyle") as Style
+            };
+            cancelButton.Click += (s, e) => { dialog.DialogResult = false; dialog.Close(); };
+
+            buttonPanel.Children.Add(okButton);
+            buttonPanel.Children.Add(cancelButton);
+
+            grid.Children.Add(promptText);
+            grid.Children.Add(inputBox);
+            grid.Children.Add(buttonPanel);
+
+            dialog.Content = grid;
+
+            inputBox.Focus();
+            inputBox.SelectAll();
+
+            return dialog.ShowDialog() == true ? inputBox.Text : null;
+        }
+
         private void QuestTile_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed && sender is FrameworkElement element)

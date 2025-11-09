@@ -27,7 +27,7 @@
 			        DragLeave="FolderTile_DragLeave">
 				<Border.ContextMenu>
 					<ContextMenu>
-						<MenuItem Header="Open" Click="OpenFolder_Click">
+						<MenuItem Header="Open" Click="OpenFolder_Click" FontWeight="Bold">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource FolderOpenIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
@@ -35,6 +35,13 @@
 							</MenuItem.Icon>
 						</MenuItem>
 						<Separator />
+						<MenuItem Header="Rename" Click="RenameFolder_Click">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="RenameBox"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
 						<MenuItem Header="Duplicate" Click="DuplicateFolder_Click">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource CopyIcon}"
@@ -42,6 +49,7 @@
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>
 						</MenuItem>
+						<Separator />
 						<MenuItem Header="Delete" Click="DeleteFolder_Click">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource DeleteIcon}"
@@ -84,7 +92,7 @@
 			        AllowDrop="False">
 				<Border.ContextMenu>
 					<ContextMenu>
-						<MenuItem Header="Open" Click="OpenQuest_Click">
+						<MenuItem Header="Open" Click="OpenQuest_Click" FontWeight="Bold">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource DocumentIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
@@ -92,6 +100,13 @@
 							</MenuItem.Icon>
 						</MenuItem>
 						<Separator />
+						<MenuItem Header="Rename" Click="RenameQuest_Click">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="RenameBox"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
 						<MenuItem Header="Duplicate" Click="DuplicateQuest_Click">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource CopyIcon}"
@@ -99,6 +114,7 @@
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>
 						</MenuItem>
+						<Separator />
 						<MenuItem Header="Delete" Click="DeleteQuest_Click">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource DeleteIcon}"
@@ -155,7 +171,7 @@
 			        AllowDrop="False">
 				<Border.ContextMenu>
 					<ContextMenu>
-						<MenuItem Header="Open" Click="OpenNpc_Click">
+						<MenuItem Header="Open" Click="OpenNpc_Click" FontWeight="Bold">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource DocumentIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
@@ -163,6 +179,13 @@
 							</MenuItem.Icon>
 						</MenuItem>
 						<Separator />
+						<MenuItem Header="Rename" Click="RenameNpc_Click">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="RenameBox"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
 						<MenuItem Header="Duplicate" Click="DuplicateNpc_Click">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource CopyIcon}"
@@ -170,6 +193,7 @@
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>
 						</MenuItem>
+						<Separator />
 						<MenuItem Header="Delete" Click="DeleteNpc_Click">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource DeleteIcon}"

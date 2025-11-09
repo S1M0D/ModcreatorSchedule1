@@ -239,6 +239,9 @@
 									<DataTrigger Binding="{Binding OpenTabs.Count}" Value="0">
 										<Setter Property="Visibility" Value="Collapsed" />
 									</DataTrigger>
+									<DataTrigger Binding="{Binding SelectedNavigationItem.Id}" Value="Resources">
+										<Setter Property="Visibility" Value="Collapsed" />
+									</DataTrigger>
 								</Style.Triggers>
 							</Style>
 						</Border.Style>
@@ -315,7 +318,7 @@
 						</TabControl>
 					</Border>
 
-					<!-- Workspace View (when no tabs open) -->
+					<!-- Workspace View (when no tabs open or Resources selected) -->
 					<ContentControl DataContext="{Binding}">
 						<ContentControl.Style>
 							<Style TargetType="ContentControl">
@@ -330,6 +333,7 @@
 										<Setter Property="Visibility" Value="Visible" />
 									</DataTrigger>
 									<DataTrigger Binding="{Binding SelectedNavigationItem.Id}" Value="Resources">
+										<Setter Property="Visibility" Value="Visible" />
 										<Setter Property="Content">
 											<Setter.Value>
 												<views:ResourcesView />

@@ -189,6 +189,11 @@
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="16" Height="16" />
 			</Button>
+			<Button Command="{Binding PlayGameCommand}" ToolTip="Play Game with Connector Mod" Style="{StaticResource ToolbarButtonStyle}">
+				<materialDesign:PackIcon Kind="{StaticResource PlayIcon}"
+				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+				                         Width="16" Height="16" />
+			</Button>
 			<Separator Style="{StaticResource ToolbarSeparatorStyle}" />
 			<Button Command="{Binding OpenSettingsCommand}" ToolTip="Settings" Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource SettingsIcon}"

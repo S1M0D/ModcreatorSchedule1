@@ -5,16 +5,32 @@ VisualStudioVersion = 17.14.36429.23
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Schedule1ModdingTool", "Schedule1ModdingTool.csproj", "{B1840802-08AD-4179-B467-1B1AD933768E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModCreatorConnector", "ModCreatorConnector\ModCreatorConnector.csproj", "{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+		ConnectorNuGet|Any CPU = ConnectorNuGet|Any CPU
+		ConnectorLocal|Any CPU = ConnectorLocal|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B1840802-08AD-4179-B467-1B1AD933768E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B1840802-08AD-4179-B467-1B1AD933768E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1840802-08AD-4179-B467-1B1AD933768E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1840802-08AD-4179-B467-1B1AD933768E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1840802-08AD-4179-B467-1B1AD933768E}.ConnectorNuGet|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1840802-08AD-4179-B467-1B1AD933768E}.ConnectorNuGet|Any CPU.Build.0 = Debug|Any CPU
+		{B1840802-08AD-4179-B467-1B1AD933768E}.ConnectorLocal|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1840802-08AD-4179-B467-1B1AD933768E}.ConnectorLocal|Any CPU.Build.0 = Debug|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Debug|Any CPU.ActiveCfg = ConnectorLocal|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Debug|Any CPU.Build.0 = ConnectorLocal|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Release|Any CPU.ActiveCfg = ConnectorNuGet|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Release|Any CPU.Build.0 = 
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.ConnectorNuGet|Any CPU.ActiveCfg = ConnectorNuGet|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.ConnectorNuGet|Any CPU.Build.0 = ConnectorNuGet|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.ConnectorLocal|Any CPU.ActiveCfg = ConnectorLocal|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.ConnectorLocal|Any CPU.Build.0 = ConnectorLocal|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

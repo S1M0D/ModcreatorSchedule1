@@ -1,6 +1,10 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Schedule1ModdingTool.Utils;
 
@@ -257,9 +261,114 @@ namespace Schedule1ModdingTool.Models
         private string _hairPath = "Avatar/Hair/Spiky/Spiky";
         private string _eyeballMaterialIdentifier = "Default";
 
+        [JsonProperty("faceLayers")]
         public ObservableCollection<NpcAppearanceLayer> FaceLayers { get; } = new();
+
+        [JsonProperty("bodyLayers")]
         public ObservableCollection<NpcAppearanceLayer> BodyLayers { get; } = new();
+
+        [JsonProperty("accessoryLayers")]
         public ObservableCollection<NpcAppearanceLayer> AccessoryLayers { get; } = new();
+
+        public NpcAppearanceSettings()
+        {
+            // Subscribe to collection changes to trigger PropertyChanged events
+            // This ensures appearance preview updates when layers are added/removed
+            FaceLayers.CollectionChanged += OnLayerCollectionChanged;
+            BodyLayers.CollectionChanged += OnLayerCollectionChanged;
+            AccessoryLayers.CollectionChanged += OnLayerCollectionChanged;
+
+            // Subscribe to any existing items (in case of deserialization)
+            SubscribeToExistingLayers();
+        }
+
+        [OnDeserialized]
+        internal void OnDeserializedMethod(StreamingContext context)
+        {
+            // Re-subscribe to layers after JSON deserialization
+            SubscribeToExistingLayers();
+        }
+
+        private void SubscribeToExistingLayers()
+        {
+            foreach (var layer in FaceLayers)
+                layer.PropertyChanged += OnLayerPropertyChanged;
+            foreach (var layer in BodyLayers)
+                layer.PropertyChanged += OnLayerPropertyChanged;
+            foreach (var layer in AccessoryLayers)
+                layer.PropertyChanged += OnLayerPropertyChanged;
+        }
+
+        private void OnLayerCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            Debug.WriteLine($"[NpcAppearanceSettings] Layer collection changed: {e.Action}");
+
+            // Unsubscribe from old items
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcAppearanceLayer layer)
+                    {
+                        layer.PropertyChanged -= OnLayerPropertyChanged;
+                        Debug.WriteLine($"[NpcAppearanceSettings] Unsubscribed from layer: {layer.LayerPath}");
+                    }
+                }
+            }
+
+            // Subscribe to new items
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcAppearanceLayer layer)
+                    {
+                        layer.PropertyChanged += OnLayerPropertyChanged;
+                        Debug.WriteLine($"[NpcAppearanceSettings] Subscribed to layer: {layer.LayerPath}");
+                    }
+                }
+            }
+
+            // Notify that layers changed
+            if (sender == FaceLayers)
+            {
+                Debug.WriteLine("[NpcAppearanceSettings] Raising PropertyChanged for FaceLayers");
+                OnPropertyChanged(nameof(FaceLayers));
+            }
+            else if (sender == BodyLayers)
+            {
+                Debug.WriteLine("[NpcAppearanceSettings] Raising PropertyChanged for BodyLayers");
+                OnPropertyChanged(nameof(BodyLayers));
+            }
+            else if (sender == AccessoryLayers)
+            {
+                Debug.WriteLine("[NpcAppearanceSettings] Raising PropertyChanged for AccessoryLayers");
+                OnPropertyChanged(nameof(AccessoryLayers));
+            }
+        }
+
+        private void OnLayerPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            Debug.WriteLine($"[NpcAppearanceSettings] Layer property changed: {e.PropertyName}");
+
+            // When any layer's properties change, notify that the collection changed
+            // This triggers appearance preview updates for layer color/path changes
+            if (FaceLayers.Contains(sender))
+            {
+                Debug.WriteLine("[NpcAppearanceSettings] Raising PropertyChanged for FaceLayers (property change)");
+                OnPropertyChanged(nameof(FaceLayers));
+            }
+            else if (BodyLayers.Contains(sender))
+            {
+                Debug.WriteLine("[NpcAppearanceSettings] Raising PropertyChanged for BodyLayers (property change)");
+                OnPropertyChanged(nameof(BodyLayers));
+            }
+            else if (AccessoryLayers.Contains(sender))
+            {
+                Debug.WriteLine("[NpcAppearanceSettings] Raising PropertyChanged for AccessoryLayers (property change)");
+                OnPropertyChanged(nameof(AccessoryLayers));
+            }
+        }
 
         [JsonProperty("gender")]
         public double Gender

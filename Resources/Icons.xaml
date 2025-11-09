@@ -30,5 +30,6 @@
     <x:Static x:Key="NewProjectIcon" Member="materialDesign:PackIconKind.FileDocumentPlus"/>
     <x:Static x:Key="SaveAsIcon" Member="materialDesign:PackIconKind.ContentSaveAll"/>
     <x:Static x:Key="CodeRefreshIcon" Member="materialDesign:PackIconKind.FileRefresh"/>
+    <x:Static x:Key="PlayIcon" Member="materialDesign:PackIconKind.Play"/>
 
 </ResourceDictionary>

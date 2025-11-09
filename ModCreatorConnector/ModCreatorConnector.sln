@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36603.0 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModCreatorConnector", "ModCreatorConnector.csproj", "{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		CrossCompat|Any CPU = CrossCompat|Any CPU
+		Il2cpp|Any CPU = Il2cpp|Any CPU
+		Mono|Any CPU = Mono|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.CrossCompat|Any CPU.ActiveCfg = CrossCompat|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.CrossCompat|Any CPU.Build.0 = CrossCompat|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Il2cpp|Any CPU.ActiveCfg = Il2cpp|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Il2cpp|Any CPU.Build.0 = Il2cpp|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Mono|Any CPU.ActiveCfg = Mono|Any CPU
+		{14A9B2AF-2B45-4D46-9EA3-C76EC1B3EBED}.Mono|Any CPU.Build.0 = Mono|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {14E13CB0-700D-419E-8690-382A95C66B99}
+	EndGlobalSection
+EndGlobal

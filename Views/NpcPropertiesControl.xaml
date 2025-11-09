@@ -273,7 +273,10 @@
 
 				<Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
 					<StackPanel Margin="12">
-						<TextBlock Text="Face Layers" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+						<StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+							<TextBlock Text="Face Layers" Style="{StaticResource PanelHeaderStyle}" />
+							<views:InfoIcon TooltipText="Face layers define the facial features and textures for the NPC. You can add multiple layers to create complex facial appearances. IMPORTANT: If you don't add at least one face layer, the NPC's face will appear as a black mask in-game." />
+						</StackPanel>
 						<ItemsControl ItemsSource="{Binding SelectedNpc.Appearance.FaceLayers}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate DataType="{x:Type models:NpcAppearanceLayer}">
@@ -322,7 +325,10 @@
 
 				<Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
 					<StackPanel Margin="12">
-						<TextBlock Text="Body Layers" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+						<StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+							<TextBlock Text="Body Layers" Style="{StaticResource PanelHeaderStyle}" />
+							<views:InfoIcon TooltipText="Body layers define the clothing and body textures for the NPC. You can add multiple layers (e.g., shirts, pants) to create layered clothing appearances." />
+						</StackPanel>
 						<ItemsControl ItemsSource="{Binding SelectedNpc.Appearance.BodyLayers}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate DataType="{x:Type models:NpcAppearanceLayer}">
@@ -371,7 +377,10 @@
 
 				<Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
 					<StackPanel Margin="12">
-						<TextBlock Text="Accessory Layers" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+						<StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+							<TextBlock Text="Accessory Layers" Style="{StaticResource PanelHeaderStyle}" />
+							<views:InfoIcon TooltipText="Accessory layers define additional items worn by the NPC, such as shoes, hats, glasses, or other accessories. You can add multiple accessory layers to create a complete look." />
+						</StackPanel>
 						<ItemsControl ItemsSource="{Binding SelectedNpc.Appearance.AccessoryLayers}">
 							<ItemsControl.ItemTemplate>
 								<DataTemplate DataType="{x:Type models:NpcAppearanceLayer}">

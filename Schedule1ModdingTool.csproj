@@ -19,28 +19,19 @@
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
   </ItemGroup>
 
+
+  <!-- Only reference ModCreatorConnector project, don't build it automatically -->
+  <!-- It will be built explicitly via GameLaunchService when needed -->
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\MelonLoader\net35\0Harmony.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="MelonLoader">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\MelonLoader\net35\MelonLoader.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Burst">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed\Unity.Burst.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.SharedInternalsModule">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed\UnityEngine.SharedInternalsModule.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="ModCreatorConnector\ModCreatorConnector.csproj" ReferenceOutputAssembly="False" />
+  </ItemGroup>
+
+  <!-- Exclude ModCreatorConnector folder from being included as content in this project -->
+  <ItemGroup>
+    <Compile Remove="ModCreatorConnector\**" />
+    <None Remove="ModCreatorConnector\**" />
+    <Content Remove="ModCreatorConnector\**" />
+    <EmbeddedResource Remove="ModCreatorConnector\**" />
   </ItemGroup>
 
 </Project>

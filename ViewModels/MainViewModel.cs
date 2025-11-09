@@ -11,6 +11,7 @@ using Microsoft.Win32;
 using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.Services;
 using Schedule1ModdingTool.Services.CodeGeneration.Orchestration;
+using System.ComponentModel;
 using Schedule1ModdingTool.Utils;
 using Schedule1ModdingTool.Views;
 
@@ -27,6 +28,7 @@ namespace Schedule1ModdingTool.ViewModels
         private ResourceAsset? _selectedResource;
         private string _generatedCode = "";
         private bool _isCodeVisible = false;
+        private readonly AppearancePreviewService _appearancePreviewService = new AppearancePreviewService();
 
         public QuestProject CurrentProject
         {
@@ -89,6 +91,24 @@ namespace Schedule1ModdingTool.ViewModels
             get => _selectedNpc;
             set
             {
+                var stackTrace = new System.Diagnostics.StackTrace(1, true);
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] SelectedNpc setter called. Old: '{_selectedNpc?.NpcId ?? "null"}', New: '{value?.NpcId ?? "null"}', Same instance: {ReferenceEquals(_selectedNpc, value)}");
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Call stack:\n{stackTrace}");
+
+                // Don't unsubscribe/resubscribe if it's the same instance
+                if (ReferenceEquals(_selectedNpc, value))
+                {
+                    System.Diagnostics.Debug.WriteLine("[MainViewModel] Same NPC instance, skipping unsubscribe/resubscribe");
+                    return;
+                }
+
+                // Unsubscribe from previous NPC's appearance changes
+                if (_selectedNpc?.Appearance != null)
+                {
+                    System.Diagnostics.Debug.WriteLine("[MainViewModel] Unsubscribing from previous NPC appearance");
+                    _selectedNpc.Appearance.PropertyChanged -= OnAppearancePropertyChanged;
+                }
+
                 if (SetProperty(ref _selectedNpc, value))
                 {
                     if (value != null)
@@ -96,6 +116,20 @@ namespace Schedule1ModdingTool.ViewModels
                         _selectedQuest = null;
                         OnPropertyChanged(nameof(SelectedQuest));
                         RegenerateCode();
+
+                        // Subscribe to appearance changes for preview
+                        if (value.Appearance != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[MainViewModel] Subscribing to NPC '{value.NpcId}' appearance changes");
+                            value.Appearance.PropertyChanged += OnAppearancePropertyChanged;
+                            // Send initial appearance
+                            System.Diagnostics.Debug.WriteLine("[MainViewModel] Sending initial appearance to preview service");
+                            _appearancePreviewService.SendAppearanceUpdate(value.Appearance);
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("[MainViewModel] Warning: NPC Appearance is null!");
+                        }
                     }
                     else if (SelectedQuest == null)
                     {
@@ -234,6 +268,7 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _exportCodeCommand;
         private ICommand? _exportModProjectCommand;
         private ICommand? _buildModCommand;
+        private ICommand? _playGameCommand;
         private ICommand? _openSettingsCommand;
         private ICommand? _selectNavigationCommand;
         private ICommand? _selectCategoryCommand;
@@ -263,6 +298,7 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand ExportCodeCommand => _exportCodeCommand!;
         public ICommand ExportModProjectCommand => _exportModProjectCommand!;
         public ICommand BuildModCommand => _buildModCommand!;
+        public ICommand PlayGameCommand => _playGameCommand!;
         public ICommand OpenSettingsCommand => _openSettingsCommand!;
         public ICommand SelectNavigationCommand => _selectNavigationCommand!;
         public ICommand SelectCategoryCommand => _selectCategoryCommand!;
@@ -281,6 +317,7 @@ namespace Schedule1ModdingTool.ViewModels
         private readonly ProjectService _projectService;
         private readonly ModProjectGeneratorService _modProjectGenerator;
         private readonly ModBuildService _modBuildService;
+        private readonly GameLaunchService _gameLaunchService;
         private ModSettings _modSettings;
 
         public MainViewModel()
@@ -289,6 +326,7 @@ namespace Schedule1ModdingTool.ViewModels
             _projectService = new ProjectService();
             _modProjectGenerator = new ModProjectGeneratorService();
             _modBuildService = new ModBuildService();
+            _gameLaunchService = new GameLaunchService();
             _modSettings = ModSettings.Load();
 
             // Set code visibility based on user experience level
@@ -303,6 +341,9 @@ namespace Schedule1ModdingTool.ViewModels
             // Don't create default project - wait for wizard
             CurrentProject = new QuestProject();
             CurrentProject.ProjectName = ""; // Empty name indicates no project loaded
+
+            // Start appearance preview service
+            _appearancePreviewService.Start();
 
             InitializeCommands();
             InitializeBlueprints();
@@ -329,6 +370,7 @@ namespace Schedule1ModdingTool.ViewModels
             _exportCodeCommand = new RelayCommand(ExportGeneratedCode, () => (SelectedQuest != null || SelectedNpc != null) && !string.IsNullOrWhiteSpace(GeneratedCode));
             _exportModProjectCommand = new RelayCommand(ExportModProject, HasAnyElements);
             _buildModCommand = new RelayCommand(BuildMod, HasAnyElements);
+            _playGameCommand = new RelayCommand(PlayGame, () => !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
             _openSettingsCommand = new RelayCommand(OpenSettings);
             _selectNavigationCommand = new RelayCommand<NavigationItem>(SelectNavigation);
             _selectCategoryCommand = new RelayCommand<ModCategory>(SelectCategory);
@@ -1644,6 +1686,55 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        private void PlayGame()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_modSettings.GameInstallPath))
+                {
+                    AppUtils.ShowError("Game install path is not configured. Please set it in Settings.");
+                    return;
+                }
+
+                ProcessState = "Building connector mod and launching game...";
+                
+                // Use ConnectorLocal for development (local DLL), ConnectorNuGet for release
+                var useLocalDll = true; // Set to false to use NuGet package instead
+                var launchResult = _gameLaunchService.LaunchGame(_modSettings, useLocalDll);
+                
+                UpdateProcessState();
+                
+                if (launchResult.Success)
+                {
+                    var message = "Game launched successfully!";
+                    if (launchResult.DllCopied)
+                    {
+                        message += $"\n\nModCreatorConnector DLL deployed to:\n{launchResult.DeployedDllPath}";
+                    }
+                    if (launchResult.Warnings.Count > 0)
+                    {
+                        message += $"\n\nWarnings:\n{string.Join("\n", launchResult.Warnings)}";
+                    }
+                    AppUtils.ShowInfo(message);
+                }
+                else
+                {
+                    ProcessState = "Launch failed";
+                    var errorMessage = $"Failed to launch game: {launchResult.ErrorMessage}";
+                    if (!string.IsNullOrEmpty(launchResult.BuildOutput))
+                    {
+                        errorMessage += $"\n\nBuild Output:\n{launchResult.BuildOutput}";
+                    }
+                    AppUtils.ShowError(errorMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                ProcessState = "Launch failed";
+                AppUtils.ShowError($"Failed to launch game: {ex.Message}");
+            }
+        }
+
         private void ShowBuildResult(ModBuildResult buildResult)
         {
             if (buildResult.Success)
@@ -1731,6 +1822,22 @@ namespace Schedule1ModdingTool.ViewModels
 
             // Reload settings after dialog closes
             _modSettings = ModSettings.Load();
+            CommandManager.InvalidateRequerySuggested(); // Refresh PlayGameCommand enabled state
+        }
+
+        private void OnAppearancePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainViewModel] OnAppearancePropertyChanged - Property: {e.PropertyName}");
+
+            if (sender is NpcAppearanceSettings appearance && SelectedNpc?.Appearance == appearance)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Sending appearance update to preview service");
+                _appearancePreviewService.SendAppearanceUpdate(appearance);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Skipping update - sender check failed");
+            }
         }
 
         private void CurrentProjectOnPropertyChanged(object? sender, PropertyChangedEventArgs e)

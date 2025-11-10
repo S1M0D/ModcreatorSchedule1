@@ -144,8 +144,6 @@ ModcreatorSchedule1/
 ├── Resources/                       # Application resources
 │   └── Icons/                      # Icon assets
 │
-├── CLAUDE.md                        # Project architecture documentation
-├── AGENTS.md                        # AI agent guidelines
 ├── CODING_STANDARDS.md             # This file's companion
 ├── CONTRIBUTING.md                 # This file
 └── README.md                        # User-facing documentation
@@ -199,7 +197,6 @@ git checkout -b fix/bug-description
 - `feature/` - New features (e.g., `feature/location-blueprint`)
 - `fix/` - Bug fixes (e.g., `fix/schedule-validation`)
 - `refactor/` - Code refactoring (e.g., `refactor/code-generator`)
-- `docs/` - Documentation changes (e.g., `docs/update-claude-md`)
 - `ui/` - UI/UX improvements (e.g., `ui/material-design-cards`)
 
 #### 3. Make Your Changes
@@ -295,7 +292,6 @@ git push origin feature/your-feature-name
 [Feature] Add Location blueprint support
 [Fix] Resolve schedule time validation bug
 [Refactor] Simplify NpcCodeGenerator structure
-[Docs] Update CLAUDE.md with new architecture
 [UI] Improve NPC editor tab layout
 ```
 
@@ -412,7 +408,7 @@ To test generated code:
    - Verify generated code is valid
    - Save and reload project
 
-5. **Update Documentation** (`CLAUDE.md`)
+5. **Update Documentation**
 
 ### Creating a Reusable Custom Control
 
@@ -444,7 +440,6 @@ To test generated code:
 5. **Document Usage**
    - Add XML summary to class
    - Document each Dependency Property
-   - Add usage example in CLAUDE.md
 
 ### Extending Code Generation
 

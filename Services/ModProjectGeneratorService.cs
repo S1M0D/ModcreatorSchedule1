@@ -47,10 +47,15 @@ namespace Schedule1ModdingTool.Services
 
                 // Get mod metadata from first quest or defaults
                 var firstQuest = project.Quests.FirstOrDefault();
+                var hasQuests = project.Quests != null && project.Quests.Any();
                 // Use the full namespace from quest (e.g., "MyMod.Quests") or construct from project name
-                var modNamespace = firstQuest?.Namespace ?? $"{MakeSafeIdentifier(project.ProjectName, "GeneratedMod")}.Quests";
+                var modNamespace = firstQuest?.Namespace ?? (hasQuests 
+                    ? $"{MakeSafeIdentifier(project.ProjectName, "GeneratedMod")}.Quests"
+                    : MakeSafeIdentifier(project.ProjectName, "GeneratedMod"));
                 // Extract root namespace for Core.cs (remove .Quests suffix if present)
-                var rootNamespace = modNamespace.Contains('.') ? modNamespace.Substring(0, modNamespace.LastIndexOf('.')) : modNamespace;
+                var rootNamespace = modNamespace.Contains('.') && modNamespace.EndsWith(".Quests")
+                    ? modNamespace.Substring(0, modNamespace.LastIndexOf('.'))
+                    : modNamespace;
                 var modAuthor = firstQuest?.ModAuthor ?? settings?.DefaultModAuthor ?? "Quest Creator";
                 var modVersion = firstQuest?.ModVersion ?? settings?.DefaultModVersion ?? "1.0.0";
                 var gameStudio = firstQuest?.GameDeveloper ?? "TVGS";
@@ -237,21 +242,9 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("EndProject");
             sb.AppendLine("Global");
             sb.AppendLine("    GlobalSection(SolutionConfigurationPlatforms) = preSolution");
-            sb.AppendLine("        Debug|Any CPU = Debug|Any CPU");
-            sb.AppendLine("        Release|Any CPU = Release|Any CPU");
-            sb.AppendLine("        Mono|Any CPU = Mono|Any CPU");
-            sb.AppendLine("        Il2cpp|Any CPU = Il2cpp|Any CPU");
             sb.AppendLine("        CrossCompat|Any CPU = CrossCompat|Any CPU");
             sb.AppendLine("    EndGlobalSection");
             sb.AppendLine("    GlobalSection(ProjectConfigurationPlatforms) = postSolution");
-            sb.AppendLine($"        {projectGuid}.Debug|Any CPU.ActiveCfg = Debug|Any CPU");
-            sb.AppendLine($"        {projectGuid}.Debug|Any CPU.Build.0 = Debug|Any CPU");
-            sb.AppendLine($"        {projectGuid}.Release|Any CPU.ActiveCfg = Release|Any CPU");
-            sb.AppendLine($"        {projectGuid}.Release|Any CPU.Build.0 = Release|Any CPU");
-            sb.AppendLine($"        {projectGuid}.Mono|Any CPU.ActiveCfg = Mono|Any CPU");
-            sb.AppendLine($"        {projectGuid}.Mono|Any CPU.Build.0 = Mono|Any CPU");
-            sb.AppendLine($"        {projectGuid}.Il2cpp|Any CPU.ActiveCfg = Il2cpp|Any CPU");
-            sb.AppendLine($"        {projectGuid}.Il2cpp|Any CPU.Build.0 = Il2cpp|Any CPU");
             sb.AppendLine($"        {projectGuid}.CrossCompat|Any CPU.ActiveCfg = CrossCompat|Any CPU");
             sb.AppendLine($"        {projectGuid}.CrossCompat|Any CPU.Build.0 = CrossCompat|Any CPU");
             sb.AppendLine("    EndGlobalSection");
@@ -311,6 +304,7 @@ namespace Schedule1ModdingTool.Services
         {
             var corePath = Path.Combine(modPath, "Core.cs");
             var sb = new StringBuilder();
+            var hasQuests = project.Quests != null && project.Quests.Any();
 
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Collections;");
@@ -318,12 +312,18 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("using System.Linq;");
             sb.AppendLine("using System.Reflection;");
             sb.AppendLine("using MelonLoader;");
-            sb.AppendLine("using S1API.Quests;");
-            sb.AppendLine("using S1API.Quests.Constants;");
+            if (hasQuests)
+            {
+                sb.AppendLine("using S1API.Quests;");
+                sb.AppendLine("using S1API.Quests.Constants;");
+            }
             sb.AppendLine("using S1API.Entities;");
             sb.AppendLine("using S1API.GameTime;");
             sb.AppendLine($"using {rootNamespace}.Utils;");
-            sb.AppendLine($"using {rootNamespace}.Quests;");
+            if (hasQuests)
+            {
+                sb.AppendLine($"using {rootNamespace}.Quests;");
+            }
             sb.AppendLine();
             sb.AppendLine($"[assembly: MelonInfo(typeof({rootNamespace}.Core), Constants.MOD_NAME, Constants.MOD_VERSION, Constants.MOD_AUTHOR)]");
             sb.AppendLine("[assembly: MelonGame(Constants.Game.GAME_STUDIO, Constants.Game.GAME_NAME)]");
@@ -334,151 +334,172 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("    {");
             sb.AppendLine("        public static Core? Instance { get; private set; }");
             sb.AppendLine();
-            sb.AppendLine("        private readonly Dictionary<string, Quest> _registeredQuests = new Dictionary<string, Quest>();");
-            sb.AppendLine("        private bool _questsRegistered;");
-            sb.AppendLine();
+
+            if (hasQuests)
+            {
+                sb.AppendLine("        private readonly Dictionary<string, Quest> _registeredQuests = new Dictionary<string, Quest>();");
+                sb.AppendLine("        private bool _questsRegistered;");
+                sb.AppendLine();
+            }
+
             sb.AppendLine("        public override void OnLateInitializeMelon()");
             sb.AppendLine("        {");
             sb.AppendLine("            Instance = this;");
-            sb.AppendLine("            Player.LocalPlayerSpawned += HandleLocalPlayerSpawned;");
+            if (hasQuests)
+            {
+                sb.AppendLine("            Player.LocalPlayerSpawned += HandleLocalPlayerSpawned;");
+            }
             sb.AppendLine("        }");
             sb.AppendLine();
-            sb.AppendLine("        public override void OnSceneWasInitialized(int buildIndex, string sceneName)");
-            sb.AppendLine("        {");
-            sb.AppendLine("            if (string.Equals(sceneName, \"Main\", StringComparison.OrdinalIgnoreCase))");
-            sb.AppendLine("            {");
-            sb.AppendLine("                _questsRegistered = false;");
-            sb.AppendLine("            }");
-            sb.AppendLine("        }");
-            sb.AppendLine();
-            sb.AppendLine("        public override void OnSceneWasUnloaded(int buildIndex, string sceneName)");
-            sb.AppendLine("        {");
-            sb.AppendLine("            if (string.Equals(sceneName, \"Main\", StringComparison.OrdinalIgnoreCase))");
-            sb.AppendLine("            {");
-            sb.AppendLine("                _questsRegistered = false;");
-            sb.AppendLine("            }");
-            sb.AppendLine("        }");
-            sb.AppendLine();
-            sb.AppendLine("        private void HandleLocalPlayerSpawned(Player player)");
-            sb.AppendLine("        {");
-            sb.AppendLine("            if (_questsRegistered)");
-            sb.AppendLine("                return;");
-            sb.AppendLine();
-            sb.AppendLine("            MelonCoroutines.Start(DelayedQuestRegistration());");
-            sb.AppendLine("        }");
-            sb.AppendLine();
-            sb.AppendLine("        private System.Collections.IEnumerator DelayedQuestRegistration()");
-            sb.AppendLine("        {");
-            sb.AppendLine("            if (_questsRegistered)");
-            sb.AppendLine("                yield break;");
-            sb.AppendLine();
-            sb.AppendLine("            _questsRegistered = true;");
-            sb.AppendLine("            // Wait a couple of frames to ensure Unity and S1API finish spawning Player/NPC systems");
-            sb.AppendLine("            yield return null;");
-            sb.AppendLine("            yield return null;");
-            sb.AppendLine("            RegisterQuests();");
-            sb.AppendLine("            StartSceneInitQuests();");
-            sb.AppendLine("        }");
-            sb.AppendLine();
+
+            if (hasQuests)
+            {
+                sb.AppendLine("        public override void OnSceneWasInitialized(int buildIndex, string sceneName)");
+                sb.AppendLine("        {");
+                sb.AppendLine("            if (string.Equals(sceneName, \"Main\", StringComparison.OrdinalIgnoreCase))");
+                sb.AppendLine("            {");
+                sb.AppendLine("                _questsRegistered = false;");
+                sb.AppendLine("            }");
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        public override void OnSceneWasUnloaded(int buildIndex, string sceneName)");
+                sb.AppendLine("        {");
+                sb.AppendLine("            if (string.Equals(sceneName, \"Main\", StringComparison.OrdinalIgnoreCase))");
+                sb.AppendLine("            {");
+                sb.AppendLine("                _questsRegistered = false;");
+                sb.AppendLine("            }");
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        private void HandleLocalPlayerSpawned(Player player)");
+                sb.AppendLine("        {");
+                sb.AppendLine("            if (_questsRegistered)");
+                sb.AppendLine("                return;");
+                sb.AppendLine();
+                sb.AppendLine("            MelonCoroutines.Start(DelayedQuestRegistration());");
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        private System.Collections.IEnumerator DelayedQuestRegistration()");
+                sb.AppendLine("        {");
+                sb.AppendLine("            if (_questsRegistered)");
+                sb.AppendLine("                yield break;");
+                sb.AppendLine();
+                sb.AppendLine("            _questsRegistered = true;");
+                sb.AppendLine("            // Wait a couple of frames to ensure Unity and S1API finish spawning Player/NPC systems");
+                sb.AppendLine("            yield return null;");
+                sb.AppendLine("            yield return null;");
+                sb.AppendLine("            RegisterQuests();");
+                sb.AppendLine("            StartSceneInitQuests();");
+                sb.AppendLine("        }");
+                sb.AppendLine();
+            }
+
             sb.AppendLine("        public override void OnApplicationQuit()");
             sb.AppendLine("        {");
-            sb.AppendLine("            Player.LocalPlayerSpawned -= HandleLocalPlayerSpawned;");
+            if (hasQuests)
+            {
+                sb.AppendLine("            Player.LocalPlayerSpawned -= HandleLocalPlayerSpawned;");
+            }
             sb.AppendLine("            Instance = null;");
             sb.AppendLine("        }");
             sb.AppendLine();
-            sb.AppendLine("        private void RegisterQuests()");
-            sb.AppendLine("        {");
-            sb.AppendLine("            // Access QuestManager.Quests via reflection (it's internal)");
-            sb.AppendLine("            var questsField = typeof(QuestManager).GetField(\"Quests\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);");
-            sb.AppendLine("            var questsList = questsField?.GetValue(null) as System.Collections.Generic.List<Quest>;");
-            sb.AppendLine();
 
-            // Register all quests
-            foreach (var quest in project.Quests)
+            if (hasQuests)
             {
-                var className = MakeSafeIdentifier(quest.ClassName, "GeneratedQuest");
-                var questId = string.IsNullOrWhiteSpace(quest.QuestId) ? className : EscapeString(quest.QuestId.Trim());
-                var questKey = MakeSafeIdentifier(quest.ClassName, "quest");
-
-                sb.AppendLine($"            // Register {className}");
-                sb.AppendLine($"            try");
-                sb.AppendLine("            {");
-                sb.AppendLine("                // Check if quest already exists (loaded from save data)");
-                sb.AppendLine($"                Quest? existingQuest = null;");
-                sb.AppendLine("                if (questsList != null)");
-                sb.AppendLine("                {");
-                sb.AppendLine($"                    existingQuest = questsList.FirstOrDefault(q => q.GetType() == typeof({className}));");
-                sb.AppendLine("                }");
+                sb.AppendLine("        private void RegisterQuests()");
+                sb.AppendLine("        {");
+                sb.AppendLine("            // Access QuestManager.Quests via reflection (it's internal)");
+                sb.AppendLine("            var questsField = typeof(QuestManager).GetField(\"Quests\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);");
+                sb.AppendLine("            var questsList = questsField?.GetValue(null) as System.Collections.Generic.List<Quest>;");
                 sb.AppendLine();
-                sb.AppendLine($"                if (existingQuest != null)");
-                sb.AppendLine("                {");
-                sb.AppendLine("                    // Quest was already loaded from save data, skip creation");
-                sb.AppendLine($"                    _registeredQuests[\"{EscapeString(quest.QuestId ?? className)}\"] = existingQuest as {className};");
-                sb.AppendLine("                }");
-                sb.AppendLine("                else");
-                sb.AppendLine("                {");
-                sb.AppendLine("                    // Quest doesn't exist, create it with consistent GUID");
-                sb.AppendLine($"                    var {questKey} = QuestManager.CreateQuest<{className}>(\"{EscapeString(questId)}\") as {className};");
-                sb.AppendLine($"                    if ({questKey} != null)");
-                sb.AppendLine("                    {");
-                sb.AppendLine("                        // Quest initialization happens when Unity calls Start() on the base game quest component");
-                sb.AppendLine("                        // This triggers CreateInternal() via Harmony patch, which calls InitializeQuest() to set up HUD UI");
-                sb.AppendLine("                        // For AutoBegin quests, CreateInternal() will automatically call Begin()");
-                sb.AppendLine($"                        _registeredQuests[\"{EscapeString(quest.QuestId ?? className)}\"] = {questKey};");
-                sb.AppendLine("                    }");
-                sb.AppendLine("                }");
-                sb.AppendLine("            }");
-                sb.AppendLine("            catch (Exception ex)");
-                sb.AppendLine("            {");
-                sb.AppendLine($"                MelonLogger.Error($\"Failed to register quest {className}: {{ex.Message}}\");");
-                sb.AppendLine("            }");
-                sb.AppendLine();
-            }
 
-            sb.AppendLine("        }");
-            sb.AppendLine();
-            sb.AppendLine("        private void SubscribeToNPCEvents()");
-            sb.AppendLine("        {");
-            sb.AppendLine("            // NPC event triggers are handled in individual quest classes via SubscribeToTriggers()");
-            sb.AppendLine("            // This prevents duplicate subscriptions and keeps trigger logic with the quest");
-            sb.AppendLine("        }");
-            sb.AppendLine();
-            sb.AppendLine("        private void SubscribeToActionTriggers()");
-            sb.AppendLine("        {");
-            sb.AppendLine("            // Triggers are handled in individual quest classes via SubscribeToTriggers()");
-            sb.AppendLine("            // This prevents duplicate subscriptions and keeps trigger logic with the quest");
-            sb.AppendLine("        }");
-            sb.AppendLine();
-            sb.AppendLine("        private void StartSceneInitQuests()");
-            sb.AppendLine("        {");
-            sb.AppendLine("            // Note: Quests with AutoBegin = true will automatically begin when CreateInternal() is called");
-            sb.AppendLine("            // (which happens when the base game quest's Start() Unity method is invoked).");
-            sb.AppendLine("            // We don't need to manually call Begin() here - the AutoBegin property handles it internally in S1API.");
-
-            // Start scene-init quests
-            var sceneInitQuests = project.Quests.Where(q => q.StartCondition?.TriggerType == QuestStartTrigger.SceneInit).ToList();
-            var autoStartQuests = project.Quests.Where(q => q.StartCondition?.TriggerType == QuestStartTrigger.AutoStart).ToList();
-
-            if (sceneInitQuests.Any() || autoStartQuests.Any())
-            {
-                sb.AppendLine("            // Quests with AutoBegin = true will automatically begin when CreateInternal() is called");
-                sb.AppendLine("            // (which happens when the base game quest's Start() Unity method is invoked)");
-                sb.AppendLine("            // No manual Begin() calls needed - AutoBegin handles it internally in S1API");
-                foreach (var quest in sceneInitQuests.Concat(autoStartQuests))
+                // Register all quests
+                foreach (var quest in project.Quests)
                 {
                     var className = MakeSafeIdentifier(quest.ClassName, "GeneratedQuest");
-                    var questKey = EscapeString(quest.QuestId ?? quest.ClassName);
+                    var questId = string.IsNullOrWhiteSpace(quest.QuestId) ? className : EscapeString(quest.QuestId.Trim());
+                    var questKey = MakeSafeIdentifier(quest.ClassName, "quest");
 
-                    sb.AppendLine($"            // {className} will auto-begin if AutoBegin = true");
-                    sb.AppendLine($"            // Quest is registered in _registeredQuests[\"{questKey}\"]");
+                    sb.AppendLine($"            // Register {className}");
+                    sb.AppendLine($"            try");
+                    sb.AppendLine("            {");
+                    sb.AppendLine("                // Check if quest already exists (loaded from save data)");
+                    sb.AppendLine($"                Quest? existingQuest = null;");
+                    sb.AppendLine("                if (questsList != null)");
+                    sb.AppendLine("                {");
+                    sb.AppendLine($"                    existingQuest = questsList.FirstOrDefault(q => q.GetType() == typeof({className}));");
+                    sb.AppendLine("                }");
+                    sb.AppendLine();
+                    sb.AppendLine($"                if (existingQuest != null)");
+                    sb.AppendLine("                {");
+                    sb.AppendLine("                    // Quest was already loaded from save data, skip creation");
+                    sb.AppendLine($"                    _registeredQuests[\"{EscapeString(quest.QuestId ?? className)}\"] = existingQuest as {className};");
+                    sb.AppendLine("                }");
+                    sb.AppendLine("                else");
+                    sb.AppendLine("                {");
+                    sb.AppendLine("                    // Quest doesn't exist, create it with consistent GUID");
+                    sb.AppendLine($"                    var {questKey} = QuestManager.CreateQuest<{className}>(\"{EscapeString(questId)}\") as {className};");
+                    sb.AppendLine($"                    if ({questKey} != null)");
+                    sb.AppendLine("                    {");
+                    sb.AppendLine("                        // Quest initialization happens when Unity calls Start() on the base game quest component");
+                    sb.AppendLine("                        // This triggers CreateInternal() via Harmony patch, which calls InitializeQuest() to set up HUD UI");
+                    sb.AppendLine("                        // For AutoBegin quests, CreateInternal() will automatically call Begin()");
+                    sb.AppendLine($"                        _registeredQuests[\"{EscapeString(quest.QuestId ?? className)}\"] = {questKey};");
+                    sb.AppendLine("                    }");
+                    sb.AppendLine("                }");
+                    sb.AppendLine("            }");
+                    sb.AppendLine("            catch (Exception ex)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                MelonLogger.Error($\"Failed to register quest {className}: {{ex.Message}}\");");
+                    sb.AppendLine("            }");
+                    sb.AppendLine();
                 }
-            }
-            else
-            {
-                sb.AppendLine("            // No scene-init or auto-start quests configured");
+
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        private void SubscribeToNPCEvents()");
+                sb.AppendLine("        {");
+                sb.AppendLine("            // NPC event triggers are handled in individual quest classes via SubscribeToTriggers()");
+                sb.AppendLine("            // This prevents duplicate subscriptions and keeps trigger logic with the quest");
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        private void SubscribeToActionTriggers()");
+                sb.AppendLine("        {");
+                sb.AppendLine("            // Triggers are handled in individual quest classes via SubscribeToTriggers()");
+                sb.AppendLine("            // This prevents duplicate subscriptions and keeps trigger logic with the quest");
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        private void StartSceneInitQuests()");
+                sb.AppendLine("        {");
+                sb.AppendLine("            // Note: Quests with AutoBegin = true will automatically begin when CreateInternal() is called");
+                sb.AppendLine("            // (which happens when the base game quest's Start() Unity method is invoked).");
+                sb.AppendLine("            // We don't need to manually call Begin() here - the AutoBegin property handles it internally in S1API.");
+
+                // Start scene-init quests
+                var sceneInitQuests = project.Quests.Where(q => q.StartCondition?.TriggerType == QuestStartTrigger.SceneInit).ToList();
+                var autoStartQuests = project.Quests.Where(q => q.StartCondition?.TriggerType == QuestStartTrigger.AutoStart).ToList();
+
+                if (sceneInitQuests.Any() || autoStartQuests.Any())
+                {
+                    sb.AppendLine("            // Quests with AutoBegin = true will automatically begin when CreateInternal() is called");
+                    sb.AppendLine("            // (which happens when the base game quest's Start() Unity method is invoked)");
+                    sb.AppendLine("            // No manual Begin() calls needed - AutoBegin handles it internally in S1API");
+                    foreach (var quest in sceneInitQuests.Concat(autoStartQuests))
+                    {
+                        var className = MakeSafeIdentifier(quest.ClassName, "GeneratedQuest");
+                        var questKey = EscapeString(quest.QuestId ?? quest.ClassName);
+
+                        sb.AppendLine($"            // {className} will auto-begin if AutoBegin = true");
+                        sb.AppendLine($"            // Quest is registered in _registeredQuests[\"{questKey}\"]");
+                    }
+                }
+                else
+                {
+                    sb.AppendLine("            // No scene-init or auto-start quests configured");
+                }
+
+                sb.AppendLine("        }");
             }
 
-            sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
 

@@ -103,5 +103,88 @@ namespace Schedule1ModdingTool.Utils
                 "({0:0.###}f, {1:0.###}f)",
                 left, right);
         }
+
+        /// <summary>
+        /// Converts a Schedule One clothing color integer value to its readable name.
+        /// </summary>
+        /// <param name="colorValue">The integer color value (0-26)</param>
+        /// <returns>The color name (e.g., "Tan", "Navy", "Black") or "White" if invalid</returns>
+        public static string ClothingColorToString(int colorValue)
+        {
+            return colorValue switch
+            {
+                0 => "White",
+                1 => "LightGrey",
+                2 => "DarkGrey",
+                3 => "Charcoal",
+                4 => "Black",
+                5 => "LightRed",
+                6 => "Red",
+                7 => "Crimson",
+                8 => "Orange",
+                9 => "Tan",
+                10 => "Brown",
+                11 => "Coral",
+                12 => "Beige",
+                13 => "Yellow",
+                14 => "Lime",
+                15 => "LightGreen",
+                16 => "DarkGreen",
+                17 => "Cyan",
+                18 => "SkyBlue",
+                19 => "Blue",
+                20 => "DeepBlue",
+                21 => "Navy",
+                22 => "DeepPurple",
+                23 => "Purple",
+                24 => "Magenta",
+                25 => "BrightPink",
+                26 => "HotPink",
+                _ => "White"
+            };
+        }
+
+        /// <summary>
+        /// Converts a Schedule One clothing color name to its integer value.
+        /// </summary>
+        /// <param name="colorName">The color name (e.g., "Tan", "Navy", "Black")</param>
+        /// <returns>The integer color value (0-26) or 0 (White) if invalid</returns>
+        public static int ClothingColorToInt(string? colorName)
+        {
+            if (string.IsNullOrWhiteSpace(colorName))
+                return 0;
+
+            return colorName.Trim() switch
+            {
+                "White" => 0,
+                "LightGrey" => 1,
+                "DarkGrey" => 2,
+                "Charcoal" => 3,
+                "Black" => 4,
+                "LightRed" => 5,
+                "Red" => 6,
+                "Crimson" => 7,
+                "Orange" => 8,
+                "Tan" => 9,
+                "Brown" => 10,
+                "Coral" => 11,
+                "Beige" => 12,
+                "Yellow" => 13,
+                "Lime" => 14,
+                "LightGreen" => 15,
+                "DarkGreen" => 16,
+                "Cyan" => 17,
+                "SkyBlue" => 18,
+                "Blue" => 19,
+                "DeepBlue" => 20,
+                "Navy" => 21,
+                "DeepPurple" => 22,
+                "Purple" => 23,
+                "Magenta" => 24,
+                "BrightPink" => 25,
+                "HotPink" => 26,
+                _ => 0
+            };
+        }
     }
 }

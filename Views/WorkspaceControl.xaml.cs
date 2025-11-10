@@ -388,7 +388,7 @@ namespace Schedule1ModdingTool.Views
             };
             Grid.SetRow(promptText, 0);
 
-            var inputBox = new TextBox
+            var inputBox = new System.Windows.Controls.TextBox
             {
                 Text = defaultValue,
                 Margin = new Thickness(0, 0, 0, 16),
@@ -399,8 +399,8 @@ namespace Schedule1ModdingTool.Views
 
             var buttonPanel = new StackPanel
             {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right
             };
             Grid.SetRow(buttonPanel, 2);
 

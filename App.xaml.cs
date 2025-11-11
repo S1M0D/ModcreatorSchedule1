@@ -1,5 +1,8 @@
+using System;
+using System.IO;
 using System.Windows;
 using Schedule1ModdingTool.Models;
+using Schedule1ModdingTool.Services;
 using Schedule1ModdingTool.ViewModels;
 using Schedule1ModdingTool.Views;
 
@@ -26,6 +29,48 @@ namespace Schedule1ModdingTool
                 }
             }
 
+            // Check for crash recovery
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var autoSaveDirectory = Path.Combine(appDataPath, "Schedule1ModdingTool", "AutoSave");
+            var crashRecoveryService = new CrashRecoveryService(autoSaveDirectory);
+
+            QuestProject? recoveredProject = null;
+
+            if (crashRecoveryService.HasRecoverableSession())
+            {
+                var recoveryWindow = new CrashRecoveryWindow(crashRecoveryService);
+                var recoveryResult = recoveryWindow.ShowDialog();
+
+                if (recoveryResult == true && recoveryWindow.RecoveredProject != null)
+                {
+                    // User recovered a project - open it directly
+                    recoveredProject = recoveryWindow.RecoveredProject;
+                }
+                else if (!recoveryWindow.UserSkippedRecovery)
+                {
+                    // User closed recovery or handled all projects - cleanup old auto-saves
+                    crashRecoveryService.CleanupOldAutoSaves();
+                }
+            }
+
+            // If we recovered a project, open it directly
+            if (recoveredProject != null)
+            {
+                try
+                {
+                    var mainWindow = new MainWindow(recoveredProject);
+                    MainWindow = mainWindow;
+                    mainWindow.Show();
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to open recovered project: {ex.Message}",
+                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    // Continue to startup dialog on error
+                }
+            }
+
             // Show the startup dialog
             var startupDialog = new StartupDialog();
             var result = startupDialog.ShowDialog();
@@ -41,16 +86,16 @@ namespace Schedule1ModdingTool
                     // Ensure the window stays open - don't shutdown
                     return;
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     // If MainWindow creation fails, show error and shutdown
-                    MessageBox.Show($"Failed to open project: {ex.Message}\n\nStack trace: {ex.StackTrace}", 
+                    MessageBox.Show($"Failed to open project: {ex.Message}\n\nStack trace: {ex.StackTrace}",
                         "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     Shutdown();
                     return;
                 }
             }
-            
+
             // User chose to exit or closed the dialog without selecting a project
             Shutdown();
         }

@@ -32,6 +32,8 @@ namespace Schedule1ModdingTool.Models
         private ExperienceLevel _experienceLevel = ExperienceLevel.SomeCoding;
         private bool _isFirstStartComplete = false;
         private int _undoHistorySize = 5;
+        private bool _autoSaveEnabled = true;
+        private int _autoSaveIntervalSeconds = 60;
 
         [JsonProperty("gameInstallPath")]
         public string GameInstallPath
@@ -98,6 +100,25 @@ namespace Schedule1ModdingTool.Models
                 // Clamp value between 1 and 50
                 var clampedValue = System.Math.Max(1, System.Math.Min(50, value));
                 SetProperty(ref _undoHistorySize, clampedValue);
+            }
+        }
+
+        [JsonProperty("autoSaveEnabled")]
+        public bool AutoSaveEnabled
+        {
+            get => _autoSaveEnabled;
+            set => SetProperty(ref _autoSaveEnabled, value);
+        }
+
+        [JsonProperty("autoSaveIntervalSeconds")]
+        public int AutoSaveIntervalSeconds
+        {
+            get => _autoSaveIntervalSeconds;
+            set
+            {
+                // Clamp value between 10 seconds and 10 minutes
+                var clampedValue = System.Math.Max(10, System.Math.Min(600, value));
+                SetProperty(ref _autoSaveIntervalSeconds, clampedValue);
             }
         }
 

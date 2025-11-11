@@ -28,6 +28,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (quest.Objectives?.Any() != true)
                 return;
 
+            builder.AppendComment("🔧 Generated from: Quest.Objectives[] - one field per objective");
             builder.AppendComment("Quest entry fields for objectives");
 
             var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -41,6 +42,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                     usedNames,
                     index);
 
+                builder.AppendComment($"🔧 From: Objectives[{index - 1}].Name = \"{objective.Name}\"");
                 builder.AppendLine($"private QuestEntry {safeVariable};");
             }
 

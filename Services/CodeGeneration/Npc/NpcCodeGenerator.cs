@@ -60,6 +60,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
         private void GenerateNpcClass(ICodeBuilder builder, NpcBlueprint npc, string className)
         {
             // Class XML comment
+            builder.AppendComment("🔧 Generated from: Npc.DisplayName, Npc.NpcId");
             builder.AppendBlockComment(
                 $"Auto-generated NPC blueprint for \"{CodeFormatter.EscapeString(npc.DisplayName)}\".",
                 "Customize ConfigurePrefab and OnCreated to add unique logic."
@@ -68,11 +69,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             builder.OpenBlock($"public sealed class {className} : NPC");
 
             // IsPhysical property
+            builder.AppendComment("🔧 Generated from: Npc.IsPhysical");
             builder.AppendLine($"public override bool IsPhysical => {npc.IsPhysical.ToString().ToLowerInvariant()};");
 
             // IsDealer property if applicable
             if (npc.IsDealer)
             {
+                builder.AppendComment("🔧 Generated from: Npc.IsDealer = true");
                 builder.AppendLine("public override bool IsDealer => true;");
             }
 
@@ -95,9 +98,11 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
         /// </summary>
         private void GenerateConfigurePrefabMethod(ICodeBuilder builder, NpcBlueprint npc)
         {
+            builder.AppendComment("🔧 Generated from: Multiple Npc properties (identity, appearance, spawn, customer, dealer, relationships, schedule, inventory)");
             builder.OpenBlock("protected override void ConfigurePrefab(NPCPrefabBuilder builder)");
 
             // Identity
+            builder.AppendComment("🔧 Generated from: Npc.NpcId, Npc.FirstName, Npc.LastName");
             builder.AppendLine($"builder.WithIdentity(\"{CodeFormatter.EscapeString(npc.NpcId)}\", \"{CodeFormatter.EscapeString(npc.FirstName)}\", \"{CodeFormatter.EscapeString(npc.LastName)}\")");
 
             // Appearance
@@ -106,12 +111,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             // Spawn position
             if (npc.HasSpawnPosition)
             {
+                builder.AppendComment("🔧 Generated from: Npc.HasSpawnPosition, Npc.SpawnX/Y/Z");
                 builder.AppendLine($".WithSpawnPosition({CodeFormatter.FormatVector3(npc.SpawnX, npc.SpawnY, npc.SpawnZ)})");
             }
 
             // Customer configuration
             if (npc.EnableCustomer)
             {
+                builder.AppendComment("🔧 Generated from: Npc.EnableCustomer = true");
                 builder.AppendLine(".EnsureCustomer()");
                 GenerateCustomerDefaults(builder, npc.CustomerDefaults);
             }
@@ -119,6 +126,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             // Dealer configuration
             if (npc.IsDealer)
             {
+                builder.AppendComment("🔧 Generated from: Npc.IsDealer = true");
                 builder.AppendLine(".EnsureDealer()");
                 GenerateDealerDefaults(builder, npc.DealerDefaults);
             }
@@ -126,18 +134,21 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             // Relationship defaults
             if (ShouldGenerateRelationshipDefaults(npc.RelationshipDefaults))
             {
+                builder.AppendComment("🔧 Generated from: Npc.RelationshipDefaults properties");
                 GenerateRelationshipDefaults(builder, npc.RelationshipDefaults);
             }
 
             // Schedule
             if (npc.ScheduleActions != null && npc.ScheduleActions.Count > 0)
             {
+                builder.AppendComment("🔧 Generated from: Npc.ScheduleActions[]");
                 _scheduleGenerator.Generate(builder, npc);
             }
 
             // Inventory defaults
             if (ShouldGenerateInventoryDefaults(npc.InventoryDefaults))
             {
+                builder.AppendComment("🔧 Generated from: Npc.InventoryDefaults properties");
                 GenerateInventoryDefaults(builder, npc.InventoryDefaults);
             }
 
@@ -149,38 +160,60 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
         private void GenerateCustomerDefaults(ICodeBuilder builder, NpcCustomerDefaults cd)
         {
+            builder.AppendComment("🔧 Generated from: Npc.CustomerDefaults properties");
             builder.OpenBlock(".WithCustomerDefaults(cd =>");
+            builder.AppendComment("🔧 From: CustomerDefaults.MinWeeklySpending, MaxWeeklySpending");
             builder.AppendLine($"cd.WithSpending({cd.MinWeeklySpending}f, {cd.MaxWeeklySpending}f)");
+            builder.AppendComment("🔧 From: CustomerDefaults.MinOrdersPerWeek, MaxOrdersPerWeek");
             builder.AppendLine($"  .WithOrdersPerWeek({cd.MinOrdersPerWeek}, {cd.MaxOrdersPerWeek})");
+            builder.AppendComment("🔧 From: CustomerDefaults.PreferredOrderDay");
             builder.AppendLine($"  .WithPreferredOrderDay(Day.{cd.PreferredOrderDay})");
+            builder.AppendComment("🔧 From: CustomerDefaults.OrderTime");
             builder.AppendLine($"  .WithOrderTime({cd.OrderTime})");
-            builder.AppendLine($"  .WithStandards(CustomerStandard.{cd.CustomerStandards})");
+            builder.AppendComment("🔧 From: CustomerDefaults.CustomerStandards");
+            // Handle case where CustomerStandards might contain ComboBoxItem prefix
+            var standardsValue = cd.CustomerStandards;
+            if (standardsValue != null && standardsValue.Contains(":"))
+            {
+                // Extract just the value after the colon (e.g., "System.Windows.Controls.ComboBoxItem: Low" → "Low")
+                standardsValue = standardsValue.Substring(standardsValue.LastIndexOf(':') + 1).Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(standardsValue))
+            {
+                builder.AppendLine($"  .WithStandards(CustomerStandard.{standardsValue})");
+            }
+            builder.AppendComment("🔧 From: CustomerDefaults.AllowDirectApproach");
             builder.AppendLine($"  .AllowDirectApproach({cd.AllowDirectApproach.ToString().ToLowerInvariant()})");
 
             // Advanced features
             if (cd.GuaranteeFirstSample)
             {
+                builder.AppendComment("🔧 From: CustomerDefaults.GuaranteeFirstSample = true");
                 builder.AppendLine($"  .GuaranteeFirstSample(true)");
             }
 
             if (cd.MutualRelationMinAt50 != 0 || cd.MutualRelationMaxAt100 != 0)
             {
+                builder.AppendComment("🔧 From: CustomerDefaults.MutualRelationMinAt50, MutualRelationMaxAt100");
                 builder.AppendLine($"  .WithMutualRelationRequirement(minAt50: {cd.MutualRelationMinAt50}f, maxAt100: {cd.MutualRelationMaxAt100}f)");
             }
 
             if (cd.CallPoliceChance > 0)
             {
+                builder.AppendComment("🔧 From: CustomerDefaults.CallPoliceChance");
                 builder.AppendLine($"  .WithCallPoliceChance({cd.CallPoliceChance}f)");
             }
 
             if (cd.BaseAddiction > 0 || cd.DependenceMultiplier != 1.0f)
             {
+                builder.AppendComment("🔧 From: CustomerDefaults.BaseAddiction, DependenceMultiplier");
                 builder.AppendLine($"  .WithDependence(baseAddiction: {cd.BaseAddiction}f, dependenceMultiplier: {cd.DependenceMultiplier}f)");
             }
 
             // Drug affinities
             if (cd.DrugAffinities != null && cd.DrugAffinities.Count > 0)
             {
+                builder.AppendComment("🔧 From: CustomerDefaults.DrugAffinities[]");
                 builder.AppendLine("  .WithAffinities(new[]");
                 builder.AppendLine("  {");
                 for (int i = 0; i < cd.DrugAffinities.Count; i++)
@@ -195,6 +228,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             // Preferred properties
             if (cd.PreferredProperties != null && cd.PreferredProperties.Count > 0)
             {
+                builder.AppendComment("🔧 From: CustomerDefaults.PreferredProperties[]");
                 var props = string.Join(", ", cd.PreferredProperties.Select(p => $"Property.{p}"));
                 builder.AppendLine($"  .WithPreferredProperties({props})");
             }
@@ -206,28 +240,36 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
         private void GenerateDealerDefaults(ICodeBuilder builder, NpcDealerDefaults dd)
         {
+            builder.AppendComment("🔧 Generated from: Npc.DealerDefaults properties");
             builder.OpenBlock(".WithDealerDefaults(dd =>");
+            builder.AppendComment("🔧 From: DealerDefaults.SigningFee");
             builder.AppendLine($"dd.WithSigningFee({dd.SigningFee}f)");
+            builder.AppendComment("🔧 From: DealerDefaults.CommissionCut");
             builder.AppendLine($"  .WithCut({dd.CommissionCut}f)");
+            builder.AppendComment("🔧 From: DealerDefaults.DealerType");
             builder.AppendLine($"  .WithDealerType(DealerType.{dd.DealerType})");
 
             if (!string.IsNullOrWhiteSpace(dd.HomeName))
             {
+                builder.AppendComment("🔧 From: DealerDefaults.HomeName");
                 builder.AppendLine($"  .WithHomeName(\"{CodeFormatter.EscapeString(dd.HomeName)}\")");
             }
 
             if (dd.AllowInsufficientQuality)
             {
+                builder.AppendComment("🔧 From: DealerDefaults.AllowInsufficientQuality = true");
                 builder.AppendLine("  .AllowInsufficientQuality(true)");
             }
 
             if (!dd.AllowExcessQuality)
             {
+                builder.AppendComment("🔧 From: DealerDefaults.AllowExcessQuality = false");
                 builder.AppendLine("  .AllowExcessQuality(false)");
             }
 
             if (!string.IsNullOrWhiteSpace(dd.CompletedDealsVariable))
             {
+                builder.AppendComment("🔧 From: DealerDefaults.CompletedDealsVariable");
                 builder.AppendLine($"  .WithCompletedDealsVariable(\"{CodeFormatter.EscapeString(dd.CompletedDealsVariable)}\")");
             }
 
@@ -238,33 +280,40 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
         private void GenerateRelationshipDefaults(ICodeBuilder builder, NpcRelationshipDefaults rd)
         {
+            builder.AppendComment("🔧 Generated from: Npc.RelationshipDefaults properties");
             builder.OpenBlock(".WithRelationshipDefaults(r =>");
 
             if (rd.StartingDelta != 0)
             {
+                builder.AppendComment("🔧 From: RelationshipDefaults.StartingDelta");
                 builder.AppendLine($"r.WithDelta({rd.StartingDelta}f)");
             }
             else
             {
+                builder.AppendComment("🔧 From: RelationshipDefaults.StartingDelta = 0");
                 builder.AppendLine("r.WithDelta(0f)");
             }
 
             if (rd.StartsUnlocked)
             {
+                builder.AppendComment("🔧 From: RelationshipDefaults.StartsUnlocked = true");
                 builder.AppendLine("  .SetUnlocked(true)");
             }
             else
             {
+                builder.AppendComment("🔧 From: RelationshipDefaults.StartsUnlocked = false");
                 builder.AppendLine("  .SetUnlocked(false)");
             }
 
             if (!string.IsNullOrWhiteSpace(rd.UnlockType))
             {
+                builder.AppendComment("🔧 From: RelationshipDefaults.UnlockType");
                 builder.AppendLine($"  .SetUnlockType(NPCRelationship.UnlockType.{rd.UnlockType})");
             }
 
             if (rd.Connections != null && rd.Connections.Count > 0)
             {
+                builder.AppendComment("🔧 From: RelationshipDefaults.Connections[]");
                 var connections = string.Join(", ", rd.Connections.Select(c => $"\"{CodeFormatter.EscapeString(c)}\""));
                 builder.AppendLine($"  .WithConnectionsById({connections})");
             }
@@ -276,6 +325,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
         private void GenerateInventoryDefaults(ICodeBuilder builder, NpcInventoryDefaults inv)
         {
+            builder.AppendComment("🔧 Generated from: Npc.InventoryDefaults properties");
             builder.OpenBlock(".WithInventoryDefaults(inv =>");
 
             bool hasStartupItems = inv.StartupItems != null && inv.StartupItems.Count > 0;
@@ -284,6 +334,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
             if (hasStartupItems)
             {
+                builder.AppendComment("🔧 From: InventoryDefaults.StartupItems[]");
                 var items = string.Join(", ", inv.StartupItems.Select(i => $"\"{CodeFormatter.EscapeString(i)}\""));
                 builder.AppendLine($"inv.WithStartupItems({items})");
             }
@@ -294,11 +345,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
             if (hasCash)
             {
+                builder.AppendComment("🔧 From: InventoryDefaults.EnableRandomCash, RandomCashMin, RandomCashMax");
                 builder.AppendLine($"   .WithRandomCash(min: {inv.RandomCashMin}f, max: {inv.RandomCashMax}f)");
             }
 
             if (hasClearNight)
             {
+                builder.AppendComment("🔧 From: InventoryDefaults.ClearInventoryEachNight = false");
                 builder.AppendLine("   .WithClearInventoryEachNight(false)");
             }
 

@@ -40,6 +40,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                              (quest.QuestFinishTriggers?.Any() == true) ||
                              (quest.Objectives?.Any(o => o.StartTriggers?.Any() == true || o.FinishTriggers?.Any() == true) == true);
 
+            builder.AppendComment("🔧 Generated from: Quest.QuestTriggers, Quest.QuestFinishTriggers, Quest.Objectives[].StartTriggers, Quest.Objectives[].FinishTriggers");
             builder.AppendBlockComment(
                 "Subscribes to triggers for this quest and its objectives."
             );
@@ -80,6 +81,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (quest.QuestTriggers?.Any(t => t.TriggerTarget == QuestTriggerTarget.QuestStart) != true)
                 return;
 
+            builder.AppendComment("🔧 Generated from: Quest.QuestTriggers[] (where TriggerTarget = QuestStart)");
             foreach (var trigger in quest.QuestTriggers.Where(t => t.TriggerTarget == QuestTriggerTarget.QuestStart))
             {
                 var handlerInfo = handlerInfos.FirstOrDefault(h =>
@@ -102,6 +104,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (quest.QuestFinishTriggers?.Any() != true)
                 return;
 
+            builder.AppendComment("🔧 Generated from: Quest.QuestFinishTriggers[]");
             foreach (var trigger in quest.QuestFinishTriggers)
             {
                 var finishMethod = trigger.FinishType switch
@@ -132,6 +135,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (quest.Objectives?.Any() != true)
                 return;
 
+            builder.AppendComment("🔧 Generated from: Quest.Objectives[].StartTriggers, Quest.Objectives[].FinishTriggers");
             var objectiveNames = _entryFieldGenerator.GetAllObjectiveVariableNames(quest);
 
             for (int i = 0; i < quest.Objectives.Count; i++)
@@ -142,6 +146,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 // Objective start triggers
                 if (objective.StartTriggers?.Any() == true)
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].StartTriggers[]");
                     foreach (var trigger in objective.StartTriggers)
                     {
                         var handlerInfo = handlerInfos.FirstOrDefault(h =>
@@ -155,6 +160,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 // Objective finish triggers
                 if (objective.FinishTriggers?.Any() == true)
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].FinishTriggers[]");
                     foreach (var trigger in objective.FinishTriggers)
                     {
                         var handlerInfo = handlerInfos.FirstOrDefault(h =>

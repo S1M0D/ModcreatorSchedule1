@@ -448,10 +448,10 @@
 
 		<!-- Status Bar -->
 		<StatusBar Grid.Row="3" Style="{StaticResource DarkStatusBarStyle}">
-			<StatusBarItem>
+			<StatusBarItem Padding="8,0,8,0">
 				<TextBlock Text="{Binding ProcessState, FallbackValue='Ready'}" />
 			</StatusBarItem>
-			<StatusBarItem HorizontalAlignment="Right">
+			<StatusBarItem HorizontalAlignment="Right" Padding="8,0,8,0">
 				<StackPanel Orientation="Horizontal">
 					<TextBlock Text="Quests: " />
 					<TextBlock Text="{Binding CurrentProject.Quests.Count}" />

@@ -59,7 +59,9 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
 
         /// <summary>
         /// Adds standard using statements for NPC code generation.
-        /// Includes S1API.Entities, S1API.Economy, UnityEngine, and common System namespaces.
+        /// Includes S1API.Entities, S1API.Economy, S1API.Products (for DrugType), 
+        /// S1API.Map (for Building), S1API.Map.Buildings (for building types like ApartmentBuilding),
+        /// UnityEngine, and common System namespaces.
         /// </summary>
         /// <returns>This builder for method chaining.</returns>
         public UsingStatementsBuilder AddNpcUsings()
@@ -70,6 +72,9 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
                 "S1API.Entities.Schedule",
                 "S1API.GameTime",
                 "S1API.Economy",
+                "S1API.Products",
+                "S1API.Map",
+                "S1API.Map.Buildings",
                 "UnityEngine"
             );
         }

@@ -56,6 +56,12 @@ namespace Schedule1ModdingTool.Views
 
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
+            // Clear session marker to indicate clean shutdown
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.CleanupOnClose();
+            }
+
             // When MainWindow closes, shutdown the application
             Application.Current.Shutdown();
         }

@@ -30,6 +30,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (quest == null)
                 throw new ArgumentNullException(nameof(quest));
 
+            builder.AppendComment("🔧 Generated from: Quest.Objectives[]");
             builder.AppendBlockComment(
                 "Called when the quest is created. Sets up objectives, POI positions, and activates entries.",
                 "Only creates entries if they don't already exist (e.g., from save data)."
@@ -76,15 +77,18 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 var objective = quest.Objectives[i];
                 var objectiveVar = objectiveNames[i];
 
+                builder.AppendComment($"🔧 Generated from: Quest.Objectives[{i}]");
                 builder.AppendComment($"Objective \"{CodeFormatter.EscapeString(objective.Title)}\" ({objective.Name})");
 
                 // Create entry
                 if (objective.HasLocation && objective.CreatePOI)
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, LocationX/Y/Z");
                     builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", {CodeFormatter.FormatVector3(objective)});");
                 }
                 else
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].Title");
                     builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\");");
                 }
 
@@ -92,20 +96,23 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 bool shouldAutoStart = objective.AutoStart && (objective.StartTriggers?.Any() != true);
                 if (shouldAutoStart)
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].AutoStart = true");
                     builder.AppendLine($"{objectiveVar}.Begin();");
                 }
                 else if (objective.StartTriggers?.Any() == true)
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].StartTriggers[]");
                     builder.AppendLine($"{objectiveVar}.SetState(QuestState.Inactive);");
                     builder.AppendComment("Entry will be activated by start trigger");
                 }
                 else
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].AutoStart = false");
                     builder.AppendLine($"{objectiveVar}.SetState(QuestState.Inactive);");
                     builder.AppendComment("Entry starts inactive (AutoStart is disabled)");
                 }
 
-                builder.AppendComment($"Required progress: {objective.RequiredProgress}");
+                builder.AppendComment($"🔧 From: Objectives[{i}].RequiredProgress = {objective.RequiredProgress}");
                 builder.AppendLine();
             }
         }
@@ -120,6 +127,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (quest == null)
                 throw new ArgumentNullException(nameof(quest));
 
+            builder.AppendComment("🔧 Generated from: Quest.Objectives[] (rebuild logic for save/load)");
             builder.AppendBlockComment(
                 "Called after quest data has been loaded from save files.",
                 "Rebuilds quest entries if they were cleared during load."
@@ -161,14 +169,17 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 var objective = quest.Objectives[i];
                 var objectiveVar = objectiveNames[i];
 
+                builder.AppendComment($"🔧 Generated from: Quest.Objectives[{i}]");
                 builder.AppendComment($"Rebuild objective \"{CodeFormatter.EscapeString(objective.Title)}\" ({objective.Name})");
 
                 // Create entry
+                builder.AppendComment($"🔧 From: Objectives[{i}].Title");
                 builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\");");
 
                 // Set POI position if objective has a location
                 if (objective.HasLocation)
                 {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].HasLocation, LocationX/Y/Z");
                     builder.AppendLine($"{objectiveVar}.POIPosition = {CodeFormatter.FormatVector3(objective)};");
                 }
 
@@ -203,6 +214,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (quest == null)
                 throw new ArgumentNullException(nameof(quest));
 
+            builder.AppendComment("🔧 Generated from: Quest.CustomIcon, Quest.IconFileName");
             builder.OpenBlock("private Sprite? LoadCustomIcon()");
 
             if (string.IsNullOrWhiteSpace(quest.IconFileName))

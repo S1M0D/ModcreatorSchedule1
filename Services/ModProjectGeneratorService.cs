@@ -85,6 +85,9 @@ namespace Schedule1ModdingTool.Services
                     GenerateNpcFile(modPath, npc, result);
                 }
 
+                // Clean up old generated files that no longer match current NPCs/Quests
+                CleanupOldGeneratedFiles(modPath, project, result);
+
                 // Validate and copy resources
                 ValidateAndCopyResources(project, modPath, result);
 
@@ -525,6 +528,87 @@ namespace Schedule1ModdingTool.Services
 
             File.WriteAllText(npcPath, npcCode);
             result.GeneratedFiles.Add(npcPath);
+        }
+
+        /// <summary>
+        /// Removes old generated C# files that no longer correspond to current NPCs or Quests.
+        /// This handles cases where elements were renamed or deleted.
+        /// </summary>
+        private void CleanupOldGeneratedFiles(string modPath, QuestProject project, ModProjectGenerationResult result)
+        {
+            try
+            {
+                // Collect expected file names from current NPCs and Quests
+                var expectedNpcFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var expectedQuestFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var npc in project.Npcs)
+                {
+                    var className = MakeSafeIdentifier(npc.ClassName, "GeneratedNpc");
+                    expectedNpcFiles.Add($"{className}.cs");
+                }
+
+                foreach (var quest in project.Quests)
+                {
+                    var className = MakeSafeIdentifier(quest.ClassName, "GeneratedQuest");
+                    expectedQuestFiles.Add($"{className}.cs");
+                }
+
+                // Clean up NPC files
+                var npcsDir = Path.Combine(modPath, "NPCs");
+                if (Directory.Exists(npcsDir))
+                {
+                    var existingNpcFiles = Directory.GetFiles(npcsDir, "*.cs");
+                    foreach (var filePath in existingNpcFiles)
+                    {
+                        var fileName = Path.GetFileName(filePath);
+                        if (!expectedNpcFiles.Contains(fileName))
+                        {
+                            try
+                            {
+                                File.Delete(filePath);
+                                Debug.WriteLine($"[ModProjectGenerator] Deleted old NPC file: {fileName}");
+                                result.Warnings.Add($"Removed old NPC file: {fileName}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old NPC file '{fileName}': {ex.Message}");
+                                result.Warnings.Add($"Could not remove old NPC file '{fileName}': {ex.Message}");
+                            }
+                        }
+                    }
+                }
+
+                // Clean up Quest files
+                var questsDir = Path.Combine(modPath, "Quests");
+                if (Directory.Exists(questsDir))
+                {
+                    var existingQuestFiles = Directory.GetFiles(questsDir, "*.cs");
+                    foreach (var filePath in existingQuestFiles)
+                    {
+                        var fileName = Path.GetFileName(filePath);
+                        if (!expectedQuestFiles.Contains(fileName))
+                        {
+                            try
+                            {
+                                File.Delete(filePath);
+                                Debug.WriteLine($"[ModProjectGenerator] Deleted old Quest file: {fileName}");
+                                result.Warnings.Add($"Removed old Quest file: {fileName}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old Quest file '{fileName}': {ex.Message}");
+                                result.Warnings.Add($"Could not remove old Quest file '{fileName}': {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ModProjectGenerator] Error during cleanup of old files: {ex.Message}");
+                result.Warnings.Add($"Error cleaning up old generated files: {ex.Message}");
+            }
         }
 
         private void ValidateAndCopyResources(QuestProject project, string modPath, ModProjectGenerationResult result)

@@ -27,8 +27,9 @@ namespace Schedule1ModdingTool.Views.Controls
 
         private void AddAffinity_Click(object sender, RoutedEventArgs e)
         {
+            // Add directly to the bound collection (should never be null due to model initialization)
             if (DrugAffinities == null)
-                DrugAffinities = new ObservableCollection<DrugAffinity>();
+                return;
 
             DrugAffinities.Add(new DrugAffinity
             {

@@ -69,6 +69,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             var questId = string.IsNullOrWhiteSpace(quest.QuestId) ? className : quest.QuestId.Trim();
 
             // Class XML comment
+            builder.AppendComment("🔧 Generated from: Quest.QuestTitle");
             builder.AppendBlockComment(
                 $"Auto-generated quest blueprint for \"{CodeFormatter.EscapeString(quest.QuestTitle)}\".",
                 "Customize the body to wire in game-specific logic."
@@ -77,6 +78,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.OpenBlock($"public class {className} : Quest");
 
             // Quest identifier constant
+            builder.AppendComment("🔧 Generated from: Quest.QuestId (or Quest.ClassName if QuestId is empty)");
             builder.AppendLine($"public const string QuestIdentifier = \"{CodeFormatter.EscapeString(questId)}\";");
             builder.AppendLine();
 
@@ -141,12 +143,16 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
         /// </summary>
         private void GenerateQuestProperties(ICodeBuilder builder, QuestBlueprint quest)
         {
+            builder.AppendComment("🔧 Generated from: Quest.QuestTitle");
             builder.AppendLine($"protected override string Title => \"{CodeFormatter.EscapeString(quest.QuestTitle)}\";");
+            builder.AppendComment("🔧 Generated from: Quest.QuestDescription");
             builder.AppendLine($"protected override string Description => \"{CodeFormatter.EscapeString(quest.QuestDescription)}\";");
+            builder.AppendComment("🔧 Generated from: Quest.AutoBegin");
             builder.AppendLine($"protected override bool AutoBegin => {quest.AutoBegin.ToString().ToLowerInvariant()};");
 
             if (quest.CustomIcon)
             {
+                builder.AppendComment("🔧 Generated from: Quest.CustomIcon");
                 builder.AppendLine("protected override Sprite? QuestIcon => LoadCustomIcon();");
             }
 
@@ -155,22 +161,23 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             // Generate quest initialization code - override CreateInternal to set properties before base initialization
             if (!quest.TrackOnBegin || !quest.AutoCompleteOnAllEntriesComplete)
             {
+                builder.AppendComment("🔧 Generated from: Quest.TrackOnBegin, Quest.AutoCompleteOnAllEntriesComplete");
                 builder.AppendBlockComment(
                     "Quest initialization - sets tracking and auto-complete behavior",
                     "Called during quest construction, before base initialization"
                 );
                 builder.OpenBlock("internal override void CreateInternal()");
-                
+
                 // Set properties before calling base
                 if (!quest.TrackOnBegin)
                 {
-                    builder.AppendComment("Disable automatic quest tracking");
+                    builder.AppendComment("🔧 Generated from: Quest.TrackOnBegin = false");
                     builder.AppendLine("S1Quest.TrackOnBegin = false;");
                 }
-                
+
                 if (!quest.AutoCompleteOnAllEntriesComplete)
                 {
-                    builder.AppendComment("Disable automatic quest completion when all entries complete");
+                    builder.AppendComment("🔧 Generated from: Quest.AutoCompleteOnAllEntriesComplete = false");
                     builder.AppendLine("S1Quest.AutoCompleteOnAllEntriesComplete = false;");
                 }
                 
@@ -189,6 +196,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (handlerInfos.Count == 0)
                 return;
 
+            builder.AppendComment("🔧 Generated from: Quest.Objectives[].StartTriggers, Quest.Objectives[].FinishTriggers, Quest.StartTriggers, Quest.FinishTriggers");
             builder.AppendComment("Trigger event handlers");
             foreach (var handlerInfo in handlerInfos)
             {

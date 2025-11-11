@@ -43,10 +43,12 @@ namespace Schedule1ModdingTool.ViewModels
         private readonly NavigationService _navigationService;
         private readonly ElementManagementService _elementManagementService;
         private readonly UndoRedoService _undoRedoService;
+        private readonly AutoSaveService _autoSaveService;
         private ModSettings _modSettings;
         private bool _isRestoringFromUndoRedo = false;
         private DispatcherTimer? _debounceSnapshotTimer;
         private bool _wasModifiedBeforeChange = false;
+        private string? _currentProjectPath;
 
         // ViewModels
         private WorkspaceViewModel _workspaceViewModel;
@@ -358,10 +360,15 @@ namespace Schedule1ModdingTool.ViewModels
             _modBuildService = new ModBuildService();
             _gameLaunchService = new GameLaunchService();
             _undoRedoService = new Services.UndoRedoService();
+            _autoSaveService = new AutoSaveService();
             _modSettings = ModSettings.Load();
-            
+
             // Configure undo history size from settings
             _undoRedoService.MaxHistorySize = _modSettings.UndoHistorySize;
+
+            // Configure auto-save from settings
+            _autoSaveService.IsEnabled = _modSettings.AutoSaveEnabled;
+            _autoSaveService.AutoSaveIntervalSeconds = _modSettings.AutoSaveIntervalSeconds;
 
             // Set code visibility based on user experience level
             _isCodeVisible = _modSettings.ExperienceLevel != ExperienceLevel.NoCodingExperience;
@@ -611,11 +618,15 @@ namespace Schedule1ModdingTool.ViewModels
                 CurrentProject = project;
                 NormalizeProjectResources();
                 SelectedQuest = CurrentProject.Quests.FirstOrDefault();
-                
+
                 // Clear undo/redo history when loading a new project
                 _undoRedoService.Clear();
                 _undoRedoService.SaveSnapshot(CurrentProject);
-                
+
+                // Set up auto-save for the newly opened project
+                _currentProjectPath = CurrentProject.FilePath;
+                _autoSaveService.SetCurrentProject(CurrentProject, _currentProjectPath);
+
                 UpdateProcessState();
             }
             else if (string.IsNullOrWhiteSpace(CurrentProject.ProjectName))
@@ -639,6 +650,14 @@ namespace Schedule1ModdingTool.ViewModels
 
                 ProcessState = "Saving project...";
                 var success = _projectService.SaveProject(CurrentProject);
+
+                if (success)
+                {
+                    // Update current project path and clear auto-saves for this project
+                    _currentProjectPath = CurrentProject.FilePath;
+                    _autoSaveService.ClearAutoSaves(_currentProjectPath);
+                }
+
                 UpdateProcessState();
                 if (!success)
                 {
@@ -1793,6 +1812,16 @@ namespace Schedule1ModdingTool.ViewModels
                 _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
                 UpdateProcessState();
             }
+        }
+
+        /// <summary>
+        /// Cleanup method called when the application is closing normally.
+        /// Clears the session marker to prevent crash recovery on next start.
+        /// </summary>
+        public void CleanupOnClose()
+        {
+            _autoSaveService.ClearSessionMarker();
+            _autoSaveService.Dispose();
         }
 
         #endregion

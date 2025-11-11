@@ -14,7 +14,7 @@
         </StackPanel>
 
         <!-- Drug Affinities List -->
-        <ItemsControl ItemsSource="{Binding DrugAffinities}" Margin="0,0,0,8">
+        <ItemsControl ItemsSource="{Binding DrugAffinities, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="0,0,0,8">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:DrugAffinity}">
                     <Grid Margin="0,4">
@@ -25,17 +25,16 @@
                         </Grid.ColumnDefinitions>
 
                         <ComboBox Grid.Column="0"
-                                  SelectedItem="{Binding DrugType}"
+                                  SelectedValue="{Binding DrugType}"
+                                  SelectedValuePath="Content"
                                   Style="{StaticResource ComboBoxStyle}"
                                   Margin="0,0,8,0">
                             <ComboBoxItem Content="Marijuana"/>
-                            <ComboBoxItem Content="Cocaine"/>
-                            <ComboBoxItem Content="Heroin"/>
                             <ComboBoxItem Content="Methamphetamine"/>
-                            <ComboBoxItem Content="LSD"/>
+                            <ComboBoxItem Content="Cocaine"/>
                             <ComboBoxItem Content="MDMA"/>
-                            <ComboBoxItem Content="Psilocybin"/>
-                            <ComboBoxItem Content="Ketamine"/>
+                            <ComboBoxItem Content="Shrooms"/>
+                            <ComboBoxItem Content="Heroin"/>
                         </ComboBox>
 
                         <TextBox Grid.Column="1"

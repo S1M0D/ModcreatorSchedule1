@@ -15,19 +15,23 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (npc.ScheduleActions == null || npc.ScheduleActions.Count == 0)
                 return;
 
+            builder.AppendComment("🔧 Generated from: Npc.ScheduleActions[] (daily schedule with 8 action types)");
             builder.OpenBlock(".WithSchedule(plan =>");
 
             bool hasCustomerOrDealer = npc.EnableCustomer || npc.IsDealer;
             bool hasDealSignal = false;
 
-            foreach (var action in npc.ScheduleActions)
+            for (int i = 0; i < npc.ScheduleActions.Count; i++)
             {
+                var action = npc.ScheduleActions[i];
+                builder.AppendComment($"🔧 From: ScheduleActions[{i}] - Type: {action.ActionType}, StartTime: {action.StartTime}");
+
                 switch (action.ActionType)
                 {
                     case ScheduleActionType.EnsureDealSignal:
                         if (!hasDealSignal && hasCustomerOrDealer)
                         {
-                            builder.AppendLine("plan.EnsureDealSignal()");
+                            builder.AppendLine("    plan.EnsureDealSignal();");
                             hasDealSignal = true;
                         }
                         break;
@@ -69,7 +73,6 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                 }
             }
 
-            builder.AppendLine(";");
             builder.CloseBlock();
             builder.AppendLine(")");
         }
@@ -102,7 +105,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
             
-            builder.AppendLine($"    .WalkTo({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.WalkTo({string.Join(", ", parameters)});");
         }
 
         private void GenerateStayInBuilding(ICodeBuilder builder, NpcScheduleAction action)
@@ -116,6 +119,19 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
             // BuildingName is a type name (e.g., "NorthApartments"), not a string literal
             var buildingTypeName = action.BuildingName;
+
+            // Handle case where BuildingName might be "Display Name (TypeName)" format
+            if (buildingTypeName.Contains("(") && buildingTypeName.Contains(")"))
+            {
+                // Extract content from parentheses: "Apartment Building (ApartmentBuilding)" → "ApartmentBuilding"
+                var startParen = buildingTypeName.LastIndexOf('(');
+                var endParen = buildingTypeName.LastIndexOf(')');
+                if (startParen >= 0 && endParen > startParen)
+                {
+                    buildingTypeName = buildingTypeName.Substring(startParen + 1, endParen - startParen - 1).Trim();
+                }
+            }
+
             var parameters = new System.Collections.Generic.List<string>();
             parameters.Add($"Building.Get<{buildingTypeName}>()");
             parameters.Add($"{action.StartTime}");
@@ -131,7 +147,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
             
-            builder.AppendLine($"    .StayInBuilding({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.StayInBuilding({string.Join(", ", parameters)});");
         }
 
         private void GenerateLocationDialogue(ICodeBuilder builder, NpcScheduleAction action)
@@ -162,7 +178,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
             
-            builder.AppendLine($"    .LocationDialogue({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.LocationDialogue({string.Join(", ", parameters)});");
         }
 
         private void GenerateDriveToCarPark(ICodeBuilder builder, NpcScheduleAction action)
@@ -195,7 +211,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
 
-            builder.AppendLine($"    .DriveToCarParkWithCreateVehicle({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.DriveToCarParkWithCreateVehicle({string.Join(", ", parameters)});");
         }
 
         private void GenerateUseVendingMachine(ICodeBuilder builder, NpcScheduleAction action)
@@ -209,7 +225,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
             
-            builder.AppendLine($"    .UseVendingMachine({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.UseVendingMachine({string.Join(", ", parameters)});");
         }
 
         private void GenerateUseATM(ICodeBuilder builder, NpcScheduleAction action)
@@ -223,7 +239,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
             
-            builder.AppendLine($"    .UseATM({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.UseATM({string.Join(", ", parameters)});");
         }
 
         private void GenerateHandleDeal(ICodeBuilder builder, NpcScheduleAction action)
@@ -234,7 +250,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
             
-            builder.AppendLine($"    .HandleDeal({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.HandleDeal({string.Join(", ", parameters)});");
         }
 
         private void GenerateSitAtSeatSet(ICodeBuilder builder, NpcScheduleAction action)
@@ -256,7 +272,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (!string.IsNullOrWhiteSpace(action.ActionName))
                 parameters.Add($"name: {CodeFormatter.EscapeString(action.ActionName)}");
             
-            builder.AppendLine($"    .SitAtSeatSet({string.Join(", ", parameters)})");
+            builder.AppendLine($"    plan.SitAtSeatSet({string.Join(", ", parameters)});");
         }
     }
 }

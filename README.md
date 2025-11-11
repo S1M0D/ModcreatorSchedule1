@@ -7,6 +7,6 @@
 
 
 
-Support Us
-[Estonia](https://ko-fi.com/estonla)
-[Bars](https://ko-fi.com/ifbars)
+## Support Us
+- [Estonia](https://ko-fi.com/estonla)
+- [Bars](https://ko-fi.com/ifbars)

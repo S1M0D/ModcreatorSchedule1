@@ -43,6 +43,19 @@ namespace Schedule1ModdingTool.Views
         private void BuildingSelector_Loaded(object sender, RoutedEventArgs e)
         {
             UpdateBuildingList();
+            // Sync initial selection if SelectedBuildingTypeName is already set
+            if (!string.IsNullOrWhiteSpace(SelectedBuildingTypeName) && AvailableBuildings != null)
+            {
+                var building = AvailableBuildings.FirstOrDefault(b => b.TypeName == SelectedBuildingTypeName);
+                if (building != null && BuildingComboBox.SelectedItem != building)
+                {
+                    BuildingComboBox.SelectedItem = building;
+                    if (BuildingComboBox.IsEditable)
+                    {
+                        BuildingComboBox.Text = building.DisplayName;
+                    }
+                }
+            }
         }
 
         private void BuildingComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -183,7 +196,7 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
-        private void UpdateBuildingList()
+        public void UpdateBuildingList()
         {
             BuildingComboBox.ItemsSource = AvailableBuildings;
         }

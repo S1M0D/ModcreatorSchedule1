@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows;
@@ -12,13 +13,32 @@ namespace Schedule1ModdingTool.Views
 {
     public partial class NpcPropertiesControl : UserControl
     {
+        public static readonly DependencyProperty AvailableNpcsProperty =
+            DependencyProperty.Register(nameof(AvailableNpcs), typeof(ObservableCollection<NpcInfo>), typeof(NpcPropertiesControl),
+                new PropertyMetadata(null));
+
+        public ObservableCollection<NpcInfo> AvailableNpcs
+        {
+            get => (ObservableCollection<NpcInfo>)GetValue(AvailableNpcsProperty);
+            set => SetValue(AvailableNpcsProperty, value);
+        }
+
         public NpcPropertiesControl()
         {
             InitializeComponent();
+            Loaded += NpcPropertiesControl_Loaded;
         }
 
         private MainViewModel? ViewModel => DataContext as MainViewModel;
         private NpcBlueprint? CurrentNpc => ViewModel?.SelectedNpc;
+
+        private void NpcPropertiesControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Validate mutual exclusivity on load
+            ValidateCustomerDealerExclusivity();
+            // Initialize NPC list
+            InitializeNpcList();
+        }
 
         private void Grid_Loaded(object sender, RoutedEventArgs e)
         {
@@ -196,35 +216,151 @@ namespace Schedule1ModdingTool.Views
             // Allow unchecking without restrictions
         }
 
+        private void InitializeNpcList()
+        {
+            // Build NPC list from project NPCs and base game NPCs
+            var npcList = new System.Collections.Generic.List<NpcInfo>();
+
+            if (ViewModel != null)
+            {
+                // Add project NPCs (excluding the current NPC to avoid self-connection)
+                if (ViewModel.CurrentProject?.Npcs != null)
+                {
+                    foreach (var npc in ViewModel.CurrentProject.Npcs)
+                    {
+                        // Skip the current NPC to prevent self-connection
+                        if (CurrentNpc != null && npc.NpcId == CurrentNpc.NpcId)
+                            continue;
+
+                        npcList.Add(new NpcInfo
+                        {
+                            Id = npc.NpcId,
+                            DisplayName = npc.DisplayName,
+                            IsModNpc = true
+                        });
+                    }
+                }
+
+                // Add base game NPCs
+                AddBaseGameNpcs(npcList);
+
+                AvailableNpcs = new ObservableCollection<NpcInfo>(npcList.OrderBy(n => n.DisplayName));
+                
+                // Set AvailableNpcs on the NpcSelector control
+                if (ConnectionNpcSelector != null)
+                {
+                    ConnectionNpcSelector.AvailableNpcs = AvailableNpcs;
+                }
+            }
+        }
+
+        private static void AddBaseGameNpcs(System.Collections.Generic.List<NpcInfo> npcList)
+        {
+            // Same list as in PropertiesControl - all base game NPCs
+            // NPC IDs are in game format: firstname_lastname (lowercase with underscore)
+            var baseNpcs = new[]
+            {
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Anna Chesterfield"), DisplayName = "Anna Chesterfield", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Billy Kramer"), DisplayName = "Billy Kramer", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Cranky Frank"), DisplayName = "Cranky Frank", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Genghis Barn"), DisplayName = "Genghis Barn", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jane Lucero"), DisplayName = "Jane Lucero", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Javier Perez"), DisplayName = "Javier Perez", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Lisa Gardener"), DisplayName = "Lisa Gardener", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Mac Cooper"), DisplayName = "Mac Cooper", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Marco Baron"), DisplayName = "Marco Baron", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Melissa Wood"), DisplayName = "Melissa Wood", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Salvador Moreno"), DisplayName = "Salvador Moreno", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Brad Crosby"), DisplayName = "Brad Crosby", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Elizabeth Homley"), DisplayName = "Elizabeth Homley", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Eugene Buckley"), DisplayName = "Eugene Buckley", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Greg Fliggle"), DisplayName = "Greg Fliggle", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jeff Gilmore"), DisplayName = "Jeff Gilmore", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jennifer Rivera"), DisplayName = "Jennifer Rivera", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Kevin Oakley"), DisplayName = "Kevin Oakley", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Louis Fourier"), DisplayName = "Louis Fourier", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Lucy Pennington"), DisplayName = "Lucy Pennington", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Philip Wentworth"), DisplayName = "Philip Wentworth", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Randy Caulfield"), DisplayName = "Randy Caulfield", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Albert Hoover"), DisplayName = "Albert Hoover", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Austin Steiner"), DisplayName = "Austin Steiner", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Benji Coleman"), DisplayName = "Benji Coleman", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Beth Penn"), DisplayName = "Beth Penn", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Chloe Bowers"), DisplayName = "Chloe Bowers", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Donna Martin"), DisplayName = "Donna Martin", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Geraldine Poon"), DisplayName = "Geraldine Poon", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jessi Waters"), DisplayName = "Jessi Waters", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Kathy Henderson"), DisplayName = "Kathy Henderson", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Kyle Cooley"), DisplayName = "Kyle Cooley", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Ludwig Meyer"), DisplayName = "Ludwig Meyer", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Mick Lubbin"), DisplayName = "Mick Lubbin", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Ming"), DisplayName = "Ming", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Peggy Myers"), DisplayName = "Peggy Myers", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Peter File"), DisplayName = "Peter File", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Sam Thompson"), DisplayName = "Sam Thompson", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Alison Knight"), DisplayName = "Alison Knight", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Carl Bundy"), DisplayName = "Carl Bundy", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Chris Sullivan"), DisplayName = "Chris Sullivan", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Dennis Kennedy"), DisplayName = "Dennis Kennedy", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Hank Stevenson"), DisplayName = "Hank Stevenson", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Harold Colt"), DisplayName = "Harold Colt", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jackie Stevenson"), DisplayName = "Jackie Stevenson", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jack Knight"), DisplayName = "Jack Knight", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jeremy Wilkinson"), DisplayName = "Jeremy Wilkinson", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Karen Kennedy"), DisplayName = "Karen Kennedy", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Wei Long"), DisplayName = "Wei Long", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Fiona Hancock"), DisplayName = "Fiona Hancock", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Herbert Bleuball"), DisplayName = "Herbert Bleuball", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jen Heard"), DisplayName = "Jen Heard", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Leo Rivers"), DisplayName = "Leo Rivers", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Lily Turner"), DisplayName = "Lily Turner", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Michael Boog"), DisplayName = "Michael Boog", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Pearl Moore"), DisplayName = "Pearl Moore", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Ray Hoffman"), DisplayName = "Ray Hoffman", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Tobias Wentworth"), DisplayName = "Tobias Wentworth", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Walter Cussler"), DisplayName = "Walter Cussler", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Charles Rowland"), DisplayName = "Charles Rowland", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Dean Webster"), DisplayName = "Dean Webster", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Doris Lubbin"), DisplayName = "Doris Lubbin", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("George Greene"), DisplayName = "George Greene", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Jerry Montero"), DisplayName = "Jerry Montero", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Joyce Ball"), DisplayName = "Joyce Ball", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Keith Wagner"), DisplayName = "Keith Wagner", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Kim Delaney"), DisplayName = "Kim Delaney", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Meg Cooley"), DisplayName = "Meg Cooley", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Molly Presley"), DisplayName = "Molly Presley", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Shirley Watts"), DisplayName = "Shirley Watts", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Trent Sherman"), DisplayName = "Trent Sherman", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Officer Bailey"), DisplayName = "Officer Bailey", IsModNpc = false },
+                new NpcInfo { Id = ConvertDisplayNameToGameId("Bobby Cooley"), DisplayName = "Bobby Cooley", IsModNpc = false }
+            };
+
+            npcList.AddRange(baseNpcs);
+        }
+
+        private static string ConvertDisplayNameToGameId(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+                return "";
+
+            // Split by space and convert to lowercase
+            var parts = displayName.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
+            return string.Join("_", parts.Select(p => p.ToLowerInvariant()));
+        }
+
         // Relationship Defaults Handlers
         private void AddConnection_Click(object sender, RoutedEventArgs e)
         {
-            if (CurrentNpc == null || ConnectionIdTextBox == null || string.IsNullOrWhiteSpace(ConnectionIdTextBox.Text))
+            if (CurrentNpc == null || ConnectionNpcSelector == null || string.IsNullOrWhiteSpace(ConnectionNpcSelector.SelectedNpcId))
                 return;
 
-            var npcId = ConnectionIdTextBox.Text.Trim();
-            
-            // Validate the NPC ID format
-            if (!ValidationHelpers.IsValidNpcId(npcId))
-            {
-                // Auto-correct if possible
-                var corrected = ValidationHelpers.NormalizeNpcId(npcId);
-                if (ValidationHelpers.IsValidNpcId(corrected))
-                {
-                    npcId = corrected;
-                    ConnectionIdTextBox.Text = corrected;
-                }
-                else
-                {
-                    AppUtils.ShowWarning($"Invalid NPC ID format: {npcId}\n\nNPC IDs must be lowercase with underscores (e.g., 'bobby_cooley')");
-                    return;
-                }
-            }
+            var npcId = ConnectionNpcSelector.SelectedNpcId.Trim();
 
             if (!CurrentNpc.RelationshipDefaults.Connections.Contains(npcId))
             {
                 CurrentNpc.RelationshipDefaults.Connections.Add(npcId);
-                ConnectionIdTextBox.Text = string.Empty;
+                // Clear the selector
+                ConnectionNpcSelector.SelectedNpcId = string.Empty;
             }
         }
 
@@ -233,8 +369,7 @@ namespace Schedule1ModdingTool.Views
             if (CurrentNpc == null)
                 return;
 
-            var listBox = FindName("ConnectionIdTextBox") as System.Windows.Controls.ListBox;
-            if (listBox?.SelectedItem is string selectedConnection)
+            if (ConnectionsListBox?.SelectedItem is string selectedConnection)
             {
                 CurrentNpc.RelationshipDefaults.Connections.Remove(selectedConnection);
             }

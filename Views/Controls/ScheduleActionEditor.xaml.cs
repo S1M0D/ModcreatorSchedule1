@@ -38,9 +38,13 @@ namespace Schedule1ModdingTool.Views.Controls
         private void ScheduleActionEditor_Loaded(object sender, RoutedEventArgs e)
         {
             // Set AvailableBuildings on BuildingSelector after it's loaded
+            // This ensures the building list is populated, similar to how NPC combo boxes work
             if (BuildingSelector != null)
             {
                 BuildingSelector.AvailableBuildings = AvailableBuildings;
+                // Ensure the building list is updated after setting AvailableBuildings
+                // This is similar to how NpcComboBox_Loaded sets ItemsSource directly
+                BuildingSelector.UpdateBuildingList();
             }
         }
 

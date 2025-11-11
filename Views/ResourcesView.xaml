@@ -35,7 +35,9 @@
 			</StackPanel>
 
 			<ScrollViewer Grid.Row="1"
-			              VerticalScrollBarVisibility="Auto">
+			              VerticalScrollBarVisibility="Auto"
+			              ClipToBounds="True"
+			              Padding="4,4,4,4">
 				<Grid Margin="16">
 					<Grid.RowDefinitions>
 						<RowDefinition Height="Auto" />

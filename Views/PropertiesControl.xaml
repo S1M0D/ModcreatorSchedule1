@@ -103,7 +103,10 @@
 
                                 <StackPanel Margin="0,8,0,0"
                                             Visibility="{Binding SelectedQuest.CustomIcon, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <Label Content="Icon Resource" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Icon Resource" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Select a resource file to use as the quest icon. Should be 64x64 or 128x128 pixels"/>
+                                    </StackPanel>
                                     <ComboBox ItemsSource="{Binding CurrentProject.Resources}"
                                               SelectedValuePath="RelativePath"
                                               SelectedValue="{Binding SelectedQuest.IconFileName}"
@@ -122,21 +125,33 @@
                                                Visibility="{Binding SelectedQuest.IconFileName, Converter={StaticResource StringToVisibilityConverter}}" />
                                 </StackPanel>
 
-                                <CheckBox Content="Quest Rewards"
-                                          IsChecked="{Binding SelectedQuest.QuestRewards}"
-                                          Foreground="{StaticResource LightTextBrush}" Margin="0,8,0,2"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,2">
+                                    <CheckBox Content="Quest Rewards"
+                                              IsChecked="{Binding SelectedQuest.QuestRewards}"
+                                              Foreground="{StaticResource LightTextBrush}"/>
+                                    <views:InfoIcon TooltipText="If enabled, quest completion will grant rewards (XP, items, etc.) to the player"/>
+                                </StackPanel>
 
-                                <CheckBox Content="Generate Data Class"
-                                          IsChecked="{Binding SelectedQuest.GenerateDataClass}"
-                                          Foreground="{StaticResource LightTextBrush}" Margin="0,2"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                    <CheckBox Content="Generate Data Class"
+                                              IsChecked="{Binding SelectedQuest.GenerateDataClass}"
+                                              Foreground="{StaticResource LightTextBrush}"/>
+                                    <views:InfoIcon TooltipText="If enabled, generates a separate data class for quest state persistence"/>
+                                </StackPanel>
 
-                                <CheckBox Content="Track on Begin"
-                                          IsChecked="{Binding SelectedQuest.TrackOnBegin}"
-                                          Foreground="{StaticResource LightTextBrush}" Margin="0,8,0,2"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,2">
+                                    <CheckBox Content="Track on Begin"
+                                              IsChecked="{Binding SelectedQuest.TrackOnBegin}"
+                                              Foreground="{StaticResource LightTextBrush}"/>
+                                    <views:InfoIcon TooltipText="If enabled, quest will be automatically tracked in UI when it begins"/>
+                                </StackPanel>
 
-                                <CheckBox Content="Auto Complete on All Entries Complete"
-                                          IsChecked="{Binding SelectedQuest.AutoCompleteOnAllEntriesComplete}"
-                                          Foreground="{StaticResource LightTextBrush}" Margin="0,2"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                    <CheckBox Content="Auto Complete on All Entries Complete"
+                                              IsChecked="{Binding SelectedQuest.AutoCompleteOnAllEntriesComplete}"
+                                              Foreground="{StaticResource LightTextBrush}"/>
+                                    <views:InfoIcon TooltipText="If enabled, quest automatically completes when all objectives/entries are finished"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -434,7 +449,10 @@
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
                                                     <StackPanel Grid.Column="0">
-                                                        <Label Content="Name" Style="{StaticResource LabelStyle}"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Name" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Internal identifier for this objective. Used in code generation and quest logic"/>
+                                                        </StackPanel>
                                                         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                                                                  Style="{StaticResource TextBoxStyle}"/>
                                                     </StackPanel>
@@ -450,7 +468,10 @@
 
                                                 <!-- Objective Title -->
                                                 <StackPanel Grid.Row="1" Margin="0,0,0,12">
-                                                    <Label Content="Title" Style="{StaticResource LabelStyle}"/>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Label Content="Title" Style="{StaticResource LabelStyle}"/>
+                                                        <views:InfoIcon TooltipText="Display title shown to the player in quest UI and logs"/>
+                                                    </StackPanel>
                                                     <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}"
                                                              Style="{StaticResource TextBoxStyle}"/>
                                                 </StackPanel>
@@ -474,16 +495,22 @@
 
                                                 <!-- Required Progress -->
                                                 <StackPanel Grid.Row="3" Margin="0,0,0,12">
-                                                    <Label Content="Required Progress" Style="{StaticResource LabelStyle}"/>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Label Content="Required Progress" Style="{StaticResource LabelStyle}"/>
+                                                        <views:InfoIcon TooltipText="Amount of progress required to complete this objective. Typically 1.0 for single-step objectives"/>
+                                                    </StackPanel>
                                                     <TextBox Text="{Binding RequiredProgress, UpdateSourceTrigger=PropertyChanged}"
                                                              Style="{StaticResource TextBoxStyle}"/>
                                                 </StackPanel>
 
                                                 <!-- Location Settings -->
                                                 <StackPanel Grid.Row="4" Margin="0,0,0,12">
-                                                    <CheckBox Content="Has Location"
-                                                              IsChecked="{Binding HasLocation}"
-                                                              Foreground="{StaticResource LightTextBrush}" Margin="0,4,0,8"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                                                        <CheckBox Content="Has Location"
+                                                                  IsChecked="{Binding HasLocation}"
+                                                                  Foreground="{StaticResource LightTextBrush}"/>
+                                                        <views:InfoIcon TooltipText="If enabled, this objective has a specific location. Used for POI markers and location-based triggers"/>
+                                                    </StackPanel>
 
                                                     <controls:Vector3Input X="{Binding LocationX, Mode=TwoWay}"
                                                                           Y="{Binding LocationY, Mode=TwoWay}"

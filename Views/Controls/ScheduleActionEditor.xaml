@@ -76,13 +76,13 @@
 
                 <!-- StayInBuilding Fields -->
                 <StackPanel x:Name="StayInBuildingFields" Visibility="Collapsed">
-                    <Label Content="Building" Style="{StaticResource LabelStyle}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="Building" Style="{StaticResource LabelStyle}"/>
+                        <views:InfoIcon TooltipText="Select a building identifier type from S1API.Map.Buildings namespace"/>
+                    </StackPanel>
                     <views:BuildingSelector x:Name="BuildingSelector"
                                           SelectedBuildingTypeName="{Binding BuildingName, Mode=TwoWay}"
                                           Margin="0,0,0,8"/>
-                    <views:InfoIcon TooltipText="Select a building identifier type from S1API.Map.Buildings namespace"
-                                  HorizontalAlignment="Left"
-                                  Margin="0,0,0,8"/>
 
                     <Label Content="Duration (minutes)" Style="{StaticResource LabelStyle}"/>
                     <TextBox Text="{Binding Duration, UpdateSourceTrigger=PropertyChanged}"

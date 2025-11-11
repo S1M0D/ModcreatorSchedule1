@@ -347,7 +347,9 @@
 		<ScrollViewer Grid.Row="1"
 		              VerticalScrollBarVisibility="Auto"
 		              HorizontalScrollBarVisibility="Disabled"
-		              Background="{StaticResource DarkBackgroundBrush}">
+		              Background="{StaticResource DarkBackgroundBrush}"
+		              ClipToBounds="True"
+		              Padding="4,4,4,4">
 			<ItemsControl ItemsSource="{Binding WorkspaceViewModel.CurrentTiles}">
 				<ItemsControl.ItemsPanel>
 					<ItemsPanelTemplate>

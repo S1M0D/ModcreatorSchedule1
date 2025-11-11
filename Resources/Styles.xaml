@@ -43,25 +43,50 @@
 
     <Style x:Key="BaseTextBoxStyle" TargetType="TextBox">
         <Setter Property="Padding" Value="6,4"/>
-        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundDeeperBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Margin" Value="0,2,0,4"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2">
+                        <!-- Inset shadow: dark on top, light on bottom for "pushed in" effect -->
+                        <Border.Effect>
+                            <DropShadowEffect Color="#80000000" Direction="90" ShadowDepth="1" BlurRadius="2" Opacity="0.3"/>
+                        </Border.Effect>
+                        <ScrollViewer x:Name="PART_ContentHost" 
+                                      Margin="{TemplateBinding Padding}"
+                                      Focusable="False"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="TextBox" BasedOn="{StaticResource BaseTextBoxStyle}">
         <Style.Triggers>
             <Trigger Property="IsFocused" Value="True">
                 <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Background" Value="{StaticResource DarkBackgroundBaseBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <!-- Reduced inset shadow when focused -->
+                        <DropShadowEffect Color="#60000000" Direction="90" ShadowDepth="0.5" BlurRadius="1" Opacity="0.2"/>
+                    </Setter.Value>
+                </Setter>
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style TargetType="ComboBox">
-        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundDeeperBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="6,4"/>
         <Setter Property="Margin" Value="0,2,0,4"/>
@@ -72,7 +97,11 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="0">
+                            CornerRadius="2">
+                        <!-- Inset shadow for depth -->
+                        <Border.Effect>
+                            <DropShadowEffect Color="#80000000" Direction="90" ShadowDepth="1" BlurRadius="2" Opacity="0.3"/>
+                        </Border.Effect>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
@@ -151,9 +180,16 @@
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource DarkBackgroundBaseBrush}"/>
+                            <Setter TargetName="Border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#60000000" Direction="90" ShadowDepth="0.5" BlurRadius="1" Opacity="0.2"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentOrangeHoverBrush}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{StaticResource DarkBackgroundElevatedBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -170,9 +206,9 @@
     </Style>
 
     <Style x:Key="ComboBoxStyle" TargetType="ComboBox">
-        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundDeeperBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="6,4"/>
         <Setter Property="Margin" Value="0,2,0,4"/>
@@ -183,7 +219,11 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="0">
+                            CornerRadius="2">
+                        <!-- Inset shadow for depth -->
+                        <Border.Effect>
+                            <DropShadowEffect Color="#80000000" Direction="90" ShadowDepth="1" BlurRadius="2" Opacity="0.3"/>
+                        </Border.Effect>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
@@ -281,13 +321,13 @@
     </Style>
 
     <Style TargetType="ComboBoxItem">
-        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkBackgroundDeeperBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="Padding" Value="6,4"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{StaticResource DarkSelectedBrush}"/>
@@ -297,11 +337,16 @@
 
     <Style TargetType="GroupBox">
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="10"/>
         <Setter Property="Margin" Value="0,0,0,12"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#30000000" Direction="270" ShadowDepth="1" BlurRadius="3" Opacity="0.2"/>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="ListBox">
@@ -317,9 +362,9 @@
     </Style>
 
     <Style TargetType="ContextMenu">
-        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelMoreElevatedBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderAccentBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="2"/>
         <Setter Property="Template">
@@ -330,6 +375,10 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4"
                             Padding="{TemplateBinding Padding}">
+                        <Border.Effect>
+                            <!-- Context menus appear elevated -->
+                            <DropShadowEffect Color="#80000000" Direction="270" ShadowDepth="4" BlurRadius="8" Opacity="0.5"/>
+                        </Border.Effect>
                         <ItemsPresenter/>
                     </Border>
                 </ControlTemplate>
@@ -455,39 +504,122 @@
     </Style>
 
     <Style TargetType="ToolTip">
-        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelMoreElevatedBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderAccentBrush}"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <!-- Tooltips appear elevated -->
+                <DropShadowEffect Color="#80000000" Direction="270" ShadowDepth="3" BlurRadius="6" Opacity="0.4"/>
+            </Setter.Value>
+        </Setter>
+        <!-- Tooltip fade in animation - Guides users -->
+        <Style.Triggers>
+            <Trigger Property="IsVisible" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource TooltipFadeInAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="BaseButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="10,5"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="1" ScaleY="1"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <!-- Subtle shadow for buttons -->
+                <DropShadowEffect Color="#30000000" Direction="270" ShadowDepth="1" BlurRadius="3" Opacity="0.2"/>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
+            <!-- Hover animation - Highlights interactivity -->
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource ButtonHoverEnterAnimation}"/>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource ButtonHoverLeaveAnimation}"/>
+                </Trigger.ExitActions>
+                <Setter Property="Background" Value="{StaticResource DarkPanelMoreElevatedBrush}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <!-- Larger shadow on hover for more depth -->
+                        <DropShadowEffect Color="#60000000" Direction="270" ShadowDepth="3" BlurRadius="6" Opacity="0.4"/>
+                    </Setter.Value>
+                </Setter>
             </Trigger>
+            <!-- Click animation - Provides feedback -->
+            <EventTrigger RoutedEvent="PreviewMouseDown">
+                <BeginStoryboard Storyboard="{StaticResource ButtonClickAnimation}"/>
+            </EventTrigger>
+            <EventTrigger RoutedEvent="PreviewMouseUp">
+                <BeginStoryboard Storyboard="{StaticResource ButtonClickReleaseAnimation}"/>
+            </EventTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Opacity" Value="0.5"/>
+                <Setter Property="Effect" Value="{x:Null}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
 
     <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}"/>
 
-    <!-- Panel Styles -->
+    <!-- Panel Styles with Layered Colors and Shadows -->
     <Style x:Key="PanelStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Margin" Value="2"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform X="0" Y="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <!-- Subtle shadow: light glow on top, dark shadow at bottom -->
+                <DropShadowEffect Color="#40000000" Direction="270" ShadowDepth="2" BlurRadius="4" Opacity="0.25"/>
+            </Setter.Value>
+        </Setter>
+        <!-- Fade in animation when panel appears - Guides users -->
+        <Style.Triggers>
+            <Trigger Property="IsVisible" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource FadeInAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    
+    <!-- Elevated Panel Style for selected/active panels -->
+    <Style x:Key="PanelElevatedStyle" TargetType="Border" BasedOn="{StaticResource PanelStyle}">
+        <Setter Property="Background" Value="{StaticResource DarkPanelMoreElevatedBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderAccentBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#60000000" Direction="270" ShadowDepth="4" BlurRadius="8" Opacity="0.4"/>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Header Styles -->
@@ -505,6 +637,7 @@
         <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Effect" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -519,8 +652,13 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#1F2A3D"/>
+                <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#30000000" Direction="270" ShadowDepth="1" BlurRadius="2" Opacity="0.2"/>
+                    </Setter.Value>
+                </Setter>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Opacity" Value="0.4"/>
@@ -534,12 +672,25 @@
         <Setter Property="Foreground" Value="White"/>
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <!-- Accent buttons get more prominent shadow -->
+                <DropShadowEffect Color="#80000000" Direction="270" ShadowDepth="2" BlurRadius="4" Opacity="0.3"/>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#FFB347"/>
+                <Setter Property="Background" Value="{StaticResource AccentOrangeLightBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <!-- Larger shadow on hover for accent buttons -->
+                        <DropShadowEffect Color="#A0000000" Direction="270" ShadowDepth="4" BlurRadius="8" Opacity="0.5"/>
+                    </Setter.Value>
+                </Setter>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="Effect" Value="{x:Null}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -551,6 +702,7 @@
         <Setter Property="MinHeight" Value="32"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Effect" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -563,21 +715,54 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#30000000" Direction="270" ShadowDepth="1" BlurRadius="2" Opacity="0.2"/>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Blueprint Item Style -->
     <Style x:Key="BlueprintItemStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Margin" Value="4,2"/>
         <Setter Property="Padding" Value="8,6"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#30000000" Direction="270" ShadowDepth="1" BlurRadius="3" Opacity="0.2"/>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
+            <!-- Hover lift animation -->
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource CardHoverLiftAnimation}"/>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource CardHoverLiftReleaseAnimation}"/>
+                </Trigger.ExitActions>
+                <Setter Property="Background" Value="{StaticResource DarkPanelMoreElevatedBrush}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#60000000" Direction="270" ShadowDepth="3" BlurRadius="6" Opacity="0.4"/>
+                    </Setter.Value>
+                </Setter>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -601,9 +786,19 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
                             <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#80000000" Direction="270" ShadowDepth="2" BlurRadius="4" Opacity="0.3"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                            <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#30000000" Direction="270" ShadowDepth="1" BlurRadius="2" Opacity="0.2"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -618,16 +813,11 @@
         <Setter Property="Margin" Value="0,4,0,2"/>
     </Style>
 
-    <Style x:Key="TextBoxStyle" TargetType="TextBox">
-        <Setter Property="Padding" Value="6,4"/>
-        <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Margin" Value="0,2,0,4"/>
+    <Style x:Key="TextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource BaseTextBoxStyle}">
         <Style.Triggers>
             <Trigger Property="IsFocused" Value="True">
                 <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Background" Value="{StaticResource DarkBackgroundBaseBrush}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -687,25 +877,40 @@
     
     <!-- Tile Style -->
     <Style x:Key="CategoryTileStyle" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
-        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource DarkBorderSubtleBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="6"/>
         <Setter Property="Padding" Value="16"/>
-        <Setter Property="Margin" Value="8"/>
+        <Setter Property="Margin" Value="8,10,8,8"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform Y="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="Effect">
             <Setter.Value>
-                <DropShadowEffect Color="#40000000" Direction="270" ShadowDepth="2" BlurRadius="4" Opacity="0.3"/>
+                <!-- Reduced shadow blur to prevent overflow -->
+                <DropShadowEffect Color="#40000000" Direction="270" ShadowDepth="2" BlurRadius="3" Opacity="0.25"/>
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <!-- Card hover lift animation - Adds delight -->
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource CardHoverLiftAnimation}"/>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard Storyboard="{StaticResource CardHoverLiftReleaseAnimation}"/>
+                </Trigger.ExitActions>
+                <Setter Property="Background" Value="{StaticResource DarkPanelMoreElevatedBrush}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
                 <Setter Property="Effect">
                     <Setter.Value>
-                        <DropShadowEffect Color="#60000000" Direction="270" ShadowDepth="4" BlurRadius="8" Opacity="0.5"/>
+                        <!-- Larger shadow on hover for more depth -->
+                        <DropShadowEffect Color="#60000000" Direction="270" ShadowDepth="4" BlurRadius="8" Opacity="0.4"/>
                     </Setter.Value>
                 </Setter>
             </Trigger>
@@ -721,6 +926,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Effect" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -735,8 +941,13 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#1F2A3D"/>
+                <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
                 <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#30000000" Direction="270" ShadowDepth="1" BlurRadius="2" Opacity="0.2"/>
+                    </Setter.Value>
+                </Setter>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -745,32 +956,80 @@
     <Style x:Key="TabItemStyle" TargetType="TabItem">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Padding" Value="12,8"/>
         <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="Normal"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TabItem">
-                    <Border Background="{TemplateBinding Background}"
+                    <Border x:Name="TabBorder"
+                            Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
-                            Margin="2,0">
-                        <ContentPresenter ContentSource="Header" 
-                                        HorizontalAlignment="Center" 
-                                        VerticalAlignment="Center"/>
+                            Margin="0,0,2,0"
+                            CornerRadius="4,4,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ContentPresenter Grid.Row="0"
+                                            ContentSource="Header" 
+                                            HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,0,2"/>
+                            <!-- Bottom border indicator for selected tab -->
+                            <Border x:Name="BottomIndicator"
+                                    Grid.Row="1"
+                                    Height="2"
+                                    Background="Transparent"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="4,0,4,0"
+                                    CornerRadius="1"/>
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}"/>
+                            <!-- Selected tabs use elevated color to appear "on top" -->
+                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter TargetName="BottomIndicator" Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
+                            <Setter TargetName="TabBorder" Property="Effect">
+                                <Setter.Value>
+                                    <!-- Subtle glow on selected tab -->
+                                    <DropShadowEffect Color="#40FFFFFF" Direction="90" ShadowDepth="1" BlurRadius="3" Opacity="0.15"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource DarkPanelBaseBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+                            <Setter TargetName="BottomIndicator" Property="Background" Value="{StaticResource AccentOrangeHoverBrush}"/>
+                            <Setter TargetName="BottomIndicator" Property="Height" Value="1"/>
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="False"/>
+                                <Condition Property="IsMouseOver" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Foreground" Value="{StaticResource MediumTextBrush}"/>
+                            <Setter Property="FontWeight" Value="Normal"/>
+                        </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <!-- Tab switch animation - Provides feedback -->
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource TabSwitchAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Navigation Rail Tab Style - High Contrast for Visibility -->
@@ -788,7 +1047,8 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
-                            Margin="4,2">
+                            Margin="4,2"
+                            CornerRadius="4">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -800,7 +1060,8 @@
                                     Width="3"
                                     Background="Transparent"
                                     Margin="0,0,8,0"
-                                    VerticalAlignment="Stretch"/>
+                                    VerticalAlignment="Stretch"
+                                    CornerRadius="1.5"/>
                             <ContentPresenter Grid.Column="1"
                                             ContentSource="Header" 
                                             HorizontalAlignment="Left" 
@@ -809,12 +1070,19 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource DarkPanelBrush}"/>
+                            <!-- Selected tabs use elevated color -->
+                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
                             <Setter TargetName="SelectionIndicator" Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
+                            <Setter TargetName="TabBorder" Property="Effect">
+                                <Setter.Value>
+                                    <!-- Light glow on selected navigation tab -->
+                                    <DropShadowEffect Color="#40FFFFFF" Direction="90" ShadowDepth="1" BlurRadius="2" Opacity="0.1"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+                            <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource DarkPanelBaseBrush}"/>
                             <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
                         </Trigger>
                         <MultiTrigger>
@@ -832,14 +1100,34 @@
     
     <!-- Selected Navigation Item Style -->
     <Style x:Key="SelectedNavigationItemStyle" TargetType="Button" BasedOn="{StaticResource NavigationItemStyle}">
-        <Setter Property="Background" Value="#1F2A3D"/>
+        <Setter Property="Background" Value="{StaticResource DarkPanelElevatedBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <!-- Light glow on selected navigation item -->
+                <DropShadowEffect Color="#40FFFFFF" Direction="90" ShadowDepth="1" BlurRadius="2" Opacity="0.1"/>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Validation Styles -->
     <Style x:Key="InvalidTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource BaseTextBoxStyle}">
         <Setter Property="BorderBrush" Value="{StaticResource ErrorBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <TranslateTransform X="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <!-- Shake animation for validation errors - Provides feedback -->
+        <Style.Triggers>
+            <Trigger Property="Validation.HasError" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource ShakeAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="ValidationErrorTextStyle" TargetType="TextBlock">
@@ -847,6 +1135,71 @@
         <Setter Property="FontSize" Value="11"/>
         <Setter Property="Margin" Value="4,2,0,0"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
+        <!-- Fade in animation for error messages -->
+        <Style.Triggers>
+            <Trigger Property="IsVisible" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource FadeInAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Loading Indicator Style - Indicates system status -->
+    <Style x:Key="LoadingIndicatorStyle" TargetType="Ellipse">
+        <Setter Property="Width" Value="20"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="Stroke" Value="{StaticResource AccentOrangeBrush}"/>
+        <Setter Property="StrokeThickness" Value="2"/>
+        <Setter Property="StrokeDashArray" Value="5,5"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <RotateTransform Angle="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Style.Triggers>
+            <Trigger Property="IsVisible" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource RotateLoadingAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Pulse Loading Style - For status indicators -->
+    <Style x:Key="PulseLoadingStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource AccentOrangeBrush}"/>
+        <Setter Property="CornerRadius" Value="50"/>
+        <Setter Property="Width" Value="12"/>
+        <Setter Property="Height" Value="12"/>
+        <Style.Triggers>
+            <Trigger Property="IsVisible" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource PulseAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Success Indicator Style - Provides feedback -->
+    <Style x:Key="SuccessIndicatorStyle" TargetType="Path">
+        <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
+        <Setter Property="Stroke" Value="{StaticResource SuccessBrush}"/>
+        <Setter Property="StrokeThickness" Value="2"/>
+        <Setter Property="RenderTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="0" ScaleY="0"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+        <Style.Triggers>
+            <Trigger Property="IsVisible" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard Storyboard="{StaticResource SuccessCheckAnimation}"/>
+                </Trigger.EnterActions>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
 </ResourceDictionary>

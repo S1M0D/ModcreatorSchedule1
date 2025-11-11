@@ -7,7 +7,6 @@
              mc:Ignorable="d"
              d:DesignHeight="30" d:DesignWidth="300">
     <ComboBox x:Name="BuildingComboBox"
-              SelectedValue="{Binding SelectedBuildingTypeName, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
               SelectedValuePath="TypeName"
               FontSize="10"
               IsEditable="True"

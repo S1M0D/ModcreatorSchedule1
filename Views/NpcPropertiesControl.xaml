@@ -142,7 +142,10 @@
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Relationship Defaults" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
 
-                                    <Label Content="Starting Relationship Delta" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Starting Relationship Delta" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Initial relationship level (0-5): 0=Stranger, 1=Acquaintance, 2.5=Friend, 4=Good Friend, 5=Best Friend"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.RelationshipDefaults.StartingDelta, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
@@ -153,17 +156,23 @@
                                         <views:InfoIcon TooltipText="If checked, NPC is immediately available for interaction"/>
                                     </StackPanel>
 
-                                    <Label Content="Unlock Type" Style="{StaticResource LabelStyle}" Margin="0,8,0,0"/>
-                                    <ComboBox SelectedItem="{Binding SelectedNpc.RelationshipDefaults.UnlockType}"
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Label Content="Unlock Type" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="How the NPC becomes available: DirectApproach = player can approach directly, Recommendation = requires introduction from connected NPC"/>
+                                    </StackPanel>
+                                    <ComboBox SelectedValue="{Binding SelectedNpc.RelationshipDefaults.UnlockType}"
+                                              SelectedValuePath="Content"
                                               Style="{StaticResource ComboBoxStyle}">
                                         <ComboBoxItem Content="DirectApproach"/>
-                                        <ComboBoxItem Content="Quest"/>
-                                        <ComboBoxItem Content="Story"/>
-                                        <ComboBoxItem Content="Relationship"/>
+                                        <ComboBoxItem Content="Recommendation"/>
                                     </ComboBox>
 
-                                    <Label Content="Connected NPCs (IDs)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0"/>
-                                    <ListBox ItemsSource="{Binding SelectedNpc.RelationshipDefaults.Connections}"
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Label Content="Connected NPCs" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="NPCs in this NPC's social network. Used for recommendations and relationship propagation"/>
+                                    </StackPanel>
+                                    <ListBox x:Name="ConnectionsListBox"
+                                             ItemsSource="{Binding SelectedNpc.RelationshipDefaults.Connections}"
                                              Height="100"
                                              Background="{StaticResource DarkBackgroundBrush}"
                                              Foreground="{StaticResource LightTextBrush}"
@@ -175,10 +184,9 @@
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <controls:ValidatedTextBox x:Name="ConnectionIdTextBox"
-                                                                   Grid.Column="0"
-                                                                   ValidationType="NpcId"
-                                                                   Margin="0,0,4,0"/>
+                                        <views:NpcSelector x:Name="ConnectionNpcSelector"
+                                                           Grid.Column="0"
+                                                           Margin="0,0,4,0"/>
                                         <Button Grid.Column="1" Content="Add"
                                                 Style="{StaticResource IconButtonStyle}"
                                                 Click="AddConnection_Click"
@@ -222,27 +230,45 @@
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Physical Attributes" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
 
-                                    <Label Content="Gender (0-1)" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Gender (0-1)" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Gender value: 0.0 = male, 1.0 = female. Values between 0 and 1 blend characteristics"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.Appearance.Gender, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Height" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Height" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="NPC height value (0.0 = short, 1.0 = tall). Affects overall scale and proportions"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.Appearance.Height, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Weight" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Weight" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="NPC weight value (0.0 = thin, 1.0 = heavy). Affects body proportions and shape"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.Appearance.Weight, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Pupil Dilation" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Pupil Dilation" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Controls pupil dilation (0.0-1.0). Higher values = more dilated pupils"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.Appearance.PupilDilation, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Eyebrow Scale" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Eyebrow Scale" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Scale factor for eyebrow size (0.0-1.0). Affects eyebrow width"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowScale, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Eyebrow Thickness" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Eyebrow Thickness" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Thickness value for eyebrows (0.0-1.0). Higher values = thicker eyebrows"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowThickness, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
                                 </StackPanel>
@@ -251,7 +277,10 @@
                             <Border Style="{StaticResource PanelStyle}">
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Hair" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
-                                    <Label Content="Hair Path" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Hair Path" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Resource path to the hair style asset (e.g., 'Avatar/Hair/Spiky/Spiky'). Use presets or enter custom path"/>
+                                    </StackPanel>
                                     <ComboBox ItemsSource="{x:Static presets:AppearancePresets.HairStyles}"
                                               IsEditable="True"
                                               Text="{Binding SelectedNpc.Appearance.HairPath, UpdateSourceTrigger=PropertyChanged}">
@@ -570,23 +599,38 @@
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Spending &amp; Orders" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
 
-                                    <Label Content="Min Weekly Spending" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Min Weekly Spending" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Minimum amount ($) this customer will spend per week on products"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MinWeeklySpending, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Max Weekly Spending" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Max Weekly Spending" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Maximum amount ($) this customer will spend per week on products"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MaxWeeklySpending, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Min Orders Per Week" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Min Orders Per Week" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Minimum number of orders this customer will place per week"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MinOrdersPerWeek, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Max Orders Per Week" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Max Orders Per Week" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Maximum number of orders this customer will place per week"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MaxOrdersPerWeek, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Preferred Order Day" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Preferred Order Day" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Day of the week when this customer prefers to place orders"/>
+                                    </StackPanel>
                                     <ComboBox SelectedItem="{Binding SelectedNpc.CustomerDefaults.PreferredOrderDay}"
                                               Style="{StaticResource ComboBoxStyle}">
                                         <ComboBoxItem Content="Monday"/>
@@ -609,7 +653,10 @@
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Customer Behavior" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
 
-                                    <Label Content="Customer Standards" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Customer Standards" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Quality expectations: VeryLow/Low = accepts low quality, Moderate = expects decent quality, High/VeryHigh = demands high quality"/>
+                                    </StackPanel>
                                     <ComboBox SelectedItem="{Binding SelectedNpc.CustomerDefaults.CustomerStandards}"
                                               Style="{StaticResource ComboBoxStyle}">
                                         <ComboBoxItem Content="VeryLow"/>
@@ -619,13 +666,19 @@
                                         <ComboBoxItem Content="VeryHigh"/>
                                     </ComboBox>
 
-                                    <CheckBox Content="Allow Direct Approach"
-                                              IsChecked="{Binding SelectedNpc.CustomerDefaults.AllowDirectApproach}"
-                                              Foreground="{StaticResource LightTextBrush}" Margin="0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8">
+                                        <CheckBox Content="Allow Direct Approach"
+                                                  IsChecked="{Binding SelectedNpc.CustomerDefaults.AllowDirectApproach}"
+                                                  Foreground="{StaticResource LightTextBrush}"/>
+                                        <views:InfoIcon TooltipText="If enabled, player can approach this customer directly without introduction"/>
+                                    </StackPanel>
 
-                                    <CheckBox Content="Guarantee First Sample"
-                                              IsChecked="{Binding SelectedNpc.CustomerDefaults.GuaranteeFirstSample}"
-                                              Foreground="{StaticResource LightTextBrush}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox Content="Guarantee First Sample"
+                                                  IsChecked="{Binding SelectedNpc.CustomerDefaults.GuaranteeFirstSample}"
+                                                  Foreground="{StaticResource LightTextBrush}"/>
+                                        <views:InfoIcon TooltipText="If enabled, customer will always accept the first sample product offered"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -655,15 +708,24 @@
                                 <StackPanel Margin="12">
                                     <TextBlock Text="Risk &amp; Addiction" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
 
-                                    <Label Content="Call Police Chance (0-1)" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Call Police Chance (0-1)" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Probability (0.0-1.0) that customer will call police during a deal. 0 = never, 1 = always"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.CustomerDefaults.CallPoliceChance, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Base Addiction" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Base Addiction" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Base addiction level (0.0-1.0). Higher values = more addicted, affects buying behavior"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.CustomerDefaults.BaseAddiction, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
-                                    <Label Content="Dependence Multiplier" Style="{StaticResource LabelStyle}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Dependence Multiplier" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Multiplier for addiction growth over time. Higher values = faster addiction increase"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding SelectedNpc.CustomerDefaults.DependenceMultiplier, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource TextBoxStyle}"/>
                                 </StackPanel>
@@ -772,17 +834,26 @@
                         <!-- Economic Settings -->
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Economic Settings" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
+                                    <TextBlock Text="Economic Settings" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
 
-                                <Label Content="Signing Fee ($)" Style="{StaticResource LabelStyle}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Signing Fee ($)" Style="{StaticResource LabelStyle}"/>
+                                    <views:InfoIcon TooltipText="One-time fee ($) player must pay to recruit this dealer"/>
+                                </StackPanel>
                                 <TextBox Text="{Binding SelectedNpc.DealerDefaults.SigningFee, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource TextBoxStyle}"/>
 
-                                <Label Content="Commission Cut (0-1)" Style="{StaticResource LabelStyle}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Commission Cut (0-1)" Style="{StaticResource LabelStyle}"/>
+                                    <views:InfoIcon TooltipText="Dealer's commission rate (0.0-1.0). 0.15 = 15% commission on sales"/>
+                                </StackPanel>
                                 <TextBox Text="{Binding SelectedNpc.DealerDefaults.CommissionCut, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource TextBoxStyle}"/>
 
-                                <Label Content="Dealer Type" Style="{StaticResource LabelStyle}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Dealer Type" Style="{StaticResource LabelStyle}"/>
+                                    <views:InfoIcon TooltipText="PlayerDealer = works for player, IndependentDealer = operates independently, RivalDealer = competitor"/>
+                                </StackPanel>
                                 <ComboBox SelectedItem="{Binding SelectedNpc.DealerDefaults.DealerType}"
                                           Style="{StaticResource ComboBoxStyle}">
                                     <ComboBoxItem Content="PlayerDealer"/>
@@ -900,12 +971,18 @@
                                           IsChecked="{Binding SelectedNpc.InventoryDefaults.EnableRandomCash}"
                                           Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
 
-                                <Label Content="Min Cash Amount ($)" Style="{StaticResource LabelStyle}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Min Cash Amount ($)" Style="{StaticResource LabelStyle}"/>
+                                    <views:InfoIcon TooltipText="Minimum cash amount ($) NPC will spawn with (randomized between min and max)"/>
+                                </StackPanel>
                                 <TextBox Text="{Binding SelectedNpc.InventoryDefaults.RandomCashMin, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource TextBoxStyle}"
                                          IsEnabled="{Binding SelectedNpc.InventoryDefaults.EnableRandomCash}"/>
 
-                                <Label Content="Max Cash Amount ($)" Style="{StaticResource LabelStyle}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Max Cash Amount ($)" Style="{StaticResource LabelStyle}"/>
+                                    <views:InfoIcon TooltipText="Maximum cash amount ($) NPC will spawn with (randomized between min and max)"/>
+                                </StackPanel>
                                 <TextBox Text="{Binding SelectedNpc.InventoryDefaults.RandomCashMax, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource TextBoxStyle}"
                                          IsEnabled="{Binding SelectedNpc.InventoryDefaults.EnableRandomCash}"/>

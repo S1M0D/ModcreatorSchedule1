@@ -31,6 +31,7 @@ namespace Schedule1ModdingTool.Models
         private string _s1ApiDllPath = "";
         private ExperienceLevel _experienceLevel = ExperienceLevel.SomeCoding;
         private bool _isFirstStartComplete = false;
+        private int _undoHistorySize = 5;
 
         [JsonProperty("gameInstallPath")]
         public string GameInstallPath
@@ -86,6 +87,18 @@ namespace Schedule1ModdingTool.Models
         {
             get => _isFirstStartComplete;
             set => SetProperty(ref _isFirstStartComplete, value);
+        }
+
+        [JsonProperty("undoHistorySize")]
+        public int UndoHistorySize
+        {
+            get => _undoHistorySize;
+            set
+            {
+                // Clamp value between 1 and 50
+                var clampedValue = System.Math.Max(1, System.Math.Min(50, value));
+                SetProperty(ref _undoHistorySize, clampedValue);
+            }
         }
 
         public static ModSettings Load()

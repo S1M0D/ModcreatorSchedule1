@@ -47,7 +47,6 @@ namespace Schedule1ModdingTool.ViewModels
         private void SaveSettings()
         {
             Settings.Save();
-            AppUtils.ShowInfo("Settings saved successfully.");
             CloseRequested?.Invoke();
         }
 

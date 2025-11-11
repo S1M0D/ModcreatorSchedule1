@@ -5,7 +5,13 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Background="{StaticResource DarkBackgroundBrush}"
-        Foreground="{StaticResource LightTextBrush}">
+        Foreground="{StaticResource LightTextBrush}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        RenderOptions.BitmapScalingMode="HighQuality"
+        RenderOptions.ClearTypeHint="Enabled"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 	<Border Margin="10"
 	        Background="{StaticResource DarkPanelBrush}"
 	        Padding="16">

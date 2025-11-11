@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="Schedule 1 Modding Tool"
-        Height="300" Width="450"
+        Title="Schedule 1 Mod Creator"
+        Height="550" Width="700"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="{StaticResource DarkBackgroundBrush}"
@@ -14,8 +15,14 @@
 	<Border Background="{StaticResource DarkPanelBrush}"
 	        BorderBrush="{StaticResource DarkBorderBrush}"
 	        BorderThickness="1"
-	        CornerRadius="8"
-	        Padding="24">
+	        CornerRadius="12">
+		<Border.Effect>
+			<DropShadowEffect Color="Black" 
+			                  Direction="270" 
+			                  ShadowDepth="8" 
+			                  Opacity="0.4" 
+			                  BlurRadius="20" />
+		</Border.Effect>
 		<Grid>
 			<Grid.RowDefinitions>
 				<RowDefinition Height="Auto" />
@@ -23,124 +30,259 @@
 				<RowDefinition Height="Auto" />
 			</Grid.RowDefinitions>
 
-			<!-- Title -->
-			<TextBlock Grid.Row="0"
-			           Text="Welcome to Schedule 1 Modding Tool!"
-			           FontSize="18"
-			           FontWeight="Bold"
-			           Foreground="{StaticResource LightTextBrush}"
-			           HorizontalAlignment="Center"
-			           Margin="0,0,0,24" />
+			<!-- Header Section with Logo and Social Media -->
+			<Grid Grid.Row="0" MinHeight="130" MouseDown="Window_MouseDown">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="*" MinHeight="110" />
+					<RowDefinition Height="Auto" />
+				</Grid.RowDefinitions>
 
-			<!-- Options -->
-			<StackPanel Grid.Row="1"
-			            VerticalAlignment="Center">
-				<Button Content="Create New Project"
-				        Click="CreateNewProject_Click"
-				        Margin="0,0,0,16"
-				        Padding="16,12"
-				        FontSize="14"
-				        FontWeight="SemiBold"
-				        Background="{StaticResource DarkBackgroundBrush}"
-				        BorderBrush="{StaticResource DarkBorderBrush}"
-				        BorderThickness="1"
-				        HorizontalAlignment="Stretch">
-					<Button.Style>
-						<Style TargetType="Button">
-							<Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}" />
-							<Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
-							<Setter Property="BorderThickness" Value="1" />
-							<Setter Property="Padding" Value="16,12" />
-							<Setter Property="FontSize" Value="14" />
-							<Setter Property="FontWeight" Value="SemiBold" />
-							<Setter Property="HorizontalAlignment" Value="Stretch" />
-							<Setter Property="Foreground" Value="{StaticResource LightTextBrush}" />
-							<Setter Property="Cursor" Value="Hand" />
-							<Setter Property="Template">
-								<Setter.Value>
-									<ControlTemplate TargetType="Button">
-										<Border Background="{TemplateBinding Background}"
-										        BorderBrush="{TemplateBinding BorderBrush}"
-										        BorderThickness="{TemplateBinding BorderThickness}"
-										        CornerRadius="4"
-										        Padding="{TemplateBinding Padding}">
-											<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-										</Border>
-									</ControlTemplate>
-								</Setter.Value>
-							</Setter>
-							<Style.Triggers>
-								<Trigger Property="IsMouseOver" Value="True">
-									<Setter Property="Background" Value="{StaticResource DarkHoverBrush}" />
-									<Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}" />
-								</Trigger>
-							</Style.Triggers>
-						</Style>
-					</Button.Style>
-				</Button>
+				<!-- Header Background with Gradient Effect -->
+				<Border Grid.Row="0" 
+				        Grid.RowSpan="2"
+				        Background="{StaticResource DarkBackgroundDeeperBrush}">
+					<Border.Effect>
+						<DropShadowEffect Color="Black" 
+						                  Direction="270" 
+						                  ShadowDepth="2" 
+						                  Opacity="0.3" 
+						                  BlurRadius="4" />
+					</Border.Effect>
+				</Border>
 
-				<Button Content="Open Existing Project"
-				        Click="OpenProject_Click"
-				        Padding="16,12"
-				        FontSize="14"
-				        FontWeight="SemiBold"
-				        Background="{StaticResource DarkBackgroundBrush}"
-				        BorderBrush="{StaticResource DarkBorderBrush}"
-				        BorderThickness="1"
-				        HorizontalAlignment="Stretch">
-					<Button.Style>
-						<Style TargetType="Button">
-							<Setter Property="Background" Value="{StaticResource DarkBackgroundBrush}" />
-							<Setter Property="BorderBrush" Value="{StaticResource DarkBorderBrush}" />
-							<Setter Property="BorderThickness" Value="1" />
-							<Setter Property="Padding" Value="16,12" />
-							<Setter Property="FontSize" Value="14" />
-							<Setter Property="FontWeight" Value="SemiBold" />
-							<Setter Property="HorizontalAlignment" Value="Stretch" />
-							<Setter Property="Foreground" Value="{StaticResource LightTextBrush}" />
-							<Setter Property="Cursor" Value="Hand" />
-							<Setter Property="Template">
-								<Setter.Value>
-									<ControlTemplate TargetType="Button">
-										<Border Background="{TemplateBinding Background}"
-										        BorderBrush="{TemplateBinding BorderBrush}"
-										        BorderThickness="{TemplateBinding BorderThickness}"
-										        CornerRadius="4"
-										        Padding="{TemplateBinding Padding}">
-											<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-										</Border>
-									</ControlTemplate>
-								</Setter.Value>
-							</Setter>
-							<Style.Triggers>
-								<Trigger Property="IsMouseOver" Value="True">
-									<Setter Property="Background" Value="{StaticResource DarkHoverBrush}" />
-									<Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}" />
-								</Trigger>
-							</Style.Triggers>
-						</Style>
-					</Button.Style>
-				</Button>
-			</StackPanel>
+				<!-- Content Grid -->
+				<Grid Grid.Row="0" Margin="0,0,0,0" MouseDown="Window_MouseDown">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="*" />
+						<ColumnDefinition Width="Auto" />
+					</Grid.ColumnDefinitions>
 
-			<!-- Cancel/Exit Button -->
-			<Button Grid.Row="2"
-			        Content="Exit"
-			        Click="Exit_Click"
-			        HorizontalAlignment="Right"
-			        Margin="0,16,0,0"
-			        Padding="12,6"
-			        Foreground="{StaticResource MediumTextBrush}">
-				<Button.Style>
-					<Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
-						<Style.Triggers>
-							<Trigger Property="IsMouseOver" Value="True">
-								<Setter Property="Foreground" Value="{StaticResource AccentOrangeBrush}" />
-							</Trigger>
-						</Style.Triggers>
-					</Style>
-				</Button.Style>
-			</Button>
+					<!-- Logo/Title Section -->
+					<StackPanel Grid.Column="0"
+					           VerticalAlignment="Center"
+					           HorizontalAlignment="Left"
+					           Margin="30,0,0,0"
+					           MouseDown="Window_MouseDown">
+						<TextBlock Text="SCHEDULE 1"
+						          FontSize="32"
+						          FontWeight="Bold"
+						          Margin="0,0,0,2">
+							<TextBlock.Foreground>
+								<SolidColorBrush Color="#90C56F" />
+							</TextBlock.Foreground>
+						</TextBlock>
+						<StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+							<TextBlock Text="MOD CREATOR"
+							          FontSize="32"
+							          FontWeight="Bold"
+							          Foreground="{StaticResource AccentOrangeBrush}" />
+						</StackPanel>
+						<TextBlock Text="Visual Quest and NPC Editor"
+						          FontSize="11"
+						          FontWeight="Regular"
+						          Foreground="{StaticResource MediumTextBrush}"
+						          Margin="0,8,0,0"
+						          Opacity="0.8" />
+					</StackPanel>
+
+					<!-- Social Media Icons - Top Right -->
+					<StackPanel Grid.Column="1"
+					           Orientation="Horizontal"
+					           VerticalAlignment="Top"
+					           HorizontalAlignment="Right"
+					           Margin="0,16,20,0">
+						<Button ToolTip="GitHub Repository"
+						        Click="GitHub_Click"
+						        Style="{StaticResource IconButtonStyle}"
+						        Width="36" Height="36"
+						        Margin="4,0"
+						        Padding="0">
+							<materialDesign:PackIcon Kind="Github"
+							                         Width="20" Height="20"
+							                         Foreground="{StaticResource MediumTextBrush}" />
+						</Button>
+						<Button ToolTip="Discord Community"
+						        Click="Discord_Click"
+						        Style="{StaticResource IconButtonStyle}"
+						        Width="36" Height="36"
+						        Margin="4,0"
+						        Padding="0">
+							<materialDesign:PackIcon Kind="Message"
+							                         Width="20" Height="20"
+							                         Foreground="{StaticResource MediumTextBrush}" />
+						</Button>
+						<Button ToolTip="Report Issues"
+						        Click="Issues_Click"
+						        Style="{StaticResource IconButtonStyle}"
+						        Width="36" Height="36"
+						        Margin="4,0"
+						        Padding="0">
+							<materialDesign:PackIcon Kind="Bug"
+							                         Width="20" Height="20"
+							                         Foreground="{StaticResource MediumTextBrush}" />
+						</Button>
+					</StackPanel>
+				</Grid>
+
+				<!-- Bottom Border Separator -->
+				<Border Grid.Row="1"
+				        Height="1"
+				        Background="{StaticResource DarkBorderBrush}"
+				        Opacity="0.5"
+				        Margin="0,0,0,0" />
+			</Grid>
+
+			<!-- Main Action Buttons Section -->
+			<Grid Grid.Row="1" Margin="40,30">
+				<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="400">
+					<!-- New Project Button -->
+					<Border Background="{StaticResource DarkBackgroundBrush}"
+					        BorderBrush="{StaticResource DarkBorderBrush}"
+					        BorderThickness="1"
+					        CornerRadius="6"
+					        Margin="0,0,0,16"
+					        Cursor="Hand"
+					        MouseEnter="ActionButton_MouseEnter"
+					        MouseLeave="ActionButton_MouseLeave"
+					        MouseLeftButtonDown="CreateNewProject_Click">
+						<Grid Height="70">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto" />
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+
+							<materialDesign:PackIcon Grid.Column="0"
+							                        Kind="Plus"
+							                        Width="32" Height="32"
+							                        Foreground="{StaticResource AccentOrangeBrush}"
+							                        VerticalAlignment="Center"
+							                        Margin="20,0" />
+
+							<TextBlock Grid.Column="1"
+							          Text="New Project"
+							          FontSize="16"
+							          FontWeight="SemiBold"
+							          Foreground="{StaticResource LightTextBrush}"
+							          VerticalAlignment="Center" />
+						</Grid>
+					</Border>
+
+					<!-- Open Project Button -->
+					<Border Background="{StaticResource DarkBackgroundBrush}"
+					        BorderBrush="{StaticResource DarkBorderBrush}"
+					        BorderThickness="1"
+					        CornerRadius="6"
+					        Cursor="Hand"
+					        MouseEnter="ActionButton_MouseEnter"
+					        MouseLeave="ActionButton_MouseLeave"
+					        MouseLeftButtonDown="OpenProject_Click">
+						<Grid Height="70">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="Auto" />
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+
+							<materialDesign:PackIcon Grid.Column="0"
+							                        Kind="FolderOpen"
+							                        Width="32" Height="32"
+							                        Foreground="{StaticResource AccentOrangeBrush}"
+							                        VerticalAlignment="Center"
+							                        Margin="20,0" />
+
+							<TextBlock Grid.Column="1"
+							          Text="Open Project"
+							          FontSize="16"
+							          FontWeight="SemiBold"
+							          Foreground="{StaticResource LightTextBrush}"
+							          VerticalAlignment="Center" />
+						</Grid>
+					</Border>
+				</StackPanel>
+			</Grid>
+
+			<!-- Footer with Version and Utility Buttons -->
+			<Grid Grid.Row="2" Background="{StaticResource DarkBackgroundDeeperBrush}" Height="60">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*" />
+					<ColumnDefinition Width="Auto" />
+					<ColumnDefinition Width="*" />
+				</Grid.ColumnDefinitions>
+
+				<!-- Version Info -->
+				<StackPanel Grid.Column="0"
+				           Orientation="Horizontal"
+				           VerticalAlignment="Center"
+				           HorizontalAlignment="Left"
+				           Margin="20,0">
+					<TextBlock Text="Version 1.0.0"
+					          FontSize="11"
+					          Foreground="{StaticResource DimTextBrush}"
+					          VerticalAlignment="Center" />
+				</StackPanel>
+
+				<!-- Utility Buttons -->
+				<StackPanel Grid.Column="1"
+				           Orientation="Horizontal"
+				           VerticalAlignment="Center"
+				           HorizontalAlignment="Center">
+					<Button Content="Donate"
+					        Click="Donate_Click"
+					        ToolTip="Support Development"
+					        Padding="12,6"
+					        Margin="4,0"
+					        FontSize="11"
+					        Foreground="{StaticResource MediumTextBrush}"
+					        Style="{StaticResource IconButtonStyle}">
+						<Button.ContentTemplate>
+							<DataTemplate>
+								<StackPanel Orientation="Horizontal">
+									<materialDesign:PackIcon Kind="Heart"
+									                         Width="14" Height="14"
+									                         Margin="0,0,4,0"
+									                         Foreground="{StaticResource AccentOrangeBrush}" />
+									<TextBlock Text="Donate" VerticalAlignment="Center" />
+								</StackPanel>
+							</DataTemplate>
+						</Button.ContentTemplate>
+					</Button>
+
+					<Button Content="Preferences"
+					        Click="Preferences_Click"
+					        ToolTip="Application Settings"
+					        Padding="12,6"
+					        Margin="4,0"
+					        FontSize="11"
+					        Foreground="{StaticResource MediumTextBrush}"
+					        Style="{StaticResource IconButtonStyle}">
+						<Button.ContentTemplate>
+							<DataTemplate>
+								<StackPanel Orientation="Horizontal">
+									<materialDesign:PackIcon Kind="Cog"
+									                         Width="14" Height="14"
+									                         Margin="0,0,4,0" />
+									<TextBlock Text="Preferences" VerticalAlignment="Center" />
+								</StackPanel>
+							</DataTemplate>
+						</Button.ContentTemplate>
+					</Button>
+				</StackPanel>
+
+				<!-- Exit Button -->
+				<StackPanel Grid.Column="2"
+				           Orientation="Horizontal"
+				           VerticalAlignment="Center"
+				           HorizontalAlignment="Right"
+				           Margin="20,0">
+					<Button Content="Exit"
+					        Click="Exit_Click"
+					        Padding="12,6"
+					        FontSize="11"
+					        Foreground="{StaticResource MediumTextBrush}"
+					        Style="{StaticResource IconButtonStyle}" />
+				</StackPanel>
+			</Grid>
 		</Grid>
 	</Border>
 </Window>

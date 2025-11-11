@@ -22,6 +22,9 @@
 
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+        <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
     </Style>
 
     <Style TargetType="Label">
@@ -537,6 +540,11 @@
         <Setter Property="Padding" Value="10,5"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+        <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
+        <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
         <Setter Property="RenderTransform">
             <Setter.Value>
                 <ScaleTransform ScaleX="1" ScaleY="1"/>

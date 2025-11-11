@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.ViewModels;
@@ -8,10 +9,15 @@ namespace Schedule1ModdingTool.Services
     /// <summary>
     /// Manages tab operations including opening, closing, and workspace tab logic.
     /// </summary>
-    public class TabManagementService
+    public class TabManagementService : INotifyPropertyChanged
     {
         private readonly ObservableCollection<OpenElementTab> _openTabs;
         private OpenElementTab? _selectedTab;
+
+        /// <summary>
+        /// Event raised when a property changes.
+        /// </summary>
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Gets the collection of open tabs.
@@ -26,6 +32,9 @@ namespace Schedule1ModdingTool.Services
             get => _selectedTab;
             set
             {
+                if (ReferenceEquals(_selectedTab, value))
+                    return;
+
                 if (_selectedTab != null)
                 {
                     _selectedTab.IsSelected = false;
@@ -35,7 +44,16 @@ namespace Schedule1ModdingTool.Services
                 {
                     _selectedTab.IsSelected = true;
                 }
+                OnPropertyChanged(nameof(SelectedTab));
             }
+        }
+
+        /// <summary>
+        /// Raises the PropertyChanged event.
+        /// </summary>
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public TabManagementService(ObservableCollection<OpenElementTab> openTabs)

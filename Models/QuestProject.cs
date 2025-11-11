@@ -496,7 +496,7 @@ namespace Schedule1ModdingTool.Models
             MarkAsModified();
         }
 
-        private void AttachExistingQuestHandlers()
+        internal void AttachExistingQuestHandlers()
         {
             foreach (var quest in Quests)
             {
@@ -504,7 +504,7 @@ namespace Schedule1ModdingTool.Models
             }
         }
 
-        private void AttachExistingNpcHandlers()
+        internal void AttachExistingNpcHandlers()
         {
             foreach (var npc in Npcs)
             {
@@ -512,7 +512,7 @@ namespace Schedule1ModdingTool.Models
             }
         }
 
-        private void AttachExistingFolderHandlers()
+        internal void AttachExistingFolderHandlers()
         {
             foreach (var folder in Folders)
             {
@@ -520,7 +520,7 @@ namespace Schedule1ModdingTool.Models
             }
         }
 
-        private void AttachExistingResourceHandlers()
+        internal void AttachExistingResourceHandlers()
         {
             foreach (var asset in Resources)
             {
@@ -715,7 +715,7 @@ namespace Schedule1ModdingTool.Models
             MarkAsModified();
         }
 
-        private void EnsureRootFolder()
+        internal void EnsureRootFolder()
         {
             if (!Folders.Any())
             {

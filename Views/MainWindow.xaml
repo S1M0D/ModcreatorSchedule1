@@ -14,7 +14,11 @@
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource DarkBackgroundBrush}"
         UseLayoutRounding="True"
-        SnapsToDevicePixels="True">
+        SnapsToDevicePixels="True"
+        RenderOptions.BitmapScalingMode="HighQuality"
+        RenderOptions.ClearTypeHint="Enabled"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
 	<Window.Resources>
 		<DataTemplate x:Key="QuestEditorTemplate">
@@ -80,33 +84,25 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<Separator />
-				<MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4"
-				          Style="{StaticResource DarkMenuItemStyle}" />
-			</MenuItem>
-			<MenuItem Header="_Quest" Style="{StaticResource DarkMenuItemStyle}">
-				<MenuItem Header="_Add Quest" Command="{Binding AddQuestCommand}" Style="{StaticResource DarkMenuItemStyle}">
+				<MenuItem Header="_Undo" Command="{Binding UndoCommand}" InputGestureText="Ctrl+Z"
+				          Style="{StaticResource DarkMenuItemStyle}">
 					<MenuItem.Icon>
-						<materialDesign:PackIcon Kind="{StaticResource PlusIcon}"
+						<materialDesign:PackIcon Kind="Undo"
 						                         Foreground="{StaticResource LightTextBrush}"
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>
 				</MenuItem>
-				<MenuItem Header="_Remove Quest" Command="{Binding RemoveQuestCommand}" Style="{StaticResource DarkMenuItemStyle}">
+				<MenuItem Header="_Redo" Command="{Binding RedoCommand}" InputGestureText="Ctrl+Y"
+				          Style="{StaticResource DarkMenuItemStyle}">
 					<MenuItem.Icon>
-						<materialDesign:PackIcon Kind="{StaticResource DeleteIcon}"
+						<materialDesign:PackIcon Kind="Redo"
 						                         Foreground="{StaticResource LightTextBrush}"
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>
 				</MenuItem>
 				<Separator />
-				<MenuItem Header="_Regenerate Code" Command="{Binding RegenerateCodeCommand}" InputGestureText="F5"
-				          Style="{StaticResource DarkMenuItemStyle}">
-					<MenuItem.Icon>
-						<materialDesign:PackIcon Kind="{StaticResource CodeRefreshIcon}"
-						                         Foreground="{StaticResource LightTextBrush}"
-						                         Width="16" Height="16" />
-					</MenuItem.Icon>
-				</MenuItem>
+				<MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4"
+				          Style="{StaticResource DarkMenuItemStyle}" />
 			</MenuItem>
 			<MenuItem Header="_Build" Style="{StaticResource DarkMenuItemStyle}">
 				<MenuItem Header="_Export Mod Project" Command="{Binding ExportModProjectCommand}"
@@ -161,6 +157,17 @@
 			</Button>
 			<Button Command="{Binding SaveProjectCommand}" ToolTip="Save Project" Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource SaveIcon}"
+				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+				                         Width="18" Height="18" />
+			</Button>
+			<Separator Style="{StaticResource ToolbarSeparatorStyle}" />
+			<Button Command="{Binding UndoCommand}" ToolTip="Undo (Ctrl+Z)" Style="{StaticResource ToolbarButtonStyle}">
+				<materialDesign:PackIcon Kind="Undo"
+				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+				                         Width="18" Height="18" />
+			</Button>
+			<Button Command="{Binding RedoCommand}" ToolTip="Redo (Ctrl+Y)" Style="{StaticResource ToolbarButtonStyle}">
+				<materialDesign:PackIcon Kind="Redo"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="18" Height="18" />
 			</Button>
@@ -278,7 +285,7 @@
 										           Foreground="{Binding RelativeSource={RelativeSource AncestorType=TabItem}, Path=Foreground}" />
 										<Button Grid.Column="1"
 										        Content="×"
-										        Width="18" Height="18"
+										        Width="20" Height="20"
 										        Padding="0"
 										        FontSize="14"
 										        FontWeight="Bold"
@@ -304,7 +311,7 @@
 															<ControlTemplate TargetType="Button">
 																<Border Background="{TemplateBinding Background}"
 																        CornerRadius="2"
-																        Padding="2">
+																        Padding="3,2">
 																	<ContentPresenter HorizontalAlignment="Center"
 																	                  VerticalAlignment="Center" />
 																</Border>

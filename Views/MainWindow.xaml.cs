@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -13,29 +14,50 @@ namespace Schedule1ModdingTool.Views
     public partial class MainWindow : Window
     {
         private GridLength? _storedCodeRowHeight; // Store user's preferred height
-        
-        public MainWindow()
-        {
-            InitializeComponent();
-            DataContext = new MainViewModel();
-            
-            // Set up key bindings
-            SetupKeyBindings();
-            
-            // Set up code editor syntax highlighting
-            if (CodeEditor != null)
-            {
-                CodeEditor.SyntaxHighlighting = ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("C#");
-            }
+        private bool _isStartupMode = true;
 
-            // Show wizard on startup if no project is loaded
-            Loaded += MainWindow_Loaded;
-            
-            // Subscribe to IsCodeVisible changes to fix grid divider issue
-            if (DataContext is MainViewModel vm)
+        public MainWindow(Models.QuestProject project)
+        {
+            try
             {
-                vm.PropertyChanged += MainViewModel_PropertyChanged;
+                InitializeComponent();
+                var vm = new MainViewModel();
+                DataContext = vm;
+                
+                // Set the project on the view model
+                vm.CurrentProject = project;
+                _isStartupMode = false; // Project is loaded, startup complete
+
+                // Set up key bindings
+                SetupKeyBindings();
+
+                // Set up code editor syntax highlighting
+                if (CodeEditor != null)
+                {
+                    CodeEditor.SyntaxHighlighting = ICSharpCode.AvalonEdit.Highlighting.HighlightingManager.Instance.GetDefinition("C#");
+                }
+
+                // Subscribe to IsCodeVisible changes to fix grid divider issue
+                if (DataContext is MainViewModel viewModel)
+                {
+                    viewModel.PropertyChanged += MainViewModel_PropertyChanged;
+                }
+
+                // Handle window closed event to shutdown app
+                Closed += MainWindow_Closed;
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to initialize MainWindow: {ex.Message}\n\n{ex.StackTrace}", 
+                    "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                throw;
+            }
+        }
+
+        private void MainWindow_Closed(object? sender, EventArgs e)
+        {
+            // When MainWindow closes, shutdown the application
+            Application.Current.Shutdown();
         }
         
         private void MainViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -178,56 +200,6 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            // Check if first start wizard needs to be shown
-            var settings = Models.ModSettings.Load();
-            if (!settings.IsFirstStartComplete)
-            {
-                var firstStartWizard = new FirstStartWizardWindow
-                {
-                    Owner = this
-                };
-
-                var wizardResult = firstStartWizard.ShowDialog();
-                if (wizardResult != true)
-                {
-                    // User cancelled first start wizard - exit application
-                    Application.Current.Shutdown();
-                    return;
-                }
-            }
-
-            var vm = DataContext as MainViewModel;
-            if (vm != null && string.IsNullOrWhiteSpace(vm.CurrentProject.ProjectName))
-            {
-                // Show startup dialog instead of directly showing wizard
-                var startupDialog = new StartupDialog
-                {
-                    Owner = this
-                };
-
-                var result = startupDialog.ShowDialog();
-                
-                if (startupDialog.SelectedAction == StartupDialog.StartupAction.CreateNew)
-                {
-                    vm.NewProjectCommand.Execute(null);
-                }
-                else if (startupDialog.SelectedAction == StartupDialog.StartupAction.OpenExisting)
-                {
-                    vm.OpenProjectCommand.Execute(null);
-                }
-                else if (startupDialog.SelectedAction == StartupDialog.StartupAction.Exit)
-                {
-                    Application.Current.Shutdown();
-                }
-                else if (result == false)
-                {
-                    // User closed dialog without selecting an option
-                    Application.Current.Shutdown();
-                }
-            }
-        }
 
         private void SetupKeyBindings()
         {
@@ -247,6 +219,12 @@ namespace Schedule1ModdingTool.Views
             // Ctrl+Shift+S - Save Project As
             InputBindings.Add(new KeyBinding(vm.SaveProjectAsCommand, Key.S, ModifierKeys.Control | ModifierKeys.Shift));
             
+            // Ctrl+Z - Undo
+            InputBindings.Add(new KeyBinding(vm.UndoCommand, Key.Z, ModifierKeys.Control));
+            
+            // Ctrl+Y - Redo
+            InputBindings.Add(new KeyBinding(vm.RedoCommand, Key.Y, ModifierKeys.Control));
+            
             // F5 - Regenerate Code
             InputBindings.Add(new KeyBinding(vm.RegenerateCodeCommand, Key.F5, ModifierKeys.None));
             
@@ -264,7 +242,10 @@ namespace Schedule1ModdingTool.Views
                 vm.PropertyChanged -= MainViewModel_PropertyChanged;
             }
             
-            if (vm?.CurrentProject.IsModified == true)
+            // Skip save check during startup or if no project is loaded
+            if (!_isStartupMode && vm != null && 
+                !string.IsNullOrWhiteSpace(vm.CurrentProject.ProjectName) && 
+                vm.CurrentProject.IsModified)
             {
                 var result = MessageBox.Show(
                     "You have unsaved changes. Do you want to save them before closing?",

@@ -53,7 +53,18 @@ namespace Schedule1ModdingTool.Views
 
         private void NpcComboBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            // Handle manual entry when ComboBox loses focus
+            // If an item is selected, preserve it
+            if (NpcComboBox.SelectedItem is NpcInfo selectedNpc)
+            {
+                // Ensure SelectedNpcId matches the selected item
+                if (SelectedNpcId != selectedNpc.Id)
+                {
+                    SelectedNpcId = selectedNpc.Id;
+                }
+                return;
+            }
+
+            // Handle manual entry when ComboBox loses focus (only if no item is selected)
             if (NpcComboBox.IsEditable && !string.IsNullOrWhiteSpace(NpcComboBox.Text))
             {
                 var npc = AvailableNpcs?.FirstOrDefault(n => n.Id == NpcComboBox.Text || n.DisplayName == NpcComboBox.Text);
@@ -74,6 +85,17 @@ namespace Schedule1ModdingTool.Views
         {
             if (d is NpcSelector selector)
             {
+                // Clear selection if value is null or empty
+                if (e.NewValue == null || (e.NewValue is string str && string.IsNullOrWhiteSpace(str)))
+                {
+                    selector.NpcComboBox.SelectedItem = null;
+                    if (selector.NpcComboBox.IsEditable)
+                    {
+                        selector.NpcComboBox.Text = string.Empty;
+                    }
+                    return;
+                }
+
                 // Update selection if needed
                 if (selector.AvailableNpcs != null && e.NewValue is string npcId && !string.IsNullOrWhiteSpace(npcId))
                 {

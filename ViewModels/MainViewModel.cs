@@ -7,11 +7,10 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.Win32;
+using System.Windows.Threading;
 using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.Services;
 using Schedule1ModdingTool.Services.CodeGeneration.Orchestration;
-using System.ComponentModel;
 using Schedule1ModdingTool.Utils;
 using Schedule1ModdingTool.Views;
 
@@ -22,6 +21,7 @@ namespace Schedule1ModdingTool.ViewModels
     /// </summary>
     public class MainViewModel : ObservableObject
     {
+        // Core state
         private QuestProject _currentProject = null!;
         private QuestBlueprint? _selectedQuest;
         private NpcBlueprint? _selectedNpc;
@@ -29,7 +29,37 @@ namespace Schedule1ModdingTool.ViewModels
         private NpcScheduleAction? _selectedScheduleAction;
         private string _generatedCode = "";
         private bool _isCodeVisible = false;
+        private string _processState = "Waiting for project...";
+
+        // Services
         private readonly AppearancePreviewService _appearancePreviewService = new AppearancePreviewService();
+        private readonly CodeGenerationOrchestrator _codeGenService;
+        private readonly ProjectService _projectService;
+        private readonly ModProjectGeneratorService _modProjectGenerator;
+        private readonly ModBuildService _modBuildService;
+        private readonly GameLaunchService _gameLaunchService;
+        private readonly TabManagementService _tabManagementService;
+        private readonly ResourceManagementService _resourceManagementService;
+        private readonly NavigationService _navigationService;
+        private readonly ElementManagementService _elementManagementService;
+        private readonly UndoRedoService _undoRedoService;
+        private ModSettings _modSettings;
+        private bool _isRestoringFromUndoRedo = false;
+        private DispatcherTimer? _debounceSnapshotTimer;
+        private bool _wasModifiedBeforeChange = false;
+
+        // ViewModels
+        private WorkspaceViewModel _workspaceViewModel;
+
+        // Collections
+        public ObservableCollection<QuestBlueprint> AvailableBlueprints { get; } = new ObservableCollection<QuestBlueprint>();
+        public ObservableCollection<NpcBlueprint> AvailableNpcBlueprints { get; } = new ObservableCollection<NpcBlueprint>();
+
+        // Delegated collections (managed by services)
+        public ObservableCollection<NavigationItem> NavigationItems => _navigationService.NavigationItems;
+        public ObservableCollection<OpenElementTab> OpenTabs => _tabManagementService.OpenTabs;
+
+        #region Properties
 
         public QuestProject CurrentProject
         {
@@ -50,14 +80,27 @@ namespace Schedule1ModdingTool.ViewModels
                     {
                         _currentProject.PropertyChanged += CurrentProjectOnPropertyChanged;
                         WorkspaceViewModel.BindProject(_currentProject);
-                        WorkspaceViewModel.UpdateQuestCount(_currentProject.Quests.Count);
-                        WorkspaceViewModel.UpdateNpcCount(_currentProject.Npcs.Count);
-                        UpdateWorkspaceProjectInfo();
+                        _navigationService.UpdateElementCounts(_currentProject.Quests.Count, _currentProject.Npcs.Count);
+                        _navigationService.UpdateWorkspaceProjectInfo(_currentProject);
                         UpdateProcessState();
+                        
+                        // Subscribe to property changes on all NPCs and Quests for undo/redo tracking
+                        SubscribeToElementPropertyChanges();
+                        
+                        // Track initial modified state
+                        _wasModifiedBeforeChange = _currentProject.IsModified;
+                        
+                        // Save initial snapshot for undo (unless we're restoring from undo/redo)
+                        if (!_isRestoringFromUndoRedo)
+                        {
+                            _undoRedoService.SaveSnapshot(_currentProject);
+                        }
                     }
                     else
                     {
                         ProcessState = "Waiting for project...";
+                        _undoRedoService.Clear();
+                        UnsubscribeFromElementPropertyChanges();
                     }
                     CommandManager.InvalidateRequerySuggested();
                 }
@@ -92,21 +135,19 @@ namespace Schedule1ModdingTool.ViewModels
             get => _selectedNpc;
             set
             {
-                var stackTrace = new System.Diagnostics.StackTrace(1, true);
-                System.Diagnostics.Debug.WriteLine($"[MainViewModel] SelectedNpc setter called. Old: '{_selectedNpc?.NpcId ?? "null"}', New: '{value?.NpcId ?? "null"}', Same instance: {ReferenceEquals(_selectedNpc, value)}");
-                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Call stack:\n{stackTrace}");
+                Debug.WriteLine($"[MainViewModel] SelectedNpc setter called. Old: '{_selectedNpc?.NpcId ?? "null"}', New: '{value?.NpcId ?? "null"}', Same instance: {ReferenceEquals(_selectedNpc, value)}");
 
                 // Don't unsubscribe/resubscribe if it's the same instance
                 if (ReferenceEquals(_selectedNpc, value))
                 {
-                    System.Diagnostics.Debug.WriteLine("[MainViewModel] Same NPC instance, skipping unsubscribe/resubscribe");
+                    Debug.WriteLine("[MainViewModel] Same NPC instance, skipping unsubscribe/resubscribe");
                     return;
                 }
 
                 // Unsubscribe from previous NPC's appearance changes
                 if (_selectedNpc?.Appearance != null)
                 {
-                    System.Diagnostics.Debug.WriteLine("[MainViewModel] Unsubscribing from previous NPC appearance");
+                    Debug.WriteLine("[MainViewModel] Unsubscribing from previous NPC appearance");
                     _selectedNpc.Appearance.PropertyChanged -= OnAppearancePropertyChanged;
                 }
 
@@ -121,15 +162,14 @@ namespace Schedule1ModdingTool.ViewModels
                         // Subscribe to appearance changes for preview
                         if (value.Appearance != null)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[MainViewModel] Subscribing to NPC '{value.NpcId}' appearance changes");
+                            Debug.WriteLine($"[MainViewModel] Subscribing to NPC '{value.NpcId}' appearance changes");
                             value.Appearance.PropertyChanged += OnAppearancePropertyChanged;
-                            // Send initial appearance
-                            System.Diagnostics.Debug.WriteLine("[MainViewModel] Sending initial appearance to preview service");
+                            Debug.WriteLine("[MainViewModel] Sending initial appearance to preview service");
                             _appearancePreviewService.SendAppearanceUpdate(value.Appearance);
                         }
                         else
                         {
-                            System.Diagnostics.Debug.WriteLine("[MainViewModel] Warning: NPC Appearance is null!");
+                            Debug.WriteLine("[MainViewModel] Warning: NPC Appearance is null!");
                         }
                     }
                     else if (SelectedQuest == null)
@@ -179,74 +219,57 @@ namespace Schedule1ModdingTool.ViewModels
             set => SetProperty(ref _isCodeVisible, value);
         }
 
+        public string ProcessState
+        {
+            get => _processState;
+            set => SetProperty(ref _processState, value);
+        }
+
         public string SelectedElementName => SelectedQuest?.DisplayName ?? SelectedNpc?.DisplayName ?? "None";
 
-        public ObservableCollection<QuestBlueprint> AvailableBlueprints { get; } = new ObservableCollection<QuestBlueprint>();
-        public ObservableCollection<NpcBlueprint> AvailableNpcBlueprints { get; } = new ObservableCollection<NpcBlueprint>();
-
-        // Navigation properties
-        private NavigationItem? _selectedNavigationItem;
-        private WorkspaceViewModel _workspaceViewModel;
-        private OpenElementTab? _selectedTab;
-
-        public ObservableCollection<NavigationItem> NavigationItems { get; } = new ObservableCollection<NavigationItem>();
-        public ObservableCollection<OpenElementTab> OpenTabs { get; } = new ObservableCollection<OpenElementTab>();
-        
         public NavigationItem? SelectedNavigationItem
         {
-            get => _selectedNavigationItem;
+            get => _navigationService.SelectedNavigationItem;
             set
             {
-                if (_selectedNavigationItem != null)
-                {
-                    _selectedNavigationItem.IsSelected = false;
-                }
-                if (SetProperty(ref _selectedNavigationItem, value))
-                {
-                    if (_selectedNavigationItem != null)
-                    {
-                        _selectedNavigationItem.IsSelected = true;
-                    }
-                }
+                _navigationService.SelectNavigation(value);
+                OnPropertyChanged(nameof(SelectedNavigationItem));
             }
         }
 
         public OpenElementTab? SelectedTab
         {
-            get => _selectedTab;
+            get => _tabManagementService.SelectedTab;
             set
             {
-                if (_selectedTab != null)
+                var previousTab = _tabManagementService.SelectedTab;
+                _tabManagementService.SelectedTab = value;
+
+                if (_tabManagementService.SelectedTab != null)
                 {
-                    _selectedTab.IsSelected = false;
-                }
-                if (SetProperty(ref _selectedTab, value))
-                {
-                    if (_selectedTab != null)
+                    // Don't set SelectedQuest/SelectedNpc for workspace tabs
+                    if (_tabManagementService.SelectedTab.IsWorkspace)
                     {
-                        _selectedTab.IsSelected = true;
-                        // Don't set SelectedQuest/SelectedNpc for workspace tabs
-                        if (_selectedTab.IsWorkspace)
-                        {
-                            // Keep current selection, don't change it
-                        }
-                        else if (_selectedTab.Quest != null)
-                        {
-                            SelectedQuest = _selectedTab.Quest;
-                            SelectedNpc = null;
-                        }
-                        else if (_selectedTab.Npc != null)
-                        {
-                            SelectedNpc = _selectedTab.Npc;
-                            SelectedQuest = null;
-                        }
+                        // Keep current selection, don't change it
                     }
-                    else
+                    else if (_tabManagementService.SelectedTab.Quest != null)
                     {
-                        SelectedQuest = null;
+                        SelectedQuest = _tabManagementService.SelectedTab.Quest;
                         SelectedNpc = null;
                     }
+                    else if (_tabManagementService.SelectedTab.Npc != null)
+                    {
+                        SelectedNpc = _tabManagementService.SelectedTab.Npc;
+                        SelectedQuest = null;
+                    }
                 }
+                else
+                {
+                    SelectedQuest = null;
+                    SelectedNpc = null;
+                }
+
+                OnPropertyChanged(nameof(SelectedTab));
             }
         }
 
@@ -256,15 +279,10 @@ namespace Schedule1ModdingTool.ViewModels
             set => SetProperty(ref _workspaceViewModel, value);
         }
 
-        private string _processState = "Waiting for project...";
+        #endregion
 
-        public string ProcessState
-        {
-            get => _processState;
-            set => SetProperty(ref _processState, value);
-        }
+        #region Commands
 
-        // Commands with private backing fields
         private ICommand? _newProjectCommand;
         private ICommand? _openProjectCommand;
         private ICommand? _saveProjectCommand;
@@ -294,6 +312,8 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _duplicateNpcCommand;
         private ICommand? _duplicateFolderCommand;
         private ICommand? _deleteFolderCommand;
+        private ICommand? _undoCommand;
+        private ICommand? _redoCommand;
 
         public ICommand NewProjectCommand => _newProjectCommand!;
         public ICommand OpenProjectCommand => _openProjectCommand!;
@@ -324,22 +344,24 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand DuplicateNpcCommand => _duplicateNpcCommand!;
         public ICommand DuplicateFolderCommand => _duplicateFolderCommand!;
         public ICommand DeleteFolderCommand => _deleteFolderCommand!;
+        public ICommand UndoCommand => _undoCommand!;
+        public ICommand RedoCommand => _redoCommand!;
 
-        private readonly CodeGenerationOrchestrator _codeGenService;
-        private readonly ProjectService _projectService;
-        private readonly ModProjectGeneratorService _modProjectGenerator;
-        private readonly ModBuildService _modBuildService;
-        private readonly GameLaunchService _gameLaunchService;
-        private ModSettings _modSettings;
+        #endregion
 
         public MainViewModel()
         {
+            // Initialize core services
             _codeGenService = new CodeGenerationOrchestrator();
             _projectService = new ProjectService();
             _modProjectGenerator = new ModProjectGeneratorService();
             _modBuildService = new ModBuildService();
             _gameLaunchService = new GameLaunchService();
+            _undoRedoService = new Services.UndoRedoService();
             _modSettings = ModSettings.Load();
+            
+            // Configure undo history size from settings
+            _undoRedoService.MaxHistorySize = _modSettings.UndoHistorySize;
 
             // Set code visibility based on user experience level
             _isCodeVisible = _modSettings.ExperienceLevel != ExperienceLevel.NoCodingExperience;
@@ -348,6 +370,55 @@ namespace Schedule1ModdingTool.ViewModels
             _workspaceViewModel = new WorkspaceViewModel
             {
                 SelectedCategory = null
+            };
+
+            // Initialize modular services
+            _tabManagementService = new TabManagementService(new ObservableCollection<OpenElementTab>());
+            _resourceManagementService = new ResourceManagementService();
+            _navigationService = new NavigationService(new ObservableCollection<NavigationItem>(), _workspaceViewModel);
+            _elementManagementService = new ElementManagementService(_workspaceViewModel);
+            
+            // Subscribe to NavigationService property changes to notify MainViewModel bindings
+            _navigationService.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(NavigationService.SelectedNavigationItem))
+                {
+                    OnPropertyChanged(nameof(SelectedNavigationItem));
+                }
+            };
+            
+            // Subscribe to TabManagementService property changes to notify MainViewModel bindings
+            _tabManagementService.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(TabManagementService.SelectedTab))
+                {
+                    // Update SelectedQuest/SelectedNpc based on the selected tab
+                    if (_tabManagementService.SelectedTab != null)
+                    {
+                        // Don't set SelectedQuest/SelectedNpc for workspace tabs
+                        if (_tabManagementService.SelectedTab.IsWorkspace)
+                        {
+                            // Keep current selection, don't change it
+                        }
+                        else if (_tabManagementService.SelectedTab.Quest != null)
+                        {
+                            SelectedQuest = _tabManagementService.SelectedTab.Quest;
+                            SelectedNpc = null;
+                        }
+                        else if (_tabManagementService.SelectedTab.Npc != null)
+                        {
+                            SelectedNpc = _tabManagementService.SelectedTab.Npc;
+                            SelectedQuest = null;
+                        }
+                    }
+                    else
+                    {
+                        SelectedQuest = null;
+                        SelectedNpc = null;
+                    }
+                    
+                    OnPropertyChanged(nameof(SelectedTab));
+                }
             };
 
             // Don't create default project - wait for wizard
@@ -359,8 +430,10 @@ namespace Schedule1ModdingTool.ViewModels
 
             InitializeCommands();
             InitializeBlueprints();
-            InitializeNavigation();
+            _navigationService.InitializeNavigation();
         }
+
+        #region Initialization
 
         private void InitializeCommands()
         {
@@ -384,12 +457,12 @@ namespace Schedule1ModdingTool.ViewModels
             _buildModCommand = new RelayCommand(BuildMod, HasAnyElements);
             _playGameCommand = new RelayCommand(PlayGame, () => !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
             _openSettingsCommand = new RelayCommand(OpenSettings);
-            _selectNavigationCommand = new RelayCommand<NavigationItem>(SelectNavigation);
-            _selectCategoryCommand = new RelayCommand<ModCategory>(SelectCategory);
+            _selectNavigationCommand = new RelayCommand<NavigationItem>(item => _navigationService.SelectNavigation(item));
+            _selectCategoryCommand = new RelayCommand<ModCategory>(category => _navigationService.SelectCategory(category));
             _addFolderCommand = new RelayCommand(AddFolder);
             _addResourceCommand = new RelayCommand(() =>
             {
-                System.Diagnostics.Debug.WriteLine("[AddResourceCommand] Command executed");
+                Debug.WriteLine("[AddResourceCommand] Command executed");
                 AddResource();
             });
             _removeResourceCommand = new RelayCommand<ResourceAsset>(resource => RemoveResource(resource));
@@ -397,85 +470,11 @@ namespace Schedule1ModdingTool.ViewModels
             _duplicateNpcCommand = new RelayCommand<NpcBlueprint>(DuplicateNpc);
             _duplicateFolderCommand = new RelayCommand<ModFolder>(DuplicateFolder);
             _deleteFolderCommand = new RelayCommand<ModFolder>(DeleteFolder);
-        }
-
-        private void InitializeNavigation()
-        {
-            NavigationItems.Add(new NavigationItem
-            {
-                Id = "ModElements",
-                DisplayName = "Mod Elements",
-                IconKey = "CubeIcon",
-                IsEnabled = true,
-                IsSelected = true,
-                Tooltip = "Create and manage mod elements (Quests, NPCs, etc.)"
-            });
-
-            NavigationItems.Add(new NavigationItem
-            {
-                Id = "Resources",
-                DisplayName = "Resources",
-                IconKey = "FolderIcon",
-                IsEnabled = true,
-                IsSelected = false,
-                Tooltip = "Manage custom resources (icons, images, etc.)"
-            });
-
-            SelectedNavigationItem = NavigationItems.First();
-        }
-
-        private void SelectNavigation(NavigationItem? item)
-        {
-            if (item != null && item.IsEnabled)
-            {
-                SelectedNavigationItem = item;
-                // Reset category selection when switching navigation
-                WorkspaceViewModel.SelectedCategory = null;
-                // Update workspace title based on selected navigation
-                WorkspaceViewModel.WorkspaceTitle = item.Id switch
-                {
-                    "ModElements" => "MOD ELEMENTS",
-                    "Resources" => "RESOURCES",
-                    _ => "WORKSPACE"
-                };
-            }
-        }
-
-        private void SelectCategory(ModCategory category)
-        {
-            WorkspaceViewModel.SelectedCategory = category;
-            // Update workspace title based on selected category
-            WorkspaceViewModel.WorkspaceTitle = category switch
-            {
-                ModCategory.Quests => "QUESTS",
-                ModCategory.NPCs => "NPCS",
-                ModCategory.PhoneApps => "PHONE APPS",
-                ModCategory.Items => "ITEMS",
-                _ => "MOD ELEMENTS"
-            };
-        }
-
-        private void UpdateWorkspaceProjectInfo()
-        {
-            var projectName = string.IsNullOrEmpty(CurrentProject.ProjectName) ? "Untitled Project" : CurrentProject.ProjectName;
-            var totalElements = CurrentProject.Quests.Count;
-            WorkspaceViewModel.ProjectInfo = $"{projectName}: {totalElements} mod elements";
-        }
-
-        private void UpdateProcessState()
-        {
-            if (CurrentProject == null || string.IsNullOrWhiteSpace(CurrentProject.ProjectName))
-            {
-                ProcessState = "Waiting for project...";
-            }
-            else if (CurrentProject.IsModified)
-            {
-                ProcessState = "Ready (unsaved changes)";
-            }
-            else
-            {
-                ProcessState = "Ready";
-            }
+            _undoCommand = new RelayCommand(Undo, () => _undoRedoService.CanUndo);
+            _redoCommand = new RelayCommand(Redo, () => _undoRedoService.CanRedo);
+            
+            // Subscribe to undo/redo state changes
+            _undoRedoService.StateChanged += (s, e) => CommandManager.InvalidateRequerySuggested();
         }
 
         private void InitializeBlueprints()
@@ -504,6 +503,10 @@ namespace Schedule1ModdingTool.ViewModels
             });
         }
 
+        #endregion
+
+        #region Project Operations
+
         private void NewProject()
         {
             // Skip confirmation if no project is loaded (empty project on startup)
@@ -525,41 +528,39 @@ namespace Schedule1ModdingTool.ViewModels
                 try
                 {
                     ProcessState = "Creating project...";
-                    // Create the project folder if needed
                     var fullPath = vm.FullProjectPath;
                     if (!Directory.Exists(fullPath))
                     {
                         Directory.CreateDirectory(fullPath);
                     }
 
-                    // Create new project with defaults from wizard
                     var newProject = new QuestProject
                     {
                         ProjectName = vm.ModName,
                         ProjectDescription = $"Mod project for {vm.ModName}"
                     };
 
-                    // Set default values for all quests from wizard
                     var settings = ModSettings.Load();
                     settings.DefaultModNamespace = vm.ModNamespace;
                     settings.DefaultModAuthor = vm.ModAuthor;
                     settings.DefaultModVersion = vm.ModVersion;
                     settings.Save();
 
-                    // Set project file path
                     var projectFilePath = Path.Combine(fullPath, $"{AppUtils.MakeSafeFilename(vm.ModName)}.qproj");
                     newProject.FilePath = projectFilePath;
 
-                    // Save the project file
                     ProcessState = "Saving project...";
                     newProject.SaveToFile(projectFilePath);
 
-                    // Load it back to ensure proper initialization
                     ProcessState = "Loading project...";
                     CurrentProject = QuestProject.LoadFromFile(projectFilePath) ?? newProject;
                     NormalizeProjectResources();
                     SelectedQuest = null;
                     GeneratedCode = "";
+
+                    // Clear undo/redo history when creating a new project
+                    _undoRedoService.Clear();
+                    _undoRedoService.SaveSnapshot(CurrentProject);
 
                     wizardCompleted = true;
                     wizardWindow.DialogResult = true;
@@ -579,8 +580,7 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 wizardWindow.DialogResult = false;
                 wizardWindow.Close();
-                
-                // If cancelled on startup (empty project), close the app
+
                 if (string.IsNullOrWhiteSpace(CurrentProject.ProjectName))
                 {
                     Application.Current.Shutdown();
@@ -600,7 +600,6 @@ namespace Schedule1ModdingTool.ViewModels
 
         private void OpenProject()
         {
-            // Skip confirmation if no project is loaded (empty project on startup)
             if (!string.IsNullOrWhiteSpace(CurrentProject.ProjectName) && !ConfirmUnsavedChanges())
                 return;
 
@@ -612,11 +611,15 @@ namespace Schedule1ModdingTool.ViewModels
                 CurrentProject = project;
                 NormalizeProjectResources();
                 SelectedQuest = CurrentProject.Quests.FirstOrDefault();
+                
+                // Clear undo/redo history when loading a new project
+                _undoRedoService.Clear();
+                _undoRedoService.SaveSnapshot(CurrentProject);
+                
                 UpdateProcessState();
             }
             else if (string.IsNullOrWhiteSpace(CurrentProject.ProjectName))
             {
-                // If user cancelled opening a project and no project is loaded, close the app
                 Application.Current.Shutdown();
             }
             else
@@ -629,7 +632,6 @@ namespace Schedule1ModdingTool.ViewModels
         {
             try
             {
-                // Auto-regenerate code before saving
                 if (SelectedQuest != null || SelectedNpc != null)
                 {
                     RegenerateCode();
@@ -654,7 +656,6 @@ namespace Schedule1ModdingTool.ViewModels
         {
             try
             {
-                // Auto-regenerate code before saving
                 if (SelectedQuest != null || SelectedNpc != null)
                 {
                     RegenerateCode();
@@ -675,106 +676,6 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
-        private bool HasAnyElements() =>
-            CurrentProject.Quests.Count > 0 ||
-            CurrentProject.Npcs.Count > 0 ||
-            CurrentProject.Resources.Count > 0;
-
-        private bool TryGetProjectDirectory(out string projectDir)
-        {
-            System.Diagnostics.Debug.WriteLine("[TryGetProjectDirectory] Method called");
-            projectDir = string.Empty;
-            if (CurrentProject == null)
-            {
-                System.Diagnostics.Debug.WriteLine("[TryGetProjectDirectory] CurrentProject is null");
-                return false;
-            }
-            
-            if (string.IsNullOrWhiteSpace(CurrentProject.FilePath))
-            {
-                System.Diagnostics.Debug.WriteLine("[TryGetProjectDirectory] CurrentProject.FilePath is null or empty");
-                return false;
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[TryGetProjectDirectory] CurrentProject.FilePath: {CurrentProject.FilePath}");
-            var dir = Path.GetDirectoryName(CurrentProject.FilePath);
-            if (string.IsNullOrWhiteSpace(dir))
-            {
-                System.Diagnostics.Debug.WriteLine("[TryGetProjectDirectory] Path.GetDirectoryName returned null or empty");
-                return false;
-            }
-
-            projectDir = dir;
-            System.Diagnostics.Debug.WriteLine($"[TryGetProjectDirectory] Success, projectDir: {projectDir}");
-            return true;
-        }
-
-        private bool EnsureProjectDirectory(out string projectDir)
-        {
-            System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] Method called");
-            projectDir = string.Empty;
-
-            System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] Calling TryGetProjectDirectory...");
-            if (TryGetProjectDirectory(out projectDir))
-            {
-                System.Diagnostics.Debug.WriteLine($"[EnsureProjectDirectory] TryGetProjectDirectory succeeded: {projectDir}");
-                return true;
-            }
-
-            System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] TryGetProjectDirectory failed");
-            if (CurrentProject == null)
-            {
-                System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] CurrentProject is null, returning false");
-                return false;
-            }
-
-            System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] Showing save dialog...");
-            var shouldSave = AppUtils.AskYesNo(
-                "You need to save the project before adding resources. Would you like to save it now?",
-                "Save Project Required");
-
-            System.Diagnostics.Debug.WriteLine($"[EnsureProjectDirectory] User chose to save: {shouldSave}");
-            if (!shouldSave)
-            {
-                System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] User declined to save, returning false");
-                return false;
-            }
-
-            System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] Saving project...");
-            if (!_projectService.SaveProject(CurrentProject))
-            {
-                System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] SaveProject failed");
-                AppUtils.ShowWarning("Project was not saved. Upload cancelled.", "Resource Upload Cancelled");
-                return false;
-            }
-
-            System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] SaveProject succeeded, calling TryGetProjectDirectory again...");
-            if (TryGetProjectDirectory(out projectDir))
-            {
-                System.Diagnostics.Debug.WriteLine($"[EnsureProjectDirectory] TryGetProjectDirectory succeeded after save: {projectDir}");
-                return true;
-            }
-
-            System.Diagnostics.Debug.WriteLine("[EnsureProjectDirectory] TryGetProjectDirectory failed after save");
-            AppUtils.ShowError("Unable to determine project location after saving. Please try again.", "Resource Upload Failed");
-            return false;
-        }
-
-        private static string GenerateUniqueResourceName(string directory, string fileName)
-        {
-            var name = Path.GetFileNameWithoutExtension(fileName);
-            var ext = Path.GetExtension(fileName);
-            var candidate = fileName;
-            var counter = 1;
-
-            while (File.Exists(Path.Combine(directory, candidate)))
-            {
-                candidate = $"{name}_{counter++}{ext}";
-            }
-
-            return candidate;
-        }
-
         private void Exit()
         {
             if (ConfirmUnsavedChanges())
@@ -783,154 +684,48 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        private bool ConfirmUnsavedChanges()
+        {
+            if (!CurrentProject.IsModified) return true;
+
+            var result = MessageBox.Show(
+                "You have unsaved changes. Do you want to save them before continuing?",
+                "Unsaved Changes",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            switch (result)
+            {
+                case MessageBoxResult.Yes:
+                    SaveProject();
+                    return true;
+                case MessageBoxResult.No:
+                    return true;
+                case MessageBoxResult.Cancel:
+                default:
+                    return false;
+            }
+        }
+
+        #endregion
+
+        #region Element Operations (Delegated to ElementManagementService)
+
         private void AddQuest(QuestBlueprint? template)
         {
-            if (template == null) return;
+            // Save snapshot before making changes
+            _undoRedoService.SaveSnapshot(CurrentProject);
 
-            var settings = ModSettings.Load();
-            var quest = new QuestBlueprint(template.BlueprintType)
+            var quest = _elementManagementService.AddQuest(CurrentProject, template);
+            if (quest != null)
             {
-                ClassName = $"Quest{CurrentProject.Quests.Count + 1}",
-                QuestTitle = $"New Quest {CurrentProject.Quests.Count + 1}",
-                QuestDescription = "A new quest for Schedule 1",
-                BlueprintType = template.BlueprintType,
-                Namespace = $"{settings.DefaultModNamespace}.Quests",
-                ModName = CurrentProject.ProjectName,
-                ModAuthor = settings.DefaultModAuthor,
-                ModVersion = settings.DefaultModVersion,
-                FolderId = WorkspaceViewModel.SelectedFolder?.Id ?? QuestProject.RootFolderId
-            };
-
-            CurrentProject.AddQuest(quest);
-            SelectedQuest = quest;
-            WorkspaceViewModel.UpdateQuestCount(CurrentProject.Quests.Count);
-            UpdateWorkspaceProjectInfo();
-
-            // Open the quest in a tab automatically
-            OpenQuestInTab(quest);
-        }
-
-        public void OpenWorkspaceTab()
-        {
-            // Check if workspace tab already exists
-            var existingTab = OpenTabs.FirstOrDefault(t => t.IsWorkspace);
-            if (existingTab != null)
-            {
-                SelectedTab = existingTab;
-                return;
-            }
-
-            // Create workspace tab and add it as the first tab
-            var tab = new OpenElementTab { IsWorkspace = true };
-            OpenTabs.Insert(0, tab);
-            SelectedTab = tab;
-        }
-
-        private void EnsureWorkspaceTabExists()
-        {
-            // Check if any editor tabs exist (non-workspace tabs)
-            var hasEditorTabs = OpenTabs.Any(t => !t.IsWorkspace);
-            
-            // If no editor tabs exist yet, we're about to add the first one
-            // So we need to add the workspace tab first
-            if (!hasEditorTabs)
-            {
-                // Check if workspace tab already exists
-                var workspaceTab = OpenTabs.FirstOrDefault(t => t.IsWorkspace);
-                if (workspaceTab == null)
-                {
-                    // Add workspace tab as the first tab
-                    var tab = new OpenElementTab { IsWorkspace = true };
-                    OpenTabs.Insert(0, tab);
-                }
-            }
-        }
-
-        public void OpenQuestInTab(QuestBlueprint quest)
-        {
-            // Check if quest is already open
-            var existingTab = OpenTabs.FirstOrDefault(t => t.Quest == quest);
-            if (existingTab != null)
-            {
-                SelectedTab = existingTab;
-                return;
-            }
-
-            // Ensure workspace tab exists before adding editor tab
-            EnsureWorkspaceTabExists();
-
-            // Create new tab
-            var tab = new OpenElementTab { Quest = quest, Npc = null };
-            OpenTabs.Add(tab);
-            SelectedTab = tab;
-        }
-
-        public void OpenNpcInTab(NpcBlueprint npc)
-        {
-            var existingTab = OpenTabs.FirstOrDefault(t => t.Npc == npc);
-            if (existingTab != null)
-            {
-                SelectedTab = existingTab;
-                return;
-            }
-
-            // Ensure workspace tab exists before adding editor tab
-            EnsureWorkspaceTabExists();
-
-            var tab = new OpenElementTab { Npc = npc };
-            OpenTabs.Add(tab);
-            SelectedTab = tab;
-        }
-
-        public void CloseTab(OpenElementTab tab)
-        {
-            // If closing workspace tab, check if other tabs exist
-            if (tab.IsWorkspace)
-            {
-                var editorTabs = OpenTabs.Where(t => !t.IsWorkspace).ToList();
-                if (editorTabs.Count == 0)
-                {
-                    // No editor tabs exist, don't allow closing workspace tab
-                    return;
-                }
-            }
-
-            // If closing the last editor tab, also close workspace tab
-            if (!tab.IsWorkspace)
-            {
-                var editorTabs = OpenTabs.Where(t => !t.IsWorkspace).ToList();
-                if (editorTabs.Count == 1 && editorTabs[0] == tab)
-                {
-                    // This is the last editor tab, close workspace tab too
-                    var workspaceTab = OpenTabs.FirstOrDefault(t => t.IsWorkspace);
-                    if (workspaceTab != null)
-                    {
-                        OpenTabs.Remove(workspaceTab);
-                    }
-                }
-            }
-
-            if (tab == SelectedTab)
-            {
-                var index = OpenTabs.IndexOf(tab);
-                if (index > 0)
-                {
-                    SelectedTab = OpenTabs[index - 1];
-                }
-                else if (OpenTabs.Count > 1)
-                {
-                    SelectedTab = OpenTabs[1];
-                }
-                else
-                {
-                    SelectedTab = null;
-                }
-            }
-            OpenTabs.Remove(tab);
-            if (SelectedTab == null)
-            {
-                SelectedQuest = null;
-                SelectedNpc = null;
+                // Subscribe to property changes for undo/redo tracking
+                quest.PropertyChanged -= OnElementPropertyChanged;
+                quest.PropertyChanged += OnElementPropertyChanged;
+                
+                SelectedQuest = quest;
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+                _tabManagementService.OpenQuestInTab(quest);
             }
         }
 
@@ -938,63 +733,13 @@ namespace Schedule1ModdingTool.ViewModels
         {
             if (SelectedQuest == null) return;
 
-            var result = MessageBox.Show($"Are you sure you want to remove '{SelectedQuest.DisplayName}'?", 
-                "Remove Quest", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            
-            if (result == MessageBoxResult.Yes)
+            // Save snapshot before making changes
+            _undoRedoService.SaveSnapshot(CurrentProject);
+
+            if (_elementManagementService.RemoveQuest(CurrentProject, SelectedQuest))
             {
-                CurrentProject.RemoveQuest(SelectedQuest);
                 SelectedQuest = CurrentProject.Quests.FirstOrDefault();
-                WorkspaceViewModel.UpdateQuestCount(CurrentProject.Quests.Count);
-                UpdateWorkspaceProjectInfo();
-            }
-        }
-
-        private void AddNpc(NpcBlueprint? template)
-        {
-            var settings = ModSettings.Load();
-            var npc = template?.DeepCopy() ?? new NpcBlueprint();
-            npc.ClassName = $"Npc{CurrentProject.Npcs.Count + 1}";
-            npc.NpcId = $"npc_{CurrentProject.Npcs.Count + 1}";
-            npc.FirstName = string.IsNullOrWhiteSpace(npc.FirstName) ? "New" : npc.FirstName;
-            npc.LastName = string.IsNullOrWhiteSpace(npc.LastName) ? "NPC" : npc.LastName;
-            npc.Namespace = $"{settings.DefaultModNamespace}.NPCs";
-            npc.ModName = string.IsNullOrWhiteSpace(CurrentProject.ProjectName) ? npc.ModName : CurrentProject.ProjectName;
-            npc.ModAuthor = settings.DefaultModAuthor;
-            npc.ModVersion = settings.DefaultModVersion;
-            npc.FolderId = WorkspaceViewModel.SelectedFolder?.Id ?? QuestProject.RootFolderId;
-
-            CurrentProject.AddNpc(npc);
-            SelectedNpc = npc;
-            WorkspaceViewModel.UpdateNpcCount(CurrentProject.Npcs.Count);
-            UpdateWorkspaceProjectInfo();
-        }
-
-        private void RemoveNpc()
-        {
-            if (SelectedNpc == null) return;
-
-            var result = MessageBox.Show($"Are you sure you want to remove '{SelectedNpc.DisplayName}'?",
-                "Remove NPC", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                CurrentProject.RemoveNpc(SelectedNpc);
-                SelectedNpc = CurrentProject.Npcs.FirstOrDefault();
-                WorkspaceViewModel.UpdateNpcCount(CurrentProject.Npcs.Count);
-                UpdateWorkspaceProjectInfo();
-            }
-        }
-
-        private void AddFolder()
-        {
-            try
-            {
-                WorkspaceViewModel.CreateFolder();
-            }
-            catch (Exception ex)
-            {
-                AppUtils.ShowError($"Unable to create folder: {ex.Message}");
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
             }
         }
 
@@ -1002,460 +747,197 @@ namespace Schedule1ModdingTool.ViewModels
         {
             if (quest == null) return;
 
-            var settings = ModSettings.Load();
-            var duplicate = quest.DeepCopy();
-            duplicate.ClassName = $"{duplicate.ClassName}Copy";
-            duplicate.QuestTitle = $"{duplicate.QuestTitle} (Copy)";
-            duplicate.QuestId = $"{duplicate.QuestId}_copy";
-            duplicate.FolderId = quest.FolderId; // Keep in same folder
+            // Save snapshot before making changes
+            _undoRedoService.SaveSnapshot(CurrentProject);
 
-            CurrentProject.AddQuest(duplicate);
-            SelectedQuest = duplicate;
-            WorkspaceViewModel.UpdateQuestCount(CurrentProject.Quests.Count);
-            UpdateWorkspaceProjectInfo();
+            var duplicate = _elementManagementService.DuplicateQuest(CurrentProject, quest);
+            if (duplicate != null)
+            {
+                // Subscribe to property changes for undo/redo tracking
+                duplicate.PropertyChanged -= OnElementPropertyChanged;
+                duplicate.PropertyChanged += OnElementPropertyChanged;
+                
+                SelectedQuest = duplicate;
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+                _tabManagementService.OpenQuestInTab(duplicate);
+            }
+        }
 
-            // Open the duplicated quest in a tab
-            OpenQuestInTab(duplicate);
+        private void AddNpc(NpcBlueprint? template)
+        {
+            // Save snapshot before making changes
+            _undoRedoService.SaveSnapshot(CurrentProject);
+
+            var npc = _elementManagementService.AddNpc(CurrentProject, template);
+            
+            // Subscribe to property changes for undo/redo tracking
+            npc.PropertyChanged -= OnElementPropertyChanged;
+            npc.PropertyChanged += OnElementPropertyChanged;
+            
+            // Also subscribe to appearance changes
+            if (npc.Appearance != null)
+            {
+                npc.Appearance.PropertyChanged -= OnElementPropertyChanged;
+                npc.Appearance.PropertyChanged += OnElementPropertyChanged;
+            }
+            
+            SelectedNpc = npc;
+            _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+        }
+
+        private void RemoveNpc()
+        {
+            if (SelectedNpc == null) return;
+
+            // Save snapshot before making changes
+            _undoRedoService.SaveSnapshot(CurrentProject);
+
+            if (_elementManagementService.RemoveNpc(CurrentProject, SelectedNpc))
+            {
+                SelectedNpc = CurrentProject.Npcs.FirstOrDefault();
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+            }
         }
 
         private void DuplicateNpc(NpcBlueprint? npc)
         {
             if (npc == null) return;
 
-            var settings = ModSettings.Load();
-            var duplicate = npc.DeepCopy();
-            duplicate.ClassName = $"{duplicate.ClassName}Copy";
-            duplicate.FirstName = duplicate.FirstName;
-            duplicate.LastName = $"{duplicate.LastName} (Copy)";
-            duplicate.NpcId = $"{duplicate.NpcId}_copy";
-            duplicate.FolderId = npc.FolderId; // Keep in same folder
+            // Save snapshot before making changes
+            _undoRedoService.SaveSnapshot(CurrentProject);
 
-            CurrentProject.AddNpc(duplicate);
-            SelectedNpc = duplicate;
-            WorkspaceViewModel.UpdateNpcCount(CurrentProject.Npcs.Count);
-            UpdateWorkspaceProjectInfo();
+            var duplicate = _elementManagementService.DuplicateNpc(CurrentProject, npc);
+            if (duplicate != null)
+            {
+                // Subscribe to property changes for undo/redo tracking
+                duplicate.PropertyChanged -= OnElementPropertyChanged;
+                duplicate.PropertyChanged += OnElementPropertyChanged;
+                
+                // Also subscribe to appearance changes
+                if (duplicate.Appearance != null)
+                {
+                    duplicate.Appearance.PropertyChanged -= OnElementPropertyChanged;
+                    duplicate.Appearance.PropertyChanged += OnElementPropertyChanged;
+                }
+                
+                SelectedNpc = duplicate;
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+            }
+        }
+
+        private void AddFolder()
+        {
+            try
+            {
+                _elementManagementService.CreateFolder();
+            }
+            catch (Exception ex)
+            {
+                AppUtils.ShowError($"Unable to create folder: {ex.Message}");
+            }
         }
 
         private void DuplicateFolder(ModFolder? folder)
         {
-            if (folder == null || CurrentProject == null) return;
-
-            try
-            {
-                var duplicate = new ModFolder
-                {
-                    Name = $"{folder.Name} (Copy)",
-                    ParentId = folder.ParentId
-                };
-
-                CurrentProject.Folders.Add(duplicate);
-                WorkspaceViewModel.NavigateToFolder(duplicate);
-            }
-            catch (Exception ex)
-            {
-                AppUtils.ShowError($"Unable to duplicate folder: {ex.Message}");
-            }
+            _elementManagementService.DuplicateFolder(CurrentProject, folder);
         }
 
         private void DeleteFolder(ModFolder? folder)
         {
-            if (folder == null || CurrentProject == null) return;
-
-            // Prevent deleting root folder
-            if (string.IsNullOrWhiteSpace(folder.ParentId))
-            {
-                AppUtils.ShowWarning("Cannot delete the root folder.");
-                return;
-            }
-
-            // Check if folder has children
-            var hasChildren = CurrentProject.Folders.Any(f => f.ParentId == folder.Id) ||
-                             CurrentProject.Quests.Any(q => q.FolderId == folder.Id) ||
-                             CurrentProject.Npcs.Any(n => n.FolderId == folder.Id);
-
-            if (hasChildren)
-            {
-                var result = MessageBox.Show(
-                    $"Folder '{folder.Name}' contains items. Do you want to delete it and move all items to its parent folder?",
-                    "Delete Folder",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                if (result != MessageBoxResult.Yes)
-                    return;
-
-                // Move all children to parent folder
-                var parentId = folder.ParentId ?? QuestProject.RootFolderId;
-                foreach (var childFolder in CurrentProject.Folders.Where(f => f.ParentId == folder.Id).ToList())
-                {
-                    childFolder.ParentId = parentId;
-                }
-                foreach (var quest in CurrentProject.Quests.Where(q => q.FolderId == folder.Id))
-                {
-                    quest.FolderId = parentId;
-                }
-                foreach (var npc in CurrentProject.Npcs.Where(n => n.FolderId == folder.Id))
-                {
-                    npc.FolderId = parentId;
-                }
-            }
-            else
-            {
-                var result = MessageBox.Show(
-                    $"Are you sure you want to delete folder '{folder.Name}'?",
-                    "Delete Folder",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                if (result != MessageBoxResult.Yes)
-                    return;
-            }
-
-            // Navigate to parent folder before deleting
-            var parentFolder = CurrentProject.GetFolderById(folder.ParentId ?? QuestProject.RootFolderId);
-            if (parentFolder != null)
-            {
-                WorkspaceViewModel.NavigateToFolder(parentFolder);
-            }
-
-            CurrentProject.Folders.Remove(folder);
+            _elementManagementService.DeleteFolder(CurrentProject, folder);
         }
+
+        private void EditQuest()
+        {
+            // Handled by properties panel
+        }
+
+        private void EditNpc()
+        {
+            if (SelectedNpc != null)
+            {
+                _tabManagementService.OpenNpcInTab(SelectedNpc);
+            }
+        }
+
+        #endregion
+
+        #region Tab Operations (Delegated to TabManagementService)
+
+        public void OpenWorkspaceTab()
+        {
+            _tabManagementService.OpenWorkspaceTab();
+        }
+
+        public void OpenQuestInTab(QuestBlueprint quest)
+        {
+            _tabManagementService.OpenQuestInTab(quest);
+        }
+
+        public void OpenNpcInTab(NpcBlueprint npc)
+        {
+            _tabManagementService.OpenNpcInTab(npc);
+        }
+
+        public void CloseTab(OpenElementTab tab)
+        {
+            if (_tabManagementService.CloseTab(tab))
+            {
+                if (_tabManagementService.SelectedTab == null)
+                {
+                    SelectedQuest = null;
+                    SelectedNpc = null;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Resource Operations (Delegated to ResourceManagementService)
 
         private void AddResource()
         {
-            System.Diagnostics.Debug.WriteLine("[AddResource] Method called");
+            Debug.WriteLine("[AddResource] Method called");
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[AddResource] CurrentProject is null: {CurrentProject == null}");
                 if (CurrentProject == null)
                 {
-                    System.Diagnostics.Debug.WriteLine("[AddResource] CurrentProject is null, showing error and returning");
+                    Debug.WriteLine("[AddResource] CurrentProject is null, showing error and returning");
                     AppUtils.ShowError("No project is currently loaded.", "Cannot Add Resource");
                     return;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[AddResource] CurrentProject.FilePath: {CurrentProject.FilePath ?? "null"}");
-                System.Diagnostics.Debug.WriteLine("[AddResource] Calling EnsureProjectDirectory...");
                 if (!EnsureProjectDirectory(out var projectDir))
                 {
-                    System.Diagnostics.Debug.WriteLine("[AddResource] EnsureProjectDirectory returned false, returning");
-                    // EnsureProjectDirectory already shows user-facing messages, so we just return
+                    Debug.WriteLine("[AddResource] EnsureProjectDirectory returned false, returning");
                     UpdateProcessState();
                     return;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[AddResource] Project directory: {projectDir}");
+                ProcessState = "Adding resources...";
+                var result = _resourceManagementService.AddResources(CurrentProject, projectDir);
 
-                System.Diagnostics.Debug.WriteLine("[AddResource] Creating OpenFileDialog...");
-                var dialog = new OpenFileDialog
+                if (result.Success && result.AddedAssets.Count > 0)
                 {
-                    Filter = "PNG Images (*.png)|*.png",
-                    Title = "Select PNG Resource",
-                    Multiselect = true,
-                    CheckFileExists = true
-                };
-
-                System.Diagnostics.Debug.WriteLine("[AddResource] Calling dialog.ShowDialog()...");
-                bool? result;
-                try
-                {
-                    result = dialog.ShowDialog();
-                    System.Diagnostics.Debug.WriteLine($"[AddResource] dialog.ShowDialog() returned: {result}");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[AddResource] Exception in ShowDialog: {ex.Message}\n{ex.StackTrace}");
-                    AppUtils.ShowError($"Failed to open file dialog: {ex.Message}", "Dialog Error");
-                    return;
+                    SelectedResource = result.LastAddedAsset;
+                    Debug.WriteLine($"[AddResource] SelectedResource set to: {result.LastAddedAsset?.DisplayName}");
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[AddResource] FileNames.Length: {dialog.FileNames.Length}");
-                if (result != true || dialog.FileNames.Length == 0)
+                if (result.Failures.Count > 0)
                 {
-                    System.Diagnostics.Debug.WriteLine("[AddResource] No files selected or dialog cancelled, returning");
-                    UpdateProcessState();
-                    return;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[AddResource] Processing {dialog.FileNames.Length} file(s)");
-                ProcessState = $"Adding {dialog.FileNames.Length} resource(s)...";
-                var resourcesDir = Path.Combine(projectDir, "Resources");
-                System.Diagnostics.Debug.WriteLine($"[AddResource] Resources directory: {resourcesDir}");
-                Directory.CreateDirectory(resourcesDir);
-
-                var addedAssets = new List<ResourceAsset>();
-                var failures = new List<string>();
-
-                foreach (var file in dialog.FileNames)
-                {
-                    try
-                    {
-                        if (!File.Exists(file))
-                        {
-                            failures.Add(Path.GetFileName(file));
-                            continue;
-                        }
-
-                        var baseName = AppUtils.MakeSafeFilename(Path.GetFileNameWithoutExtension(file));
-                        var uniqueFileName = GenerateUniqueResourceName(resourcesDir, $"{baseName}.png");
-                        var destination = Path.Combine(resourcesDir, uniqueFileName);
-                        if (!TryCopyResourceFile(file, destination, out var copyError))
-                        {
-                            failures.Add($"{Path.GetFileName(file)} ({copyError})");
-                            continue;
-                        }
-
-                        var asset = new ResourceAsset
-                        {
-                            DisplayName = baseName,
-                            RelativePath = Path.Combine("Resources", uniqueFileName).Replace('\\', '/')
-                        };
-
-                        CurrentProject.AddResource(asset);
-                        addedAssets.Add(asset);
-                    }
-                    catch (Exception ex)
-                    {
-                        failures.Add($"{Path.GetFileName(file)} ({ex.Message})");
-                    }
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[AddResource] Successfully added {addedAssets.Count} asset(s), {failures.Count} failure(s)");
-                if (addedAssets.Count > 0)
-                {
-                    SelectedResource = addedAssets.Last();
-                    System.Diagnostics.Debug.WriteLine($"[AddResource] SelectedResource set to: {addedAssets.Last().DisplayName}");
-                }
-
-                if (failures.Count > 0)
-                {
-                    var message = $"Some files could not be added:\n{string.Join("\n", failures)}";
+                    var message = $"Some files could not be added:\n{string.Join("\n", result.Failures)}";
                     AppUtils.ShowWarning(message, "Resource Import Issues");
                 }
+
                 UpdateProcessState();
-                System.Diagnostics.Debug.WriteLine("[AddResource] Method completed successfully");
+                Debug.WriteLine("[AddResource] Method completed successfully");
             }
             catch (Exception ex)
             {
                 ProcessState = "Resource upload failed";
-                System.Diagnostics.Debug.WriteLine($"[AddResource] Unhandled exception: {ex.Message}\n{ex.StackTrace}");
+                Debug.WriteLine($"[AddResource] Unhandled exception: {ex.Message}\n{ex.StackTrace}");
                 AppUtils.ShowError($"An error occurred while adding resources: {ex.Message}\n\n{ex.StackTrace}", "Resource Upload Error");
             }
-        }
-
-        private void NormalizeProjectResources()
-        {
-            try
-            {
-                if (CurrentProject == null || CurrentProject.Resources.Count == 0)
-                {
-                    Debug.WriteLine("[NormalizeProjectResources] No project/resources to normalize");
-                    return;
-                }
-
-                if (!TryGetProjectDirectory(out var projectDir))
-                {
-                    Debug.WriteLine("[NormalizeProjectResources] Unable to resolve project directory");
-                    return;
-                }
-
-                var resourcesDir = Path.Combine(projectDir, "Resources");
-                Directory.CreateDirectory(resourcesDir);
-                var resourcesDirFull = NormalizeDirectoryPath(resourcesDir);
-
-                Debug.WriteLine($"[NormalizeProjectResources] Normalizing {CurrentProject.Resources.Count} resource(s) into '{resourcesDirFull}'");
-                foreach (var asset in CurrentProject.Resources.ToList())
-                {
-                    EnsureResourceAssetLocal(asset, projectDir, resourcesDir, resourcesDirFull);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[NormalizeProjectResources] {ex.Message}\n{ex.StackTrace}");
-            }
-        }
-
-        private void EnsureResourceAssetLocal(ResourceAsset asset, string projectDir, string resourcesDir, string resourcesDirFull)
-        {
-            if (asset == null)
-            {
-                Debug.WriteLine("[EnsureResourceAssetLocal] Asset was null");
-                return;
-            }
-
-            var relativePath = asset.RelativePath;
-            if (string.IsNullOrWhiteSpace(relativePath))
-            {
-                Debug.WriteLine("[EnsureResourceAssetLocal] Asset relative path was null/empty");
-                return;
-            }
-
-            string absolutePath;
-            try
-            {
-                absolutePath = ResourcePathHelper.GetAbsolutePath(relativePath, projectDir);
-            }
-            catch
-            {
-                absolutePath = relativePath;
-            }
-
-            if (!File.Exists(absolutePath) && Path.IsPathRooted(relativePath) && File.Exists(relativePath))
-            {
-                absolutePath = relativePath;
-            }
-
-            if (!File.Exists(absolutePath))
-            {
-                Debug.WriteLine($"[EnsureResourceAssetLocal] File missing for '{relativePath}' (expected '{absolutePath}')");
-                return;
-            }
-
-            Debug.WriteLine($"[EnsureResourceAssetLocal] Found '{absolutePath}' for '{relativePath}'");
-            var absoluteFull = NormalizeDirectoryPath(absolutePath);
-            if (!absoluteFull.StartsWith(resourcesDirFull, StringComparison.OrdinalIgnoreCase))
-            {
-                var extension = Path.GetExtension(absolutePath);
-                if (string.IsNullOrWhiteSpace(extension))
-                {
-                    extension = ".png";
-                }
-
-                var safeName = AppUtils.MakeSafeFilename(Path.GetFileNameWithoutExtension(absolutePath));
-                var destinationName = GenerateUniqueResourceName(resourcesDir, $"{safeName}{extension}");
-                var destinationPath = Path.Combine(resourcesDir, destinationName);
-                Debug.WriteLine($"[EnsureResourceAssetLocal] Copying '{absoluteFull}' into project resources '{destinationPath}'");
-
-                if (!TryCopyResourceFile(absolutePath, destinationPath, out var error))
-                {
-                    Debug.WriteLine($"[EnsureResourceAssetLocal] Failed to copy {absolutePath}: {error}");
-                    return;
-                }
-
-                absoluteFull = NormalizeDirectoryPath(destinationPath);
-                absolutePath = destinationPath;
-            }
-
-            var normalizedRelative = ResourcePathHelper.GetProjectRelativePath(absolutePath, projectDir);
-            if (!string.Equals(asset.RelativePath, normalizedRelative, StringComparison.OrdinalIgnoreCase))
-            {
-                asset.RelativePath = normalizedRelative;
-            }
-        }
-
-        private static string NormalizeDirectoryPath(string path)
-        {
-            return Path.GetFullPath(path)
-                       .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        }
-
-        private static bool TryCopyResourceFile(string source, string destination, out string error)
-        {
-            error = string.Empty;
-
-            // Retry copy to mitigate transient file locks from antivirus/indexers or image decoders
-            const int maxRetries = 5;
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    Debug.WriteLine($"[TryCopyResourceFile] Attempt {attempt}/{maxRetries}: '{source}' -> '{destination}'");
-                    var destDir = Path.GetDirectoryName(destination);
-                    if (!string.IsNullOrEmpty(destDir))
-                    {
-                        Directory.CreateDirectory(destDir);
-                    }
-
-                    if (File.Exists(destination))
-                    {
-                        try
-                        {
-                            File.Delete(destination);
-                        }
-                        catch (IOException ioEx)
-                        {
-                            Debug.WriteLine($"[TryCopyResourceFile] Destination delete failed: {ioEx.Message}");
-                            // Destination locked; wait and retry delete on next attempt
-                        }
-                    }
-
-                    // Use FileStream with FileShare.ReadWrite to allow reading even if file is open elsewhere
-                    // This allows copying files that might be open in Explorer preview or image viewers
-                    using (var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-                    using (var destStream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None))
-                    {
-                        sourceStream.CopyTo(destStream);
-                    }
-                    Debug.WriteLine($"[TryCopyResourceFile] Copy succeeded: '{destination}'");
-                    return true;
-                }
-                catch (IOException ioEx)
-                {
-                    error = ioEx.Message;
-                    Debug.WriteLine($"[TryCopyResourceFile] IO exception ({attempt}/{maxRetries}): {ioEx.Message}");
-                    if (attempt == maxRetries)
-                        break;
-
-                    // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
-                    System.Threading.Thread.Sleep(100 * (int)Math.Pow(2, attempt - 1));
-                    continue;
-                }
-                catch (UnauthorizedAccessException unauthEx)
-                {
-                    error = unauthEx.Message;
-                    Debug.WriteLine($"[TryCopyResourceFile] Unauthorized ({attempt}/{maxRetries}): {unauthEx.Message}");
-                    if (attempt == maxRetries)
-                        break;
-                    System.Threading.Thread.Sleep(100 * (int)Math.Pow(2, attempt - 1));
-                    continue;
-                }
-                catch (Exception ex)
-                {
-                    error = ex.Message;
-                    Debug.WriteLine($"[TryCopyResourceFile] Fatal error: {ex.Message}");
-                    return false;
-                }
-            }
-
-            Debug.WriteLine($"[TryCopyResourceFile] Failed after {maxRetries} attempts: '{source}' -> '{destination}' ({error})");
-            return false;
-        }
-
-        private static bool TryDeleteFileWithRetry(string absolutePath, out string error)
-        {
-            error = string.Empty;
-            const int maxRetries = 5;
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    if (File.Exists(absolutePath))
-                    {
-                        File.Delete(absolutePath);
-                    }
-                    return true;
-                }
-                catch (IOException ioEx)
-                {
-                    error = ioEx.Message;
-                    if (attempt == maxRetries)
-                        break;
-                    System.Threading.Thread.Sleep(100 * (int)Math.Pow(2, attempt - 1));
-                }
-                catch (UnauthorizedAccessException unauthEx)
-                {
-                    error = unauthEx.Message;
-                    if (attempt == maxRetries)
-                        break;
-                    System.Threading.Thread.Sleep(100 * (int)Math.Pow(2, attempt - 1));
-                }
-                catch (Exception ex)
-                {
-                    error = ex.Message;
-                    return false;
-                }
-            }
-            return false;
         }
 
         private void RemoveResource(ResourceAsset? resource)
@@ -1468,78 +950,38 @@ namespace Schedule1ModdingTool.ViewModels
             if (!TryGetProjectDirectory(out var projectDir))
                 return;
 
-            var absolutePath = Path.Combine(projectDir,
-                (resource.RelativePath ?? string.Empty).Replace('/', Path.DirectorySeparatorChar));
+            _resourceManagementService.RemoveResource(CurrentProject, resource, projectDir);
 
-            try
-            {
-                if (File.Exists(absolutePath))
-                {
-                    if (!TryDeleteFileWithRetry(absolutePath, out var delError))
-                    {
-                        AppUtils.ShowWarning($"Failed to delete file '{absolutePath}': {delError}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                AppUtils.ShowWarning($"Failed to delete file '{absolutePath}': {ex.Message}");
-            }
-
-            CurrentProject.RemoveResource(resource);
             if (SelectedResource == resource)
             {
                 SelectedResource = null;
             }
         }
 
-        /// <summary>
-        /// Validates all resources in the current project and returns a list of missing resources.
-        /// </summary>
-        /// <returns>List of missing resource display names and paths, or empty list if all valid</returns>
-        private List<string> ValidateProjectResources()
+        private void NormalizeProjectResources()
         {
-            var missingResources = new List<string>();
-
-            if (CurrentProject == null || CurrentProject.Resources.Count == 0)
-                return missingResources;
-
             if (!TryGetProjectDirectory(out var projectDir))
             {
-                missingResources.Add("Unable to determine project directory");
-                return missingResources;
+                Debug.WriteLine("[NormalizeProjectResources] Unable to resolve project directory");
+                return;
             }
 
-            foreach (var asset in CurrentProject.Resources)
-            {
-                if (string.IsNullOrWhiteSpace(asset.RelativePath))
-                {
-                    missingResources.Add($"{asset.DisplayName}: No path specified");
-                    continue;
-                }
-
-                if (!ResourcePathHelper.ResourceExists(asset.RelativePath, projectDir))
-                {
-                    var expectedPath = Path.Combine(projectDir, asset.RelativePath.Replace('/', Path.DirectorySeparatorChar));
-                    missingResources.Add($"{asset.DisplayName} ({asset.RelativePath})\n  Expected at: {expectedPath}");
-                }
-            }
-
-            return missingResources;
+            _resourceManagementService.NormalizeProjectResources(CurrentProject, projectDir);
         }
 
-        private void EditQuest()
+        private List<string> ValidateProjectResources()
         {
-            // This will be handled by the properties panel
+            if (!TryGetProjectDirectory(out var projectDir))
+            {
+                return new List<string> { "Unable to determine project directory" };
+            }
+
+            return _resourceManagementService.ValidateProjectResources(CurrentProject, projectDir);
         }
 
-        private void EditNpc()
-        {
-            if (SelectedNpc != null)
-            {
-                OpenNpcInTab(SelectedNpc);
-            }
-        }
+        #endregion
+
+        #region Code Generation & Build
 
         private void RegenerateCode()
         {
@@ -1566,31 +1008,7 @@ namespace Schedule1ModdingTool.ViewModels
 
         private void Compile()
         {
-            // Redirect to BuildMod - the old Compile button now builds the full mod project
             BuildMod();
-        }
-
-        private bool ConfirmUnsavedChanges()
-        {
-            if (!CurrentProject.IsModified) return true;
-
-            var result = MessageBox.Show(
-                "You have unsaved changes. Do you want to save them before continuing?",
-                "Unsaved Changes",
-                MessageBoxButton.YesNoCancel,
-                MessageBoxImage.Question);
-
-            switch (result)
-            {
-                case MessageBoxResult.Yes:
-                    SaveProject();
-                    return true;
-                case MessageBoxResult.No:
-                    return true;
-                case MessageBoxResult.Cancel:
-                default:
-                    return false;
-            }
         }
 
         private void CopyGeneratedCode()
@@ -1649,7 +1067,6 @@ namespace Schedule1ModdingTool.ViewModels
                 return false;
             }
 
-            // Validate resources before export
             var missingResources = ValidateProjectResources();
             if (missingResources.Count > 0)
             {
@@ -1666,14 +1083,12 @@ namespace Schedule1ModdingTool.ViewModels
 
             try
             {
-                // Auto-regenerate code before export
                 if (SelectedQuest != null || SelectedNpc != null)
                 {
                     RegenerateCode();
                 }
 
                 ProcessState = "Exporting mod project...";
-                // Use the project directory directly (where .qproj file is located)
                 var projectDir = Path.GetDirectoryName(CurrentProject.FilePath);
                 if (string.IsNullOrWhiteSpace(projectDir) || !Directory.Exists(projectDir))
                 {
@@ -1682,7 +1097,7 @@ namespace Schedule1ModdingTool.ViewModels
                     return false;
                 }
 
-                _modSettings = ModSettings.Load(); // Reload settings
+                _modSettings = ModSettings.Load();
                 ProcessState = "Generating mod files...";
                 var result = _modProjectGenerator.GenerateModProject(CurrentProject, projectDir, _modSettings);
 
@@ -1777,13 +1192,12 @@ namespace Schedule1ModdingTool.ViewModels
                 }
 
                 ProcessState = "Building connector mod and launching game...";
-                
-                // Use ConnectorLocal for development (local DLL), ConnectorNuGet for release
-                var useLocalDll = true; // Set to false to use NuGet package instead
+
+                var useLocalDll = true;
                 var launchResult = _gameLaunchService.LaunchGame(_modSettings, useLocalDll);
-                
+
                 UpdateProcessState();
-                
+
                 if (launchResult.Success)
                 {
                     var message = "Game launched successfully!";
@@ -1832,7 +1246,6 @@ namespace Schedule1ModdingTool.ViewModels
             }
             else
             {
-                // Show build log window with full output
                 var logVm = new BuildLogViewModel
                 {
                     Title = "Build Failed - Build Log",
@@ -1851,11 +1264,11 @@ namespace Schedule1ModdingTool.ViewModels
         private string BuildLogContent(ModBuildResult buildResult)
         {
             var sb = new System.Text.StringBuilder();
-            
+
             sb.AppendLine($"Build Status: FAILED");
             sb.AppendLine($"Exit Code: {buildResult.ExitCode}");
             sb.AppendLine();
-            
+
             if (!string.IsNullOrEmpty(buildResult.ErrorMessage))
             {
                 sb.AppendLine("=== Error Message ===");
@@ -1901,22 +1314,446 @@ namespace Schedule1ModdingTool.ViewModels
             settingsWindow.ShowDialog();
 
             // Reload settings after dialog closes
+            var oldUndoSize = _modSettings.UndoHistorySize;
             _modSettings = ModSettings.Load();
-            CommandManager.InvalidateRequerySuggested(); // Refresh PlayGameCommand enabled state
+            
+            // Update undo history size if it changed
+            if (_modSettings.UndoHistorySize != oldUndoSize)
+            {
+                _undoRedoService.MaxHistorySize = _modSettings.UndoHistorySize;
+            }
+            
+            CommandManager.InvalidateRequerySuggested();
         }
+
+        #endregion
+
+        #region Helper Methods
+
+        private bool HasAnyElements() =>
+            CurrentProject.Quests.Count > 0 ||
+            CurrentProject.Npcs.Count > 0 ||
+            CurrentProject.Resources.Count > 0;
+
+        private bool TryGetProjectDirectory(out string projectDir)
+        {
+            projectDir = string.Empty;
+            if (CurrentProject == null || string.IsNullOrWhiteSpace(CurrentProject.FilePath))
+            {
+                return false;
+            }
+
+            var dir = Path.GetDirectoryName(CurrentProject.FilePath);
+            if (string.IsNullOrWhiteSpace(dir))
+            {
+                return false;
+            }
+
+            projectDir = dir;
+            return true;
+        }
+
+        private bool EnsureProjectDirectory(out string projectDir)
+        {
+            projectDir = string.Empty;
+
+            if (TryGetProjectDirectory(out projectDir))
+            {
+                return true;
+            }
+
+            if (CurrentProject == null)
+            {
+                return false;
+            }
+
+            var shouldSave = AppUtils.AskYesNo(
+                "You need to save the project before adding resources. Would you like to save it now?",
+                "Save Project Required");
+
+            if (!shouldSave)
+            {
+                return false;
+            }
+
+            if (!_projectService.SaveProject(CurrentProject))
+            {
+                AppUtils.ShowWarning("Project was not saved. Upload cancelled.", "Resource Upload Cancelled");
+                return false;
+            }
+
+            if (TryGetProjectDirectory(out projectDir))
+            {
+                return true;
+            }
+
+            AppUtils.ShowError("Unable to determine project location after saving. Please try again.", "Resource Upload Failed");
+            return false;
+        }
+
+        private void UpdateProcessState()
+        {
+            if (CurrentProject == null || string.IsNullOrWhiteSpace(CurrentProject.ProjectName))
+            {
+                ProcessState = "Waiting for project...";
+            }
+            else if (CurrentProject.IsModified)
+            {
+                ProcessState = "Ready (unsaved changes)";
+            }
+            else
+            {
+                ProcessState = "Ready";
+            }
+        }
+
+        #endregion
+
+        #region Undo/Redo Operations
+
+        private void Undo()
+        {
+            if (CurrentProject == null || !_undoRedoService.CanUndo)
+                return;
+
+            // Save IDs of currently selected elements before restoring
+            var selectedQuestId = SelectedQuest?.QuestId;
+            var selectedNpcId = SelectedNpc?.NpcId;
+            
+            var restoredProject = _undoRedoService.Undo(CurrentProject);
+            if (restoredProject != null)
+            {
+                _isRestoringFromUndoRedo = true;
+                try
+                {
+                    // Cancel any pending snapshot saves
+                    CancelDebouncedSnapshot();
+                    
+                    // Temporarily unsubscribe to avoid saving snapshot during restore
+                    CurrentProject.PropertyChanged -= CurrentProjectOnPropertyChanged;
+                    
+                    CurrentProject = restoredProject;
+                    
+                    // Resubscribe
+                    CurrentProject.PropertyChanged += CurrentProjectOnPropertyChanged;
+                    
+                    // Resubscribe to element property changes
+                    SubscribeToElementPropertyChanges();
+                    
+                    // Update tracked modified state
+                    _wasModifiedBeforeChange = CurrentProject.IsModified;
+                    
+                    // Restore selected quest/NPC references to point to new objects
+                    RestoreSelectedElements(selectedQuestId, selectedNpcId);
+                    
+                    // Update open tabs to reference new objects
+                    UpdateOpenTabsReferences();
+                    
+                    // Update UI
+                    WorkspaceViewModel.BindProject(CurrentProject);
+                    _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count);
+                    _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+                    UpdateProcessState();
+                    
+                    // Regenerate code if needed
+                    if (SelectedQuest != null || SelectedNpc != null)
+                    {
+                        RegenerateCode();
+                    }
+                }
+                finally
+                {
+                    _isRestoringFromUndoRedo = false;
+                }
+            }
+        }
+
+        private void Redo()
+        {
+            if (CurrentProject == null || !_undoRedoService.CanRedo)
+                return;
+
+            // Save IDs of currently selected elements before restoring
+            var selectedQuestId = SelectedQuest?.QuestId;
+            var selectedNpcId = SelectedNpc?.NpcId;
+            
+            var restoredProject = _undoRedoService.Redo(CurrentProject);
+            if (restoredProject != null)
+            {
+                _isRestoringFromUndoRedo = true;
+                try
+                {
+                    // Cancel any pending snapshot saves
+                    CancelDebouncedSnapshot();
+                    
+                    // Temporarily unsubscribe to avoid saving snapshot during restore
+                    CurrentProject.PropertyChanged -= CurrentProjectOnPropertyChanged;
+                    
+                    CurrentProject = restoredProject;
+                    
+                    // Resubscribe
+                    CurrentProject.PropertyChanged += CurrentProjectOnPropertyChanged;
+                    
+                    // Resubscribe to element property changes
+                    SubscribeToElementPropertyChanges();
+                    
+                    // Update tracked modified state
+                    _wasModifiedBeforeChange = CurrentProject.IsModified;
+                    
+                    // Restore selected quest/NPC references to point to new objects
+                    RestoreSelectedElements(selectedQuestId, selectedNpcId);
+                    
+                    // Update open tabs to reference new objects
+                    UpdateOpenTabsReferences();
+                    
+                    // Update UI
+                    WorkspaceViewModel.BindProject(CurrentProject);
+                    _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count);
+                    _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+                    UpdateProcessState();
+                    
+                    // Regenerate code if needed
+                    if (SelectedQuest != null || SelectedNpc != null)
+                    {
+                        RegenerateCode();
+                    }
+                }
+                finally
+                {
+                    _isRestoringFromUndoRedo = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Restores SelectedQuest and SelectedNpc references to point to objects in the restored project
+        /// </summary>
+        private void RestoreSelectedElements(string? selectedQuestId, string? selectedNpcId)
+        {
+            // Restore selected quest if it existed before
+            if (!string.IsNullOrEmpty(selectedQuestId))
+            {
+                var restoredQuest = CurrentProject.Quests.FirstOrDefault(q => q.QuestId == selectedQuestId);
+                if (restoredQuest != null)
+                {
+                    // Clear current selection first to ensure property change notification
+                    var currentQuest = _selectedQuest;
+                    _selectedQuest = null;
+                    OnPropertyChanged(nameof(SelectedQuest));
+                    
+                    // Set to restored quest using the property setter to trigger all side effects
+                    SelectedQuest = restoredQuest;
+                }
+                else
+                {
+                    // Quest was deleted, clear selection
+                    SelectedQuest = null;
+                }
+            }
+            else if (!string.IsNullOrEmpty(selectedNpcId))
+            {
+                // Only clear quest if we're restoring an NPC
+                SelectedQuest = null;
+            }
+
+            // Restore selected NPC if it existed before
+            if (!string.IsNullOrEmpty(selectedNpcId))
+            {
+                var restoredNpc = CurrentProject.Npcs.FirstOrDefault(n => n.NpcId == selectedNpcId);
+                if (restoredNpc != null)
+                {
+                    // Clear current selection first to ensure property change notification
+                    var currentNpc = _selectedNpc;
+                    if (currentNpc?.Appearance != null)
+                    {
+                        currentNpc.Appearance.PropertyChanged -= OnAppearancePropertyChanged;
+                    }
+                    _selectedNpc = null;
+                    OnPropertyChanged(nameof(SelectedNpc));
+                    
+                    // Set to restored NPC using the property setter to trigger all side effects
+                    SelectedNpc = restoredNpc;
+                }
+                else
+                {
+                    // NPC was deleted, clear selection
+                    SelectedNpc = null;
+                }
+            }
+            else if (!string.IsNullOrEmpty(selectedQuestId))
+            {
+                // Only clear NPC if we're restoring a quest
+                SelectedNpc = null;
+            }
+        }
+
+        /// <summary>
+        /// Updates OpenTabs to reference the new objects from the restored project
+        /// </summary>
+        private void UpdateOpenTabsReferences()
+        {
+            var tabsToClose = new List<OpenElementTab>();
+            
+            foreach (var tab in OpenTabs)
+            {
+                if (tab.Quest != null)
+                {
+                    // Find the quest in the restored project by ID
+                    var restoredQuest = CurrentProject.Quests.FirstOrDefault(q => q.QuestId == tab.Quest.QuestId);
+                    if (restoredQuest != null)
+                    {
+                        tab.Quest = restoredQuest;
+                    }
+                    else
+                    {
+                        // Quest was deleted, mark tab for closing
+                        tabsToClose.Add(tab);
+                    }
+                }
+                else if (tab.Npc != null)
+                {
+                    // Find the NPC in the restored project by ID
+                    var restoredNpc = CurrentProject.Npcs.FirstOrDefault(n => n.NpcId == tab.Npc.NpcId);
+                    if (restoredNpc != null)
+                    {
+                        tab.Npc = restoredNpc;
+                    }
+                    else
+                    {
+                        // NPC was deleted, mark tab for closing
+                        tabsToClose.Add(tab);
+                    }
+                }
+            }
+            
+            // Close tabs that reference deleted elements
+            foreach (var tab in tabsToClose)
+            {
+                CloseTab(tab);
+            }
+        }
+
+        /// <summary>
+        /// Subscribes to property changes on all NPCs and Quests to track changes for undo/redo
+        /// </summary>
+        private void SubscribeToElementPropertyChanges()
+        {
+            if (CurrentProject == null)
+                return;
+
+            // Subscribe to all quest property changes
+            foreach (var quest in CurrentProject.Quests)
+            {
+                quest.PropertyChanged -= OnElementPropertyChanged;
+                quest.PropertyChanged += OnElementPropertyChanged;
+            }
+
+            // Subscribe to all NPC property changes
+            foreach (var npc in CurrentProject.Npcs)
+            {
+                npc.PropertyChanged -= OnElementPropertyChanged;
+                npc.PropertyChanged += OnElementPropertyChanged;
+                
+                // Also subscribe to appearance changes
+                if (npc.Appearance != null)
+                {
+                    npc.Appearance.PropertyChanged -= OnElementPropertyChanged;
+                    npc.Appearance.PropertyChanged += OnElementPropertyChanged;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Unsubscribes from property changes on all NPCs and Quests
+        /// </summary>
+        private void UnsubscribeFromElementPropertyChanges()
+        {
+            if (CurrentProject == null)
+                return;
+
+            foreach (var quest in CurrentProject.Quests)
+            {
+                quest.PropertyChanged -= OnElementPropertyChanged;
+            }
+
+            foreach (var npc in CurrentProject.Npcs)
+            {
+                npc.PropertyChanged -= OnElementPropertyChanged;
+                if (npc.Appearance != null)
+                {
+                    npc.Appearance.PropertyChanged -= OnElementPropertyChanged;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles property changes on NPCs and Quests to trigger debounced snapshot saves
+        /// </summary>
+        private void OnElementPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // Don't save snapshots during undo/redo operations
+            if (_isRestoringFromUndoRedo)
+                return;
+
+            // Schedule a debounced snapshot save
+            ScheduleDebouncedSnapshot();
+        }
+
+        /// <summary>
+        /// Schedules a debounced snapshot save to avoid excessive undo states
+        /// </summary>
+        private void ScheduleDebouncedSnapshot()
+        {
+            if (CurrentProject == null || _isRestoringFromUndoRedo)
+                return;
+
+            // Cancel existing timer if any
+            CancelDebouncedSnapshot();
+
+            // Create new timer with 500ms delay
+            _debounceSnapshotTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(500)
+            };
+            _debounceSnapshotTimer.Tick += (s, e) =>
+            {
+                if (CurrentProject != null && !_isRestoringFromUndoRedo)
+                {
+                    _undoRedoService.SaveSnapshot(CurrentProject);
+                }
+                CancelDebouncedSnapshot();
+            };
+            _debounceSnapshotTimer.Start();
+        }
+
+        /// <summary>
+        /// Cancels any pending debounced snapshot save
+        /// </summary>
+        private void CancelDebouncedSnapshot()
+        {
+            if (_debounceSnapshotTimer != null)
+            {
+                _debounceSnapshotTimer.Stop();
+                _debounceSnapshotTimer = null;
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
 
         private void OnAppearancePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainViewModel] OnAppearancePropertyChanged - Property: {e.PropertyName}");
+            Debug.WriteLine($"[MainViewModel] OnAppearancePropertyChanged - Property: {e.PropertyName}");
 
             if (sender is NpcAppearanceSettings appearance && SelectedNpc?.Appearance == appearance)
             {
-                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Sending appearance update to preview service");
+                Debug.WriteLine($"[MainViewModel] Sending appearance update to preview service");
                 _appearancePreviewService.SendAppearanceUpdate(appearance);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"[MainViewModel] Skipping update - sender check failed");
+                Debug.WriteLine($"[MainViewModel] Skipping update - sender check failed");
             }
         }
 
@@ -1924,18 +1761,28 @@ namespace Schedule1ModdingTool.ViewModels
         {
             if (e.PropertyName == nameof(QuestProject.IsModified))
             {
+                // Save snapshot when project becomes modified (if it wasn't modified before)
+                if (CurrentProject.IsModified && !_wasModifiedBeforeChange && !_isRestoringFromUndoRedo)
+                {
+                    ScheduleDebouncedSnapshot();
+                }
+                _wasModifiedBeforeChange = CurrentProject.IsModified;
                 UpdateProcessState();
                 CommandManager.InvalidateRequerySuggested();
             }
             else if (e.PropertyName == nameof(QuestProject.Quests))
             {
-                WorkspaceViewModel.UpdateQuestCount(CurrentProject.Quests.Count);
-                UpdateWorkspaceProjectInfo();
+                // Resubscribe to quest property changes when collection changes
+                SubscribeToElementPropertyChanges();
+                _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count);
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
             }
             else if (e.PropertyName == nameof(QuestProject.Npcs))
             {
-                WorkspaceViewModel.UpdateNpcCount(CurrentProject.Npcs.Count);
-                UpdateWorkspaceProjectInfo();
+                // Resubscribe to NPC property changes when collection changes
+                SubscribeToElementPropertyChanges();
+                _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count);
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
             }
             else if (e.PropertyName == nameof(QuestProject.Resources))
             {
@@ -1943,10 +1790,11 @@ namespace Schedule1ModdingTool.ViewModels
             }
             else if (e.PropertyName == nameof(QuestProject.ProjectName))
             {
-                UpdateWorkspaceProjectInfo();
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
                 UpdateProcessState();
             }
         }
-    }
 
+        #endregion
+    }
 }

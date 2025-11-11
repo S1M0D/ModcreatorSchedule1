@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.ViewModels;
@@ -9,11 +10,16 @@ namespace Schedule1ModdingTool.Services
     /// <summary>
     /// Manages navigation state and workspace information.
     /// </summary>
-    public class NavigationService
+    public class NavigationService : INotifyPropertyChanged
     {
         private readonly ObservableCollection<NavigationItem> _navigationItems;
         private readonly WorkspaceViewModel _workspaceViewModel;
         private NavigationItem? _selectedNavigationItem;
+
+        /// <summary>
+        /// Event raised when a property changes.
+        /// </summary>
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
         /// Gets the collection of navigation items.
@@ -28,6 +34,9 @@ namespace Schedule1ModdingTool.Services
             get => _selectedNavigationItem;
             set
             {
+                if (ReferenceEquals(_selectedNavigationItem, value))
+                    return;
+
                 if (_selectedNavigationItem != null)
                 {
                     _selectedNavigationItem.IsSelected = false;
@@ -37,7 +46,16 @@ namespace Schedule1ModdingTool.Services
                 {
                     _selectedNavigationItem.IsSelected = true;
                 }
+                OnPropertyChanged(nameof(SelectedNavigationItem));
             }
+        }
+
+        /// <summary>
+        /// Raises the PropertyChanged event.
+        /// </summary>
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public NavigationService(ObservableCollection<NavigationItem> navigationItems, WorkspaceViewModel workspaceViewModel)

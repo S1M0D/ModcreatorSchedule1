@@ -6,7 +6,13 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="{StaticResource DarkBackgroundBrush}"
-        Foreground="{StaticResource LightTextBrush}">
+        Foreground="{StaticResource LightTextBrush}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        RenderOptions.BitmapScalingMode="HighQuality"
+        RenderOptions.ClearTypeHint="Enabled"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 	<Window.Resources>
 		<utils:WizardStepTemplateSelector x:Key="WizardStepSelector">
 			<utils:WizardStepTemplateSelector.Step1Template>

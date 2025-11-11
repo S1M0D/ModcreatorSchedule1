@@ -257,6 +257,12 @@ namespace Schedule1ModdingTool.Models
             {
                 AttachTriggerHandlers(finishTrigger);
             }
+
+            // Attach handlers to StartCondition
+            if (quest.StartCondition != null)
+            {
+                quest.StartCondition.PropertyChanged += QuestOnPropertyChanged;
+            }
         }
 
         private void AttachNpcHandlers(NpcBlueprint npc)
@@ -266,6 +272,46 @@ namespace Schedule1ModdingTool.Models
 
             _trackedNpcs.Add(npc);
             npc.PropertyChanged += NpcOnPropertyChanged;
+
+            // Attach handlers to ScheduleActions collection
+            npc.ScheduleActions.CollectionChanged += OnScheduleActionsCollectionChanged;
+            foreach (var action in npc.ScheduleActions)
+            {
+                AttachScheduleActionHandlers(action);
+            }
+
+            // Attach handlers to nested objects
+            if (npc.CustomerDefaults != null)
+            {
+                npc.CustomerDefaults.PropertyChanged += NpcOnPropertyChanged;
+                npc.CustomerDefaults.DrugAffinities.CollectionChanged += OnNpcCollectionChanged;
+                npc.CustomerDefaults.PreferredProperties.CollectionChanged += OnNpcCollectionChanged;
+            }
+
+            if (npc.DealerDefaults != null)
+            {
+                npc.DealerDefaults.PropertyChanged += NpcOnPropertyChanged;
+            }
+
+            if (npc.RelationshipDefaults != null)
+            {
+                npc.RelationshipDefaults.PropertyChanged += NpcOnPropertyChanged;
+                npc.RelationshipDefaults.Connections.CollectionChanged += OnNpcCollectionChanged;
+            }
+
+            if (npc.InventoryDefaults != null)
+            {
+                npc.InventoryDefaults.PropertyChanged += NpcOnPropertyChanged;
+                npc.InventoryDefaults.StartupItems.CollectionChanged += OnNpcCollectionChanged;
+            }
+
+            if (npc.Appearance != null)
+            {
+                npc.Appearance.PropertyChanged += NpcOnPropertyChanged;
+                npc.Appearance.FaceLayers.CollectionChanged += OnNpcCollectionChanged;
+                npc.Appearance.BodyLayers.CollectionChanged += OnNpcCollectionChanged;
+                npc.Appearance.AccessoryLayers.CollectionChanged += OnNpcCollectionChanged;
+            }
         }
 
         private void DetachQuestHandlers(QuestBlueprint quest)
@@ -292,6 +338,12 @@ namespace Schedule1ModdingTool.Models
             {
                 DetachTriggerHandlers(finishTrigger);
             }
+
+            // Detach handlers from StartCondition
+            if (quest.StartCondition != null)
+            {
+                quest.StartCondition.PropertyChanged -= QuestOnPropertyChanged;
+            }
         }
 
         private void DetachNpcHandlers(NpcBlueprint npc)
@@ -300,12 +352,65 @@ namespace Schedule1ModdingTool.Models
                 return;
 
             npc.PropertyChanged -= NpcOnPropertyChanged;
+
+            // Detach handlers from ScheduleActions collection
+            npc.ScheduleActions.CollectionChanged -= OnScheduleActionsCollectionChanged;
+            foreach (var action in npc.ScheduleActions)
+            {
+                DetachScheduleActionHandlers(action);
+            }
+
+            // Detach handlers from nested objects
+            if (npc.CustomerDefaults != null)
+            {
+                npc.CustomerDefaults.PropertyChanged -= NpcOnPropertyChanged;
+                npc.CustomerDefaults.DrugAffinities.CollectionChanged -= OnNpcCollectionChanged;
+                npc.CustomerDefaults.PreferredProperties.CollectionChanged -= OnNpcCollectionChanged;
+            }
+
+            if (npc.DealerDefaults != null)
+            {
+                npc.DealerDefaults.PropertyChanged -= NpcOnPropertyChanged;
+            }
+
+            if (npc.RelationshipDefaults != null)
+            {
+                npc.RelationshipDefaults.PropertyChanged -= NpcOnPropertyChanged;
+                npc.RelationshipDefaults.Connections.CollectionChanged -= OnNpcCollectionChanged;
+            }
+
+            if (npc.InventoryDefaults != null)
+            {
+                npc.InventoryDefaults.PropertyChanged -= NpcOnPropertyChanged;
+                npc.InventoryDefaults.StartupItems.CollectionChanged -= OnNpcCollectionChanged;
+            }
+
+            if (npc.Appearance != null)
+            {
+                npc.Appearance.PropertyChanged -= NpcOnPropertyChanged;
+                npc.Appearance.FaceLayers.CollectionChanged -= OnNpcCollectionChanged;
+                npc.Appearance.BodyLayers.CollectionChanged -= OnNpcCollectionChanged;
+                npc.Appearance.AccessoryLayers.CollectionChanged -= OnNpcCollectionChanged;
+            }
         }
 
         private void QuestOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             MarkAsModified();
             OnPropertyChanged(nameof(Quests));
+
+            // If StartCondition changed, re-attach handlers
+            if (sender is QuestBlueprint quest && e.PropertyName == nameof(QuestBlueprint.StartCondition))
+            {
+                if (quest.StartCondition != null)
+                {
+                    quest.StartCondition.PropertyChanged -= QuestOnPropertyChanged;
+                }
+                if (quest.StartCondition != null)
+                {
+                    quest.StartCondition.PropertyChanged += QuestOnPropertyChanged;
+                }
+            }
         }
 
         private void OnFoldersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -350,6 +455,86 @@ namespace Schedule1ModdingTool.Models
         private void NpcOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             MarkAsModified();
+
+            // If a nested object property changed on the NPC itself, re-attach handlers to the new object
+            if (sender is NpcBlueprint npc)
+            {
+                switch (e.PropertyName)
+                {
+                    case nameof(NpcBlueprint.CustomerDefaults):
+                        // Detach old handlers
+                        if (npc.CustomerDefaults != null)
+                        {
+                            npc.CustomerDefaults.PropertyChanged -= NpcOnPropertyChanged;
+                            npc.CustomerDefaults.DrugAffinities.CollectionChanged -= OnNpcCollectionChanged;
+                            npc.CustomerDefaults.PreferredProperties.CollectionChanged -= OnNpcCollectionChanged;
+                        }
+                        // Attach new handlers
+                        if (npc.CustomerDefaults != null)
+                        {
+                            npc.CustomerDefaults.PropertyChanged += NpcOnPropertyChanged;
+                            npc.CustomerDefaults.DrugAffinities.CollectionChanged += OnNpcCollectionChanged;
+                            npc.CustomerDefaults.PreferredProperties.CollectionChanged += OnNpcCollectionChanged;
+                        }
+                        break;
+
+                    case nameof(NpcBlueprint.DealerDefaults):
+                        if (npc.DealerDefaults != null)
+                        {
+                            npc.DealerDefaults.PropertyChanged -= NpcOnPropertyChanged;
+                        }
+                        if (npc.DealerDefaults != null)
+                        {
+                            npc.DealerDefaults.PropertyChanged += NpcOnPropertyChanged;
+                        }
+                        break;
+
+                    case nameof(NpcBlueprint.RelationshipDefaults):
+                        if (npc.RelationshipDefaults != null)
+                        {
+                            npc.RelationshipDefaults.PropertyChanged -= NpcOnPropertyChanged;
+                            npc.RelationshipDefaults.Connections.CollectionChanged -= OnNpcCollectionChanged;
+                        }
+                        if (npc.RelationshipDefaults != null)
+                        {
+                            npc.RelationshipDefaults.PropertyChanged += NpcOnPropertyChanged;
+                            npc.RelationshipDefaults.Connections.CollectionChanged += OnNpcCollectionChanged;
+                        }
+                        break;
+
+                    case nameof(NpcBlueprint.InventoryDefaults):
+                        if (npc.InventoryDefaults != null)
+                        {
+                            npc.InventoryDefaults.PropertyChanged -= NpcOnPropertyChanged;
+                            npc.InventoryDefaults.StartupItems.CollectionChanged -= OnNpcCollectionChanged;
+                        }
+                        if (npc.InventoryDefaults != null)
+                        {
+                            npc.InventoryDefaults.PropertyChanged += NpcOnPropertyChanged;
+                            npc.InventoryDefaults.StartupItems.CollectionChanged += OnNpcCollectionChanged;
+                        }
+                        break;
+
+                    case nameof(NpcBlueprint.Appearance):
+                        if (npc.Appearance != null)
+                        {
+                            npc.Appearance.PropertyChanged -= NpcOnPropertyChanged;
+                            npc.Appearance.FaceLayers.CollectionChanged -= OnNpcCollectionChanged;
+                            npc.Appearance.BodyLayers.CollectionChanged -= OnNpcCollectionChanged;
+                            npc.Appearance.AccessoryLayers.CollectionChanged -= OnNpcCollectionChanged;
+                        }
+                        if (npc.Appearance != null)
+                        {
+                            npc.Appearance.PropertyChanged += NpcOnPropertyChanged;
+                            npc.Appearance.FaceLayers.CollectionChanged += OnNpcCollectionChanged;
+                            npc.Appearance.BodyLayers.CollectionChanged += OnNpcCollectionChanged;
+                            npc.Appearance.AccessoryLayers.CollectionChanged += OnNpcCollectionChanged;
+                        }
+                        break;
+                }
+            }
+            // If sender is a nested object (CustomerDefaults, etc.), just mark as modified
+            // The MarkAsModified() call above handles this case
         }
 
         private void OnObjectivesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -393,6 +578,19 @@ namespace Schedule1ModdingTool.Models
 
             _trackedObjectives.Add(objective);
             objective.PropertyChanged += ObjectiveOnPropertyChanged;
+
+            // Attach handlers to trigger collections
+            objective.StartTriggers.CollectionChanged += OnObjectiveTriggersCollectionChanged;
+            foreach (var trigger in objective.StartTriggers)
+            {
+                AttachTriggerHandlers(trigger);
+            }
+
+            objective.FinishTriggers.CollectionChanged += OnObjectiveTriggersCollectionChanged;
+            foreach (var trigger in objective.FinishTriggers)
+            {
+                AttachTriggerHandlers(trigger);
+            }
         }
 
         private void DetachObjectiveHandlers(QuestObjective objective)
@@ -401,6 +599,19 @@ namespace Schedule1ModdingTool.Models
                 return;
 
             objective.PropertyChanged -= ObjectiveOnPropertyChanged;
+
+            // Detach handlers from trigger collections
+            objective.StartTriggers.CollectionChanged -= OnObjectiveTriggersCollectionChanged;
+            foreach (var trigger in objective.StartTriggers)
+            {
+                DetachTriggerHandlers(trigger);
+            }
+
+            objective.FinishTriggers.CollectionChanged -= OnObjectiveTriggersCollectionChanged;
+            foreach (var trigger in objective.FinishTriggers)
+            {
+                DetachTriggerHandlers(trigger);
+            }
         }
 
         private void ObjectiveOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -491,8 +702,89 @@ namespace Schedule1ModdingTool.Models
             trigger.PropertyChanged -= TriggerOnPropertyChanged;
         }
 
+        private void OnNpcCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            MarkAsModified();
+        }
+
         private void TriggerOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            MarkAsModified();
+        }
+
+        private void OnScheduleActionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcScheduleAction action)
+                    {
+                        AttachScheduleActionHandlers(action);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcScheduleAction action)
+                    {
+                        DetachScheduleActionHandlers(action);
+                    }
+                }
+            }
+
+            MarkAsModified();
+        }
+
+        private void AttachScheduleActionHandlers(NpcScheduleAction action)
+        {
+            action.PropertyChanged += NpcOnPropertyChanged;
+        }
+
+        private void DetachScheduleActionHandlers(NpcScheduleAction action)
+        {
+            action.PropertyChanged -= NpcOnPropertyChanged;
+        }
+
+        private void OnObjectiveTriggersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is QuestTrigger trigger)
+                    {
+                        AttachTriggerHandlers(trigger);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is QuestTrigger trigger)
+                    {
+                        DetachTriggerHandlers(trigger);
+                    }
+                }
+            }
+
             MarkAsModified();
         }
 
@@ -536,11 +828,17 @@ namespace Schedule1ModdingTool.Models
                 quest.Objectives.CollectionChanged -= OnObjectivesCollectionChanged;
                 quest.QuestTriggers.CollectionChanged -= OnQuestTriggersCollectionChanged;
                 quest.QuestFinishTriggers.CollectionChanged -= OnQuestFinishTriggersCollectionChanged;
+                if (quest.StartCondition != null)
+                {
+                    quest.StartCondition.PropertyChanged -= QuestOnPropertyChanged;
+                }
             }
 
             foreach (var objective in _trackedObjectives.ToArray())
             {
                 objective.PropertyChanged -= ObjectiveOnPropertyChanged;
+                objective.StartTriggers.CollectionChanged -= OnObjectiveTriggersCollectionChanged;
+                objective.FinishTriggers.CollectionChanged -= OnObjectiveTriggersCollectionChanged;
             }
 
             foreach (var trigger in _trackedTriggers.ToArray())
@@ -550,7 +848,7 @@ namespace Schedule1ModdingTool.Models
 
             foreach (var npc in _trackedNpcs.ToArray())
             {
-                npc.PropertyChanged -= NpcOnPropertyChanged;
+                DetachNpcHandlers(npc);
             }
 
             foreach (var folder in _trackedFolders.ToArray())

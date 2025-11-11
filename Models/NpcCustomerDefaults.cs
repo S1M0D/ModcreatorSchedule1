@@ -56,7 +56,16 @@ namespace Schedule1ModdingTool.Models
         public string PreferredOrderDay
         {
             get => _preferredOrderDay;
-            set => SetProperty(ref _preferredOrderDay, value ?? "Monday");
+            set
+            {
+                // Strip ComboBoxItem prefix if present (for backward compatibility with old saved data)
+                var cleanValue = value;
+                if (!string.IsNullOrWhiteSpace(cleanValue) && cleanValue.Contains(":"))
+                {
+                    cleanValue = cleanValue.Substring(cleanValue.LastIndexOf(':') + 1).Trim();
+                }
+                SetProperty(ref _preferredOrderDay, cleanValue ?? "Monday");
+            }
         }
 
         [JsonProperty("orderTime")]
@@ -70,7 +79,16 @@ namespace Schedule1ModdingTool.Models
         public string CustomerStandards
         {
             get => _customerStandards;
-            set => SetProperty(ref _customerStandards, value ?? "Moderate");
+            set
+            {
+                // Strip ComboBoxItem prefix if present (for backward compatibility with old saved data)
+                var cleanValue = value;
+                if (!string.IsNullOrWhiteSpace(cleanValue) && cleanValue.Contains(":"))
+                {
+                    cleanValue = cleanValue.Substring(cleanValue.LastIndexOf(':') + 1).Trim();
+                }
+                SetProperty(ref _customerStandards, cleanValue ?? "Moderate");
+            }
         }
 
         [JsonProperty("allowDirectApproach")]

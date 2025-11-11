@@ -169,7 +169,7 @@
                                     <DockPanel Margin="0,0,0,12">
                                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                                             <TextBlock Text="Start Triggers" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                            <views:InfoIcon TooltipText="These triggers control when the quest starts. You can also set up triggers for individual quest objectives in the Objectives tab." />
+                                            <views:InfoIcon TooltipText="These triggers control when the quest starts. You can also set up triggers for individual quest objectives in the Objectives tab. (This is overridden by the auto begin setting if enabled)" />
                                         </StackPanel>
                                         <Button Content="+ Add Start Trigger"
                                                 Click="AddQuestStartTrigger_Click"

@@ -172,7 +172,32 @@
 				                         Width="18" Height="18" />
 			</Button>
 			<Separator Style="{StaticResource ToolbarSeparatorStyle}" />
-			<Button ToolTip="Add Quest" Style="{StaticResource ToolbarButtonStyle}" Click="AddQuestButton_Click">
+			<Button ToolTip="Add Element" Style="{StaticResource ToolbarButtonStyle}" Click="AddElementButton_Click" x:Name="AddElementButton">
+				<Button.ContextMenu>
+					<ContextMenu x:Name="AddElementContextMenu">
+						<MenuItem Header="Quest" Click="AddQuestMenuItem_Click" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource QuestIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="NPC" Click="AddNpcMenuItem_Click" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource NPCsIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Folder" Click="AddFolderMenuItem_Click" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource FolderIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+					</ContextMenu>
+				</Button.ContextMenu>
 				<materialDesign:PackIcon Kind="{StaticResource PlusIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="18" Height="18" />

@@ -631,7 +631,8 @@
                                         <Label Content="Preferred Order Day" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Day of the week when this customer prefers to place orders"/>
                                     </StackPanel>
-                                    <ComboBox SelectedItem="{Binding SelectedNpc.CustomerDefaults.PreferredOrderDay}"
+                                    <ComboBox SelectedValue="{Binding SelectedNpc.CustomerDefaults.PreferredOrderDay, Mode=TwoWay}"
+                                              SelectedValuePath="Content"
                                               Style="{StaticResource ComboBoxStyle}">
                                         <ComboBoxItem Content="Monday"/>
                                         <ComboBoxItem Content="Tuesday"/>
@@ -657,7 +658,8 @@
                                         <Label Content="Customer Standards" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Quality expectations: VeryLow/Low = accepts low quality, Moderate = expects decent quality, High/VeryHigh = demands high quality"/>
                                     </StackPanel>
-                                    <ComboBox SelectedItem="{Binding SelectedNpc.CustomerDefaults.CustomerStandards}"
+                                    <ComboBox SelectedValue="{Binding SelectedNpc.CustomerDefaults.CustomerStandards, Mode=TwoWay}"
+                                              SelectedValuePath="Content"
                                               Style="{StaticResource ComboBoxStyle}">
                                         <ComboBoxItem Content="VeryLow"/>
                                         <ComboBoxItem Content="Low"/>

@@ -32,34 +32,34 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
 
             builder.AppendComment("🔧 Generated from: Quest.Objectives[]");
             builder.AppendBlockComment(
-                "Called when the quest is created. Sets up objectives, POI positions, and activates entries.",
-                "Only creates entries if they don't already exist (e.g., from save data)."
+                "Called when the quest is created (Unity Start method).",
+                "For LOADED quests: OnLoaded() runs first, then OnCreated(). QuestEntries will already be populated.",
+                "For NEW quests: Only OnCreated() runs. QuestEntries will be empty.",
+                "Check QuestEntries.Count to avoid creating duplicate entries."
             );
 
             builder.OpenBlock("protected override void OnCreated()");
             builder.AppendLine("base.OnCreated();");
             builder.AppendLine();
 
-            builder.AppendComment("Skip entry creation if quest was loaded from save data");
-            builder.OpenBlock("if (QuestEntries.Count > 0)");
-            builder.AppendComment("Quest entries already exist (loaded from save), just subscribe to triggers");
-            builder.AppendLine("SubscribeToTriggers();");
-            builder.AppendLine("return;");
-            builder.CloseBlock();
-            builder.AppendLine();
-
             if (quest.Objectives?.Any() != true)
             {
                 builder.AppendComment("Define at least one objective so the quest has progress steps.");
+                builder.OpenBlock("if (QuestEntries.Count == 0)");
                 builder.AppendLine("var defaultEntry = AddEntry(\"Describe your first objective\");");
                 builder.AppendLine("defaultEntry.Begin();");
+                builder.CloseBlock();
             }
             else
             {
+                builder.AppendComment("Only create entries if they haven't been created yet (avoids duplicates for loaded quests)");
+                builder.OpenBlock("if (QuestEntries.Count == 0)");
                 GenerateObjectiveInitialization(builder, quest);
+                builder.CloseBlock();
             }
 
             builder.AppendLine();
+            builder.AppendComment("Subscribe to triggers after entries are set up (only once, in OnCreated)");
             builder.AppendLine("SubscribeToTriggers();");
             builder.CloseBlock();
             builder.AppendLine();
@@ -118,7 +118,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
         }
 
         /// <summary>
-        /// Generates the OnLoaded method which rebuilds quest entries after loading from save.
+        /// Generates the OnLoaded method which creates quest entries after loading from save.
         /// </summary>
         public void GenerateOnLoadedMethod(ICodeBuilder builder, QuestBlueprint quest)
         {
@@ -127,10 +127,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (quest == null)
                 throw new ArgumentNullException(nameof(quest));
 
-            builder.AppendComment("🔧 Generated from: Quest.Objectives[] (rebuild logic for save/load)");
+            builder.AppendComment("🔧 Generated from: Quest.Objectives[] (create entries after load)");
             builder.AppendBlockComment(
                 "Called after quest data has been loaded from save files.",
-                "Rebuilds quest entries if they were cleared during load."
+                "For loaded quests, this runs BEFORE OnCreated(), so we create entries here.",
+                "The game's save system will restore the entry states after we create them.",
+                "IMPORTANT: Do NOT call .Begin() or .SetState() here - let the save system restore states.",
+                "Note: Do not subscribe to triggers here - that is handled in OnCreated() to avoid duplicate subscriptions."
             );
 
             builder.OpenBlock("protected override void OnLoaded()");
@@ -139,22 +142,74 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
 
             if (quest.Objectives?.Any() != true)
             {
-                builder.AppendComment("No objectives defined, nothing to rebuild");
+                builder.AppendComment("No objectives defined, nothing to create");
             }
             else
             {
-                builder.AppendComment("Rebuild entries if they were cleared during load");
+                builder.AppendComment("Create quest entries if they don't exist yet");
+                builder.AppendComment("This ensures loaded quests have their entries created before OnCreated() runs");
                 builder.OpenBlock("if (QuestEntries.Count == 0)");
-
-                GenerateObjectiveRebuild(builder, quest);
-
-                builder.AppendComment("Re-subscribe to triggers after rebuilding entries");
-                builder.AppendLine("SubscribeToTriggers();");
+                GenerateObjectiveCreationWithoutState(builder, quest);
                 builder.CloseBlock();
             }
 
             builder.CloseBlock();
             builder.AppendLine();
+        }
+
+        /// <summary>
+        /// Generates objective creation code for OnLoaded WITHOUT setting states.
+        /// The game's save system will restore entry states after creation.
+        /// </summary>
+        private void GenerateObjectiveCreationWithoutState(ICodeBuilder builder, QuestBlueprint quest)
+        {
+            var objectiveNames = _entryFieldGenerator.GetAllObjectiveVariableNames(quest);
+
+            for (int i = 0; i < quest.Objectives.Count; i++)
+            {
+                var objective = quest.Objectives[i];
+                var objectiveVar = objectiveNames[i];
+
+                builder.AppendComment($"🔧 Generated from: Quest.Objectives[{i}]");
+                builder.AppendComment($"Objective \"{CodeFormatter.EscapeString(objective.Title)}\" ({objective.Name})");
+
+                // Create entry
+                if (objective.HasLocation && objective.CreatePOI)
+                {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, LocationX/Y/Z");
+                    builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", {CodeFormatter.FormatVector3(objective)});");
+                }
+                else
+                {
+                    builder.AppendComment($"🔧 From: Objectives[{i}].Title");
+                    builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\");");
+                }
+
+                // DO NOT set state here - let the save system restore it
+                builder.AppendComment("State will be restored from save data by S1API");
+                builder.AppendLine();
+            }
+        }
+
+        /// <summary>
+        /// Generates code to restore field references from QuestEntries list.
+        /// Assigns QuestEntries[i] to the corresponding field variables.
+        /// </summary>
+        private void GenerateEntryReferenceRestoration(ICodeBuilder builder, QuestBlueprint quest)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+            if (quest == null)
+                throw new ArgumentNullException(nameof(quest));
+
+            var objectiveNames = _entryFieldGenerator.GetAllObjectiveVariableNames(quest);
+
+            for (int i = 0; i < objectiveNames.Count; i++)
+            {
+                var objectiveVar = objectiveNames[i];
+                builder.AppendComment($"🔧 Restore reference for objective {i + 1}: {objectiveVar}");
+                builder.AppendLine($"{objectiveVar} = QuestEntries[{i}];");
+            }
         }
 
         /// <summary>

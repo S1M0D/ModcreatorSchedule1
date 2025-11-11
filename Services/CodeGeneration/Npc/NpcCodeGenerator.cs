@@ -167,7 +167,17 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             builder.AppendComment("🔧 From: CustomerDefaults.MinOrdersPerWeek, MaxOrdersPerWeek");
             builder.AppendLine($"  .WithOrdersPerWeek({cd.MinOrdersPerWeek}, {cd.MaxOrdersPerWeek})");
             builder.AppendComment("🔧 From: CustomerDefaults.PreferredOrderDay");
-            builder.AppendLine($"  .WithPreferredOrderDay(Day.{cd.PreferredOrderDay})");
+            // Handle case where PreferredOrderDay might contain ComboBoxItem prefix
+            var preferredDayValue = cd.PreferredOrderDay;
+            if (preferredDayValue != null && preferredDayValue.Contains(":"))
+            {
+                // Extract just the value after the colon (e.g., "System.Windows.Controls.ComboBoxItem: Thursday" → "Thursday")
+                preferredDayValue = preferredDayValue.Substring(preferredDayValue.LastIndexOf(':') + 1).Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(preferredDayValue))
+            {
+                builder.AppendLine($"  .WithPreferredOrderDay(Day.{preferredDayValue})");
+            }
             builder.AppendComment("🔧 From: CustomerDefaults.OrderTime");
             builder.AppendLine($"  .WithOrderTime({cd.OrderTime})");
             builder.AppendComment("🔧 From: CustomerDefaults.CustomerStandards");
@@ -346,7 +356,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             if (hasCash)
             {
                 builder.AppendComment("🔧 From: InventoryDefaults.EnableRandomCash, RandomCashMin, RandomCashMax");
-                builder.AppendLine($"   .WithRandomCash(min: {inv.RandomCashMin}f, max: {inv.RandomCashMax}f)");
+                builder.AppendLine($"   .WithRandomCash(min: {(int)inv.RandomCashMin}, max: {(int)inv.RandomCashMax})");
             }
 
             if (hasClearNight)

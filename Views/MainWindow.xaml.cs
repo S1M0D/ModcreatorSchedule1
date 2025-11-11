@@ -273,11 +273,37 @@ namespace Schedule1ModdingTool.Views
             base.OnClosing(e);
         }
 
-        private void AddQuestButton_Click(object sender, RoutedEventArgs e)
+        private void AddElementButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                button.ContextMenu.IsOpen = true;
+            }
+        }
+
+        private void AddQuestMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is MainViewModel vm && vm.AvailableBlueprints.Count > 0)
             {
                 vm.AddQuestCommand.Execute(vm.AvailableBlueprints[0]);
+            }
+        }
+
+        private void AddNpcMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && vm.AvailableNpcBlueprints.Count > 0)
+            {
+                vm.AddNpcCommand.Execute(vm.AvailableNpcBlueprints[0]);
+            }
+        }
+
+        private void AddFolderMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.AddFolderCommand.Execute(null);
             }
         }
 

@@ -28,6 +28,7 @@ namespace Schedule1ModdingTool.Views
 
         private MainViewModel? ViewModel => DataContext as MainViewModel;
         private NpcBlueprint? CurrentNpc => ViewModel?.SelectedNpc;
+        private TabItem? _previousSelectedTab;
 
         private void NpcPropertiesControl_Loaded(object sender, RoutedEventArgs e)
         {
@@ -480,6 +481,58 @@ namespace Schedule1ModdingTool.Views
             // This is a simplified approach - in a real app you might want to use VisualTreeHelper
             // For now, we'll rely on the ListBox selection being available through data context
             return null; // Placeholder - WPF binding will handle selection automatically
+        }
+
+        private void NpcEditorTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.TabControl tabControl)
+                return;
+
+            if (tabControl.SelectedItem == PreviewNpcTab)
+            {
+                // Execute preview command
+                if (ViewModel?.PreviewNpcCommand != null && ViewModel.PreviewNpcCommand.CanExecute(null))
+                {
+                    ViewModel.PreviewNpcCommand.Execute(null);
+                }
+
+                // Reset selection to previous tab or Inventory tab
+                if (_previousSelectedTab != null && _previousSelectedTab != PreviewNpcTab && tabControl.Items.Contains(_previousSelectedTab))
+                {
+                    tabControl.SelectedItem = _previousSelectedTab;
+                }
+                else
+                {
+                    // Find Inventory tab by searching for it
+                    TabItem? inventoryTab = null;
+                    foreach (TabItem item in tabControl.Items)
+                    {
+                        if (item.Header?.ToString() == "Inventory")
+                        {
+                            inventoryTab = item;
+                            break;
+                        }
+                    }
+                    
+                    if (inventoryTab != null)
+                    {
+                        tabControl.SelectedItem = inventoryTab;
+                    }
+                    else if (tabControl.Items.Count > 0)
+                    {
+                        // Fallback to first tab
+                        tabControl.SelectedItem = tabControl.Items[0];
+                    }
+                }
+            }
+            else
+            {
+                // Store current selection as previous (unless it's PreviewNpcTab)
+                if (tabControl.SelectedItem != PreviewNpcTab && tabControl.SelectedItem is TabItem currentTab)
+                {
+                    _previousSelectedTab = currentTab;
+                }
+            }
         }
     }
 }

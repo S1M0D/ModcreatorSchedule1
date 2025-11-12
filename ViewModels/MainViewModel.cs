@@ -300,6 +300,7 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _exportModProjectCommand;
         private ICommand? _buildModCommand;
         private ICommand? _playGameCommand;
+        private ICommand? _previewNpcCommand;
         private ICommand? _openSettingsCommand;
         private ICommand? _selectNavigationCommand;
         private ICommand? _selectCategoryCommand;
@@ -332,6 +333,7 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand ExportModProjectCommand => _exportModProjectCommand!;
         public ICommand BuildModCommand => _buildModCommand!;
         public ICommand PlayGameCommand => _playGameCommand!;
+        public ICommand PreviewNpcCommand => _previewNpcCommand!;
         public ICommand OpenSettingsCommand => _openSettingsCommand!;
 
         /// <summary>
@@ -467,6 +469,7 @@ namespace Schedule1ModdingTool.ViewModels
             _exportModProjectCommand = new RelayCommand(ExportModProject, HasAnyElements);
             _buildModCommand = new RelayCommand(BuildMod, HasAnyElements);
             _playGameCommand = new RelayCommand(PlayGame, () => !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
+            _previewNpcCommand = new RelayCommand(PreviewNpc, () => SelectedNpc != null && !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
             _openSettingsCommand = new RelayCommand(OpenSettings);
             _selectNavigationCommand = new RelayCommand<NavigationItem>(item => _navigationService.SelectNavigation(item));
             _selectCategoryCommand = new RelayCommand<ModCategory>(category => _navigationService.SelectCategory(category));
@@ -1204,6 +1207,67 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        private void PreviewNpc()
+        {
+            try
+            {
+                if (SelectedNpc == null)
+                {
+                    AppUtils.ShowError("No NPC selected for preview.");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(_modSettings.GameInstallPath))
+                {
+                    AppUtils.ShowError("Game install path is not configured. Please set it in Settings.");
+                    return;
+                }
+
+                // Ensure appearance preview service is started
+                if (!_appearancePreviewService.IsConnected)
+                {
+                    _appearancePreviewService.Start();
+                }
+
+                ProcessState = "Building connector mod and launching game with preview enabled...";
+
+                var useLocalDll = true;
+                var launchResult = _gameLaunchService.LaunchGame(_modSettings, useLocalDll, previewEnabled: true);
+
+                UpdateProcessState();
+
+                if (launchResult.Success)
+                {
+                    var message = "Game launched with NPC preview enabled!";
+                    if (launchResult.DllCopied)
+                    {
+                        message += $"\n\nModCreatorConnector DLL deployed to:\n{launchResult.DeployedDllPath}";
+                    }
+                    message += "\n\nChanges to NPC appearance will be reflected in real-time in the game menu.";
+                    if (launchResult.Warnings.Count > 0)
+                    {
+                        message += $"\n\nWarnings:\n{string.Join("\n", launchResult.Warnings)}";
+                    }
+                    AppUtils.ShowInfo(message);
+                }
+                else
+                {
+                    ProcessState = "Launch failed";
+                    var errorMessage = $"Failed to launch game: {launchResult.ErrorMessage}";
+                    if (!string.IsNullOrEmpty(launchResult.BuildOutput))
+                    {
+                        errorMessage += $"\n\nBuild Output:\n{launchResult.BuildOutput}";
+                    }
+                    AppUtils.ShowError(errorMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                ProcessState = "Launch failed";
+                AppUtils.ShowError($"Failed to launch game: {ex.Message}");
+            }
+        }
+
         private void PlayGame()
         {
             try
@@ -1214,10 +1278,44 @@ namespace Schedule1ModdingTool.ViewModels
                     return;
                 }
 
+                // Export mod project if needed
+                ProcessState = "Checking if export is needed...";
+                if (!TryExportModProject(showSuccessDialog: false, out var exportPath))
+                {
+                    ProcessState = "Export failed";
+                    return;
+                }
+
+                // Build user mod if needed
+                if (!string.IsNullOrWhiteSpace(exportPath) && Directory.Exists(exportPath))
+                {
+                    ProcessState = "Checking if build is needed...";
+                    var modDllPath = GetModDllPath(exportPath);
+                    var needsBuild = modDllPath == null || !File.Exists(modDllPath) || 
+                                     IsProjectNewerThanDll(exportPath, modDllPath);
+
+                    if (needsBuild)
+                    {
+                        ProcessState = "Building mod...";
+                        var buildResult = _modBuildService.BuildModProject(exportPath, _modSettings);
+                        if (!buildResult.Success)
+                        {
+                            ProcessState = "Build failed";
+                            ShowBuildResult(buildResult);
+                            return;
+                        }
+                        ProcessState = "Mod built successfully";
+                    }
+                    else
+                    {
+                        ProcessState = "Mod build is up to date";
+                    }
+                }
+
                 ProcessState = "Building connector mod and launching game...";
 
                 var useLocalDll = true;
-                var launchResult = _gameLaunchService.LaunchGame(_modSettings, useLocalDll);
+                var launchResult = _gameLaunchService.LaunchGame(_modSettings, useLocalDll, previewEnabled: false);
 
                 UpdateProcessState();
 
@@ -1250,6 +1348,49 @@ namespace Schedule1ModdingTool.ViewModels
                 ProcessState = "Launch failed";
                 AppUtils.ShowError($"Failed to launch game: {ex.Message}");
             }
+        }
+
+        private string? GetModDllPath(string projectPath)
+        {
+            var binPath = Path.Combine(projectPath, "bin", "CrossCompat", "netstandard2.1");
+            if (!Directory.Exists(binPath))
+            {
+                binPath = Path.Combine(projectPath, "bin", "Release", "netstandard2.1");
+            }
+
+            if (!Directory.Exists(binPath))
+                return null;
+
+            var csprojFile = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
+            if (csprojFile == null)
+                return null;
+
+            var modName = Path.GetFileNameWithoutExtension(csprojFile);
+            var dllPath = Path.Combine(binPath, $"{modName}.dll");
+            return File.Exists(dllPath) ? dllPath : null;
+        }
+
+        private bool IsProjectNewerThanDll(string projectPath, string? dllPath)
+        {
+            if (dllPath == null || !File.Exists(dllPath))
+                return true;
+
+            var dllTime = File.GetLastWriteTime(dllPath);
+            
+            // Check if any .cs files are newer than the DLL
+            var csFiles = Directory.GetFiles(projectPath, "*.cs", SearchOption.AllDirectories);
+            foreach (var csFile in csFiles)
+            {
+                if (File.GetLastWriteTime(csFile) > dllTime)
+                    return true;
+            }
+
+            // Check if .csproj is newer
+            var csprojFile = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
+            if (csprojFile != null && File.GetLastWriteTime(csprojFile) > dllTime)
+                return true;
+
+            return false;
         }
 
         private void ShowBuildResult(ModBuildResult buildResult)

@@ -20,12 +20,22 @@ namespace ModCreatorConnector
         {
             Instance = this;
 
-            // Initialize appearance preview system
-            _avatarManager = new PreviewAvatarManager();
-            _previewClient = new AppearancePreviewClient(_avatarManager);
-            _previewClient.Start();
+            // Check if preview is enabled via config file
+            var previewEnabled = PreviewConfig.IsPreviewEnabled();
 
-            MelonLogger.Msg("ModCreatorConnector: Appearance preview system initialized");
+            if (previewEnabled)
+            {
+                // Initialize appearance preview system
+                _avatarManager = new PreviewAvatarManager();
+                _previewClient = new AppearancePreviewClient(_avatarManager);
+                _previewClient.Start();
+
+                MelonLogger.Msg("ModCreatorConnector: Appearance preview system initialized");
+            }
+            else
+            {
+                MelonLogger.Msg("ModCreatorConnector: Preview disabled, skipping appearance preview initialization");
+            }
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -40,7 +50,7 @@ namespace ModCreatorConnector
 
         public override void OnUpdate()
         {
-            // Process queued appearance updates on the main thread
+            // Process queued appearance updates on the main thread (only if preview is enabled)
             _previewClient?.ProcessQueuedUpdates();
         }
 

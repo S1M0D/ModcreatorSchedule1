@@ -18,8 +18,9 @@ namespace Schedule1ModdingTool.Services
         /// </summary>
         /// <param name="settings">Mod settings containing game path</param>
         /// <param name="useLocalDll">If true, uses ConnectorLocal config (local DLL), otherwise ConnectorNuGet (NuGet package)</param>
+        /// <param name="previewEnabled">If true, enables NPC appearance preview mode</param>
         /// <returns>Result of the launch operation</returns>
-        public GameLaunchResult LaunchGame(ModSettings settings, bool useLocalDll = false)
+        public GameLaunchResult LaunchGame(ModSettings settings, bool useLocalDll = false, bool previewEnabled = false)
         {
             var result = new GameLaunchResult();
 
@@ -103,6 +104,9 @@ namespace Schedule1ModdingTool.Services
                 }
 
                 result.DeployedDllPath = targetDllPath;
+
+                // Write preview config file
+                WritePreviewConfig(modsPath, previewEnabled);
 
                 // Launch the game
                 var processStartInfo = new ProcessStartInfo
@@ -242,6 +246,25 @@ namespace Schedule1ModdingTool.Services
             }
 
             return outputBuilder.ToString();
+        }
+
+        private void WritePreviewConfig(string modsPath, bool previewEnabled)
+        {
+            try
+            {
+                var configPath = Path.Combine(modsPath, "ModCreatorConnector_Preview.json");
+                var config = new
+                {
+                    PreviewEnabled = previewEnabled
+                };
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(config, Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(configPath, json);
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail launch if config write fails
+                System.Diagnostics.Debug.WriteLine($"Failed to write preview config: {ex.Message}");
+            }
         }
 
         private void MonitorGameProcess(Process process)

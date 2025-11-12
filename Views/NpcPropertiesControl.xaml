@@ -16,9 +16,10 @@
     </UserControl.Resources>
 
     <Grid Margin="8" Loaded="Grid_Loaded" VerticalAlignment="Stretch">
-        <TabControl Style="{StaticResource MaterialDesignNavigationRailTabControl}"
+        <TabControl x:Name="NpcEditorTabControl" Style="{StaticResource MaterialDesignNavigationRailTabControl}"
                     materialDesign:ColorZoneAssist.Mode="PrimaryMid"
-                    VerticalAlignment="Stretch">
+                    VerticalAlignment="Stretch"
+                    SelectionChanged="NpcEditorTabControl_SelectionChanged">
             <TabControl.ItemContainerStyle>
                 <Style TargetType="TabItem" BasedOn="{StaticResource NavigationRailTabItemStyle}"/>
             </TabControl.ItemContainerStyle>
@@ -1007,6 +1008,41 @@
                                            FontSize="11"
                                            TextWrapping="Wrap"
                                            Margin="24,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 7: Preview NPC -->
+            <TabItem x:Name="PreviewNpcTab" Header="Preview NPC">
+                <TabItem.HeaderTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="PlayCircle" 
+                                                   VerticalAlignment="Center" 
+                                                   Margin="0,0,8,0"
+                                                   Foreground="{Binding RelativeSource={RelativeSource AncestorType=TabItem}, Path=Foreground}"/>
+                            <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TabItem.HeaderTemplate>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12" MaxWidth="600" HorizontalAlignment="Left">
+                        <Border Style="{StaticResource PanelStyle}">
+                            <StackPanel Margin="12">
+                                <TextBlock Text="Preview NPC in Game" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Click the Preview NPC tab to launch the game with appearance preview enabled. Changes to NPC appearance will be reflected in real-time in the game menu." 
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           FontSize="11"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12"/>
+                                <Button Content="Launch Preview" 
+                                        Command="{Binding PreviewNpcCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        HorizontalAlignment="Left"
+                                        Padding="20,8"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>

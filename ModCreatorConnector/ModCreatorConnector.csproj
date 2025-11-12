@@ -244,6 +244,7 @@
 	  <Compile Include="Services\AppearanceConverter.cs" />
 	  <Compile Include="Services\AppearancePreviewClient.cs" />
 	  <Compile Include="Services\PreviewAvatarManager.cs" />
+	  <Compile Include="Services\PreviewConfig.cs" />
 	  <Compile Include="Utils\Constants.cs" />
 	</ItemGroup>
 	<!-- ConnectorNuGet: Use NuGet package S1API.Forked -->

@@ -37,6 +37,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         /// <summary>
         /// Adds standard using statements for Quest code generation.
         /// Includes S1API.Quests, UnityEngine, MelonLoader, and common System namespaces.
+        /// Also includes type aliases for accessing base game quests.
         /// </summary>
         /// <returns>This builder for method chaining.</returns>
         public UsingStatementsBuilder AddQuestUsings()
@@ -44,6 +45,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
             return Add(
                 "System",
                 "System.Collections",
+                "System.Collections.Generic",
                 "System.Reflection",
                 "System.Linq",
                 "S1API.Quests",
@@ -52,6 +54,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
                 "S1API.Internal.Utils",
                 "S1API.Entities",
                 "S1API.GameTime",
+                "S1API.Console",
+                "S1API.Money",
                 "UnityEngine",
                 "MelonLoader"
             );

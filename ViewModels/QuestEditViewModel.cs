@@ -680,4 +680,32 @@ namespace Schedule1ModdingTool.ViewModels
             return $"{DisplayName} ({Id}) - {source}";
         }
     }
+
+    /// <summary>
+    /// Information about a quest for UI display
+    /// </summary>
+        public class QuestInfo
+        {
+            public string Id { get; set; } = "";
+            public string DisplayName { get; set; } = "";
+            public bool IsModQuest { get; set; }
+
+            public override string ToString()
+            {
+                var source = IsModQuest ? "Mod" : "Base Game";
+                return $"{DisplayName} ({Id}) - {source}";
+            }
+        }
+
+        public class QuestEntryInfo
+        {
+            public int Index { get; set; }
+            public string DisplayName { get; set; } = "";
+            public string QuestId { get; set; } = "";
+
+            public override string ToString()
+            {
+                return $"Entry {Index}: {DisplayName}";
+            }
+        }
 }

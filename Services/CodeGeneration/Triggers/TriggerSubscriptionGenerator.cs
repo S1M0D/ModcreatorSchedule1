@@ -192,6 +192,10 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             {
                 GenerateNpcTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, null);
             }
+            else if (trigger.TriggerType == QuestTriggerType.QuestEventTrigger && !string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+            {
+                GenerateQuestTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, null);
+            }
             else
             {
                 GenerateStaticActionTriggerSubscription(builder, trigger, actionMethod);
@@ -223,6 +227,10 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (trigger.TriggerType == QuestTriggerType.NPCEventTrigger && !string.IsNullOrWhiteSpace(trigger.TargetNpcId))
             {
                 GenerateNpcTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, objectiveVar);
+            }
+            else if (trigger.TriggerType == QuestTriggerType.QuestEventTrigger && !string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+            {
+                GenerateQuestTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, objectiveVar);
             }
             else
             {
@@ -326,6 +334,167 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             }
 
             builder.CloseBlock();
+        }
+
+        /// <summary>
+        /// Generates subscription code for Quest instance triggers.
+        /// </summary>
+        private void GenerateQuestTriggerSubscription(
+            ICodeBuilder builder,
+            QuestTrigger trigger,
+            string? handlerFieldName,
+            string actionMethod,
+            string? objectiveVar)
+        {
+            var questId = CodeFormatter.EscapeString(trigger.TargetQuestId);
+            var actionParts = trigger.TargetAction.Split('.');
+            string eventPath;
+
+            if (actionParts.Length >= 2)
+            {
+                var componentType = actionParts[0]; // Quest or QuestEntry
+                var eventName = actionParts[1]; // OnComplete, OnFail, OnBegin, etc.
+
+                if (componentType == "QuestEntry")
+                {
+                    // For QuestEntry events, we need to access the quest's entries
+                    builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
+                    builder.OpenBlock("if (quest == null)");
+                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
+                    builder.CloseBlock();
+                    builder.OpenBlock("else");
+                    
+                    if (trigger.TargetQuestEntryIndex.HasValue)
+                    {
+                        // Subscribe to specific entry
+                        builder.AppendLine($"// Subscribe to quest entry at index {trigger.TargetQuestEntryIndex.Value}");
+                        builder.OpenBlock($"if (quest.Entries.Count > {trigger.TargetQuestEntryIndex.Value})");
+                        builder.AppendLine($"var entry = quest.Entries[{trigger.TargetQuestEntryIndex.Value}];");
+                        eventPath = $"entry.{eventName}";
+                    }
+                    else
+                    {
+                        // Subscribe to all entries
+                        builder.AppendLine("// Subscribe to all quest entries");
+                        builder.OpenBlock("foreach (var entry in quest.Entries)");
+                        eventPath = $"entry.{eventName}";
+                    }
+                }
+                else
+                {
+                    // Quest events
+                    builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
+                    builder.OpenBlock("if (quest == null)");
+                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
+                    builder.CloseBlock();
+                    builder.OpenBlock("else");
+                    eventPath = $"quest.{eventName}";
+                }
+            }
+            else
+            {
+                var actionName = trigger.TargetAction.Contains(".") ? trigger.TargetAction.Split('.')[1] : trigger.TargetAction;
+                builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
+                builder.OpenBlock("if (quest == null)");
+                builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
+                builder.CloseBlock();
+                builder.OpenBlock("else");
+                eventPath = $"quest.{actionName}";
+            }
+
+            // Get lambda signature for parameterized events
+            var lambdaSignature = GetLambdaSignature(trigger.TargetAction);
+
+            if (actionParts.Length >= 2 && actionParts[0] == "QuestEntry")
+            {
+                // QuestEntry subscription - either specific entry or foreach loop
+                if (!string.IsNullOrWhiteSpace(handlerFieldName))
+                {
+                    builder.AppendLine($"{handlerFieldName} ??= {lambdaSignature} =>");
+                    builder.OpenBlock();
+                    if (objectiveVar != null)
+                    {
+                        builder.OpenBlock($"if ({objectiveVar} != null)");
+                        builder.AppendLine($"{objectiveVar}.{actionMethod};");
+                        builder.CloseBlock();
+                    }
+                    else
+                    {
+                        builder.AppendLine($"{actionMethod};");
+                    }
+                    builder.CloseBlock(semicolon: true);
+
+                    builder.AppendLine($"{eventPath} -= {handlerFieldName};");
+                    builder.AppendLine($"{eventPath} += {handlerFieldName};");
+                }
+                else
+                {
+                    builder.AppendLine($"{eventPath} += {lambdaSignature} =>");
+                    builder.OpenBlock();
+                    if (objectiveVar != null)
+                    {
+                        builder.OpenBlock($"if ({objectiveVar} != null)");
+                        builder.AppendLine($"{objectiveVar}.{actionMethod};");
+                        builder.CloseBlock();
+                    }
+                    else
+                    {
+                        builder.AppendLine($"{actionMethod};");
+                    }
+                    builder.CloseBlock(semicolon: true);
+                }
+                
+                // Close the if block for specific entry, or foreach block for all entries
+                if (trigger.TargetQuestEntryIndex.HasValue)
+                {
+                    builder.CloseBlock(); // if (quest.Entries.Count > index)
+                }
+                else
+                {
+                    builder.CloseBlock(); // foreach
+                }
+            }
+            else
+            {
+                // Quest subscription
+                if (!string.IsNullOrWhiteSpace(handlerFieldName))
+                {
+                    builder.AppendLine($"{handlerFieldName} ??= {lambdaSignature} =>");
+                    builder.OpenBlock();
+                    if (objectiveVar != null)
+                    {
+                        builder.OpenBlock($"if ({objectiveVar} != null)");
+                        builder.AppendLine($"{objectiveVar}.{actionMethod};");
+                        builder.CloseBlock();
+                    }
+                    else
+                    {
+                        builder.AppendLine($"{actionMethod};");
+                    }
+                    builder.CloseBlock(semicolon: true);
+
+                    builder.AppendLine($"{eventPath} -= {handlerFieldName};");
+                    builder.AppendLine($"{eventPath} += {handlerFieldName};");
+                }
+                else
+                {
+                    builder.AppendLine($"{eventPath} += {lambdaSignature} =>");
+                    builder.OpenBlock();
+                    if (objectiveVar != null)
+                    {
+                        builder.OpenBlock($"if ({objectiveVar} != null)");
+                        builder.AppendLine($"{objectiveVar}.{actionMethod};");
+                        builder.CloseBlock();
+                    }
+                    else
+                    {
+                        builder.AppendLine($"{actionMethod};");
+                    }
+                    builder.CloseBlock(semicolon: true);
+                }
+            }
+
+            builder.CloseBlock(); // else (quest found)
         }
 
         /// <summary>

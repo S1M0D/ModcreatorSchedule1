@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Text.RegularExpressions;
+using Schedule1ModdingTool.Models;
 
 namespace Schedule1ModdingTool.Utils
 {
@@ -200,6 +201,55 @@ namespace Schedule1ModdingTool.Utils
                 return "Class name must be PascalCase (e.g., 'BobbyCooley')";
 
             return "Invalid class name format";
+        }
+
+        /// <summary>
+        /// Validates a default value string for a given field type.
+        /// Empty strings are always valid (will use type default).
+        /// </summary>
+        /// <param name="defaultValue">The default value string to validate</param>
+        /// <param name="fieldType">The field type to validate against</param>
+        /// <returns>True if valid, false otherwise</returns>
+        public static bool IsValidDefaultValue(string? defaultValue, DataClassFieldType? fieldType)
+        {
+            // Empty is always valid (will use type default)
+            if (string.IsNullOrWhiteSpace(defaultValue))
+                return true;
+
+            if (!fieldType.HasValue)
+                return true; // Can't validate without type
+
+            return fieldType.Value switch
+            {
+                DataClassFieldType.Bool => bool.TryParse(defaultValue.Trim(), out _),
+                DataClassFieldType.Int => int.TryParse(defaultValue.Trim(), out _),
+                DataClassFieldType.Float => float.TryParse(defaultValue.Trim(), out _),
+                DataClassFieldType.String => true, // Any string is valid (will be escaped in code generation)
+                DataClassFieldType.ListString => true, // Comma-separated or newline-separated values are valid
+                _ => true
+            };
+        }
+
+        /// <summary>
+        /// Gets a user-friendly error message for an invalid default value.
+        /// </summary>
+        public static string GetDefaultValueErrorMessage(string? defaultValue, DataClassFieldType? fieldType)
+        {
+            if (string.IsNullOrWhiteSpace(defaultValue))
+                return string.Empty;
+
+            if (!fieldType.HasValue)
+                return "Invalid default value";
+
+            return fieldType.Value switch
+            {
+                DataClassFieldType.Bool => "Default value must be 'true' or 'false'",
+                DataClassFieldType.Int => "Default value must be a whole number (e.g., '100', '0', '-5')",
+                DataClassFieldType.Float => "Default value must be a decimal number (e.g., '1.5', '0.0', '-3.14')",
+                DataClassFieldType.String => string.Empty, // Any string is valid
+                DataClassFieldType.ListString => string.Empty, // Any string is valid (will be parsed as comma/newline-separated)
+                _ => "Invalid default value format"
+            };
         }
     }
 }

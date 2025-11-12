@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Schedule1ModdingTool.Models;
 
 namespace Schedule1ModdingTool.Utils
 {
@@ -66,11 +67,12 @@ namespace Schedule1ModdingTool.Utils
         /// <param name="propertyName">The name of the property</param>
         /// <param name="propertyType">The type of the property (optional)</param>
         /// <param name="parentType">The type of the parent object (optional, for context)</param>
+        /// <param name="experienceLevel">The user's coding experience level (optional, for adaptive tooltips)</param>
         /// <returns>TooltipInfo containing text and optional documentation URL</returns>
-        public static TooltipInfo GetTooltipInfo(string propertyName, Type propertyType = null, Type parentType = null)
+        public static TooltipInfo GetTooltipInfo(string propertyName, Type propertyType = null, Type parentType = null, ExperienceLevel? experienceLevel = null)
         {
             // Get description text from property name mapping
-            var tooltipText = GetPropertyDescription(propertyName, parentType);
+            var tooltipText = GetPropertyDescription(propertyName, parentType, experienceLevel);
 
             // Map property type to S1API documentation URL
             string documentationUrl = null;
@@ -85,10 +87,16 @@ namespace Schedule1ModdingTool.Utils
         /// <summary>
         /// Gets a description for a property based on common S1API property names.
         /// </summary>
-        private static string GetPropertyDescription(string propertyName, Type parentType = null)
+        private static string GetPropertyDescription(string propertyName, Type parentType = null, ExperienceLevel? experienceLevel = null)
         {
             if (string.IsNullOrWhiteSpace(propertyName))
                 return null;
+
+            // Check for experience-level-aware descriptions first
+            var level = experienceLevel ?? ExperienceLevel.SomeCoding;
+            var adaptiveDescription = GetAdaptivePropertyDescription(propertyName, level);
+            if (adaptiveDescription != null)
+                return adaptiveDescription;
 
             // Map common property names to descriptions
             var descriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -148,6 +156,104 @@ namespace Schedule1ModdingTool.Utils
                 if (descriptions.TryGetValue(fullPropertyName, out var contextualDescription))
                 {
                     return contextualDescription;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets an experience-level-aware description for properties that need adaptive tooltips.
+        /// </summary>
+        private static string GetAdaptivePropertyDescription(string propertyName, ExperienceLevel experienceLevel)
+        {
+            // Data class field properties with experience-level-aware tooltips
+            var dataClassDescriptions = new Dictionary<string, Dictionary<ExperienceLevel, string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                {
+                    "FieldName",
+                    new Dictionary<ExperienceLevel, string>
+                    {
+                        {
+                            ExperienceLevel.NoCodingExperience,
+                            "The name of this field. Use simple names like 'KillCount' or 'ItemsCollected'. This will be saved with your quest progress."
+                        },
+                        {
+                            ExperienceLevel.SomeCoding,
+                            "The C# field name. Must be a valid identifier (letters, numbers, underscore). Example: 'KillCount', 'ItemsCollected', 'HasFoundSecret'."
+                        },
+                        {
+                            ExperienceLevel.ExperiencedCoder,
+                            "C# property name (PascalCase). Must be a valid identifier. Will be generated as: public {Type} {FieldName} {{ get; set; }}. Used in serialization via [SaveableField]."
+                        }
+                    }
+                },
+                {
+                    "FieldType",
+                    new Dictionary<ExperienceLevel, string>
+                    {
+                        {
+                            ExperienceLevel.NoCodingExperience,
+                            "The type of data to store. Choose: Bool (true/false), Int (whole numbers), Float (decimal numbers), String (text), or ListString (list of text items)."
+                        },
+                        {
+                            ExperienceLevel.SomeCoding,
+                            "C# type: Bool (bool), Int (int), Float (float), String (string), or ListString (List<string>). Must be JSON-serializable for save/load."
+                        },
+                        {
+                            ExperienceLevel.ExperiencedCoder,
+                            "C# type for serialization. Supported: bool, int, float, string, List<string>. All types must be JSON-serializable. The field will be marked [Serializable]."
+                        }
+                    }
+                },
+                {
+                    "DefaultValue",
+                    new Dictionary<ExperienceLevel, string>
+                    {
+                        {
+                            ExperienceLevel.NoCodingExperience,
+                            "Optional starting value. Leave empty to use defaults: false for Bool, 0 for Int/Float, empty text for String, empty list for ListString. For lists, enter items separated by commas (e.g., 'apple, banana, orange')."
+                        },
+                        {
+                            ExperienceLevel.SomeCoding,
+                            "Optional initial value. Format: 'true'/'false' for Bool, numbers for Int/Float, text for String. For ListString, enter items separated by commas or newlines (e.g., 'item1, item2' or one per line). Empty = type default."
+                        },
+                        {
+                            ExperienceLevel.ExperiencedCoder,
+                            "Optional default value expression. Must be valid C# literal for the field type. Examples: 'true', '100', '1.5f', '\"text\"'. For List<string>, use comma/newline-separated values (e.g., 'item1, item2' generates: new List<string> { \"item1\", \"item2\" }). Empty = type default."
+                        }
+                    }
+                },
+                {
+                    "Comment",
+                    new Dictionary<ExperienceLevel, string>
+                    {
+                        {
+                            ExperienceLevel.NoCodingExperience,
+                            "Optional description of what this field stores. This helps you remember what the field is for."
+                        },
+                        {
+                            ExperienceLevel.SomeCoding,
+                            "Optional XML documentation comment. Will be generated as /// <summary> comment above the property in the generated code."
+                        },
+                        {
+                            ExperienceLevel.ExperiencedCoder,
+                            "Optional XML documentation comment. Generated as /// <summary>...</summary> above the property. Follows standard C# XML doc conventions."
+                        }
+                    }
+                }
+            };
+
+            if (dataClassDescriptions.TryGetValue(propertyName, out var levelDescriptions))
+            {
+                if (levelDescriptions.TryGetValue(experienceLevel, out var description))
+                {
+                    return description;
+                }
+                // Fallback to SomeCoding if exact level not found
+                if (levelDescriptions.TryGetValue(ExperienceLevel.SomeCoding, out var fallback))
+                {
+                    return fallback;
                 }
             }
 

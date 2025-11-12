@@ -245,18 +245,80 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
         }
 
         /// <summary>
-        /// Generates a quest reward method stub.
+        /// Generates a quest reward method from the rewards collection.
         /// </summary>
-        public void GenerateRewardMethod(ICodeBuilder builder)
+        public void GenerateRewardMethod(ICodeBuilder builder, QuestBlueprint quest)
         {
             if (builder == null)
                 throw new ArgumentNullException(nameof(builder));
+            if (quest == null)
+                throw new ArgumentNullException(nameof(quest));
 
+            builder.AppendComment("🔧 Generated from: Quest.QuestRewardsList[]");
             builder.OpenBlock("private void GrantQuestRewards()");
-            builder.AppendComment("TODO: Leverage S1API economy/registry helpers to award cash, XP, or items.");
-            builder.AppendComment("Example: EconomyManager.AddMoney(500);");
+
+            if (quest.QuestRewardsList == null || quest.QuestRewardsList.Count == 0)
+            {
+                builder.AppendComment("No rewards configured");
+            }
+            else
+            {
+                foreach (var reward in quest.QuestRewardsList)
+                {
+                    builder.AppendComment($"🔧 Generated from: QuestRewardsList[{quest.QuestRewardsList.IndexOf(reward)}] - {reward.RewardType}");
+                    
+                    switch (reward.RewardType)
+                    {
+                        case QuestRewardType.XP:
+                            builder.AppendLine($"ConsoleHelper.GiveXp({reward.Amount});");
+                            break;
+                        case QuestRewardType.Money:
+                            builder.AppendLine($"Money.ChangeCashBalance({reward.Amount});");
+                            break;
+                        case QuestRewardType.Item:
+                            if (string.IsNullOrWhiteSpace(reward.ItemId))
+                            {
+                                builder.AppendComment($"WARNING: Item ID is empty for {reward.RewardType} reward");
+                            }
+                            else
+                            {
+                                if (reward.Quantity > 1)
+                                {
+                                    builder.AppendLine($"ConsoleHelper.AddItemToInventory(\"{CodeFormatter.EscapeString(reward.ItemId)}\", {reward.Quantity});");
+                                }
+                                else
+                                {
+                                    builder.AppendLine($"ConsoleHelper.AddItemToInventory(\"{CodeFormatter.EscapeString(reward.ItemId)}\");");
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+
             builder.CloseBlock();
             builder.AppendLine();
+        }
+
+        /// <summary>
+        /// Generates the OnCompleted override that grants rewards.
+        /// </summary>
+        public void GenerateOnCompletedMethod(ICodeBuilder builder, QuestBlueprint quest)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+            if (quest == null)
+                throw new ArgumentNullException(nameof(quest));
+
+            if (quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0)
+            {
+                builder.AppendComment("🔧 Generated from: Quest.QuestRewards = true");
+                builder.OpenBlock("protected override void OnCompleted()");
+                builder.AppendLine("base.OnCompleted();");
+                builder.AppendLine("GrantQuestRewards();");
+                builder.CloseBlock();
+                builder.AppendLine();
+            }
         }
 
         /// <summary>

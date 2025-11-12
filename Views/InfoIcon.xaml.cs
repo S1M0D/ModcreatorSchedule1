@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.Utils;
 
 namespace Schedule1ModdingTool.Views
@@ -21,6 +22,10 @@ namespace Schedule1ModdingTool.Views
         public static readonly DependencyProperty DocumentationUrlProperty =
             DependencyProperty.Register(nameof(DocumentationUrl), typeof(string), typeof(InfoIcon));
 
+        public static readonly DependencyProperty ExperienceLevelProperty =
+            DependencyProperty.Register(nameof(ExperienceLevel), typeof(ExperienceLevel?), typeof(InfoIcon),
+                new PropertyMetadata(null, OnExperienceLevelChanged));
+
         public string PropertyName
         {
             get => (string)GetValue(PropertyNameProperty);
@@ -39,6 +44,12 @@ namespace Schedule1ModdingTool.Views
             set => SetValue(DocumentationUrlProperty, value);
         }
 
+        public ExperienceLevel? ExperienceLevel
+        {
+            get => (ExperienceLevel?)GetValue(ExperienceLevelProperty);
+            set => SetValue(ExperienceLevelProperty, value);
+        }
+
         public InfoIcon()
         {
             InitializeComponent();
@@ -46,15 +57,26 @@ namespace Schedule1ModdingTool.Views
 
         private static void OnPropertyNameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is InfoIcon icon && e.NewValue is string propertyName)
+            if (d is InfoIcon icon)
             {
-                icon.UpdateTooltipInfo(propertyName);
+                icon.UpdateTooltipInfo();
             }
         }
 
-        private void UpdateTooltipInfo(string propertyName)
+        private static void OnExperienceLevelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var tooltipInfo = TooltipInfoExtractor.GetTooltipInfo(propertyName);
+            if (d is InfoIcon icon && !string.IsNullOrWhiteSpace(icon.PropertyName))
+            {
+                icon.UpdateTooltipInfo();
+            }
+        }
+
+        private void UpdateTooltipInfo()
+        {
+            if (string.IsNullOrWhiteSpace(PropertyName))
+                return;
+
+            var tooltipInfo = TooltipInfoExtractor.GetTooltipInfo(PropertyName, null, null, ExperienceLevel);
             
             if (tooltipInfo.HasContent)
             {

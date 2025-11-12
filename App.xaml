@@ -37,6 +37,8 @@
             <utils:BooleanToGridLengthConverter x:Key="BooleanToGridLengthConverter"/>
             <utils:EnumToBooleanConverter x:Key="EnumToBooleanConverter"/>
             <utils:EnumToCollectionConverter x:Key="EnumToCollectionConverter"/>
+            <utils:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
+            <utils:InverseEnumToVisibilityConverter x:Key="InverseEnumToVisibilityConverter"/>
             <utils:ExperienceLevelToStringConverter x:Key="ExperienceLevelToStringConverter"/>
             <utils:ColorHexToBrushConverter x:Key="ColorHexToBrushConverter"/>
             <utils:RelativeResourcePathConverter x:Key="RelativeResourcePathConverter"/>

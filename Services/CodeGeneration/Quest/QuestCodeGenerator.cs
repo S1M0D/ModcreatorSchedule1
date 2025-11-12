@@ -48,6 +48,15 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             // Using statements
             var usingsBuilder = new UsingStatementsBuilder();
             usingsBuilder.AddQuestUsings();
+            
+            // Add type alias for base game quests (needed for QuestEventTrigger)
+            builder.AppendLine("#if (IL2CPPMELON)");
+            builder.AppendLine("using S1Quests = Il2CppScheduleOne.Quests;");
+            builder.AppendLine("#elif (MONOMELON || MONOBEPINEX || IL2CPPBEPINEX)");
+            builder.AppendLine("using S1Quests = ScheduleOne.Quests;");
+            builder.AppendLine("#endif");
+            builder.AppendLine();
+            
             usingsBuilder.GenerateUsings(builder);
 
             // Namespace
@@ -85,7 +94,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             // Data class if needed
             if (quest.GenerateDataClass)
             {
-                GenerateDataClass(builder, className);
+                GenerateDataClass(builder, quest, className);
             }
 
             // Quest properties
@@ -101,9 +110,10 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             _methodGenerator.GenerateOnLoadedMethod(builder, quest);
 
             // Reward method if needed
-            if (quest.QuestRewards)
+            if (quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0)
             {
-                _methodGenerator.GenerateRewardMethod(builder);
+                _methodGenerator.GenerateRewardMethod(builder, quest);
+                _methodGenerator.GenerateOnCompletedMethod(builder, quest);
             }
 
             // Icon loading method if needed
@@ -125,17 +135,120 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
         /// <summary>
         /// Generates the serializable data class for quest state.
         /// </summary>
-        private void GenerateDataClass(ICodeBuilder builder, string className)
+        private void GenerateDataClass(ICodeBuilder builder, QuestBlueprint quest, string className)
         {
+            builder.AppendComment("🔧 Generated from: Quest.GenerateDataClass, Quest.DataClassFields[]");
             builder.AppendLine("[Serializable]");
             builder.OpenBlock("public class QuestDataModel");
+            
+            // Always include Completed field
             builder.AppendLine("public bool Completed { get; set; }");
-            builder.AppendComment("Add additional quest-specific fields here");
+            
+            // Add custom fields
+            if (quest.DataClassFields != null && quest.DataClassFields.Count > 0)
+            {
+                foreach (var field in quest.DataClassFields)
+                {
+                    if (string.IsNullOrWhiteSpace(field.FieldName))
+                        continue;
+
+                    // Add XML comment if provided
+                    if (!string.IsNullOrWhiteSpace(field.Comment))
+                    {
+                        builder.AppendComment($"🔧 Generated from: DataClassFields[{quest.DataClassFields.IndexOf(field)}].Comment");
+                        builder.AppendLine($"/// <summary>");
+                        builder.AppendLine($"/// {CodeFormatter.EscapeString(field.Comment)}");
+                        builder.AppendLine($"/// </summary>");
+                    }
+
+                    // Generate field with proper type and default value
+                    string typeName = GetCSharpTypeName(field.FieldType);
+                    string defaultValue = GetDefaultValueString(field.FieldType, field.DefaultValue);
+                    
+                    builder.AppendComment($"🔧 Generated from: DataClassFields[{quest.DataClassFields.IndexOf(field)}] - {field.FieldName} ({typeName})");
+                    builder.AppendLine($"public {typeName} {IdentifierSanitizer.MakeSafeIdentifier(field.FieldName, "Field")} {{ get; set; }} = {defaultValue};");
+                }
+            }
+            else
+            {
+                builder.AppendComment("Add additional quest-specific fields here");
+            }
+
             builder.CloseBlock();
             builder.AppendLine();
             builder.AppendLine($"[SaveableField(\"{CodeFormatter.EscapeString(className)}Data\")]");
             builder.AppendLine("private QuestDataModel _data = new QuestDataModel();");
             builder.AppendLine();
+        }
+
+        /// <summary>
+        /// Gets the C# type name for a DataClassFieldType.
+        /// </summary>
+        private string GetCSharpTypeName(DataClassFieldType fieldType)
+        {
+            return fieldType switch
+            {
+                DataClassFieldType.Bool => "bool",
+                DataClassFieldType.Int => "int",
+                DataClassFieldType.Float => "float",
+                DataClassFieldType.String => "string",
+                DataClassFieldType.ListString => "List<string>",
+                _ => "object"
+            };
+        }
+
+        /// <summary>
+        /// Gets the default value string for a field type and value.
+        /// </summary>
+        private string GetDefaultValueString(DataClassFieldType fieldType, string defaultValue)
+        {
+            if (string.IsNullOrWhiteSpace(defaultValue))
+            {
+                // Return default value based on type
+                return fieldType switch
+                {
+                    DataClassFieldType.Bool => "false",
+                    DataClassFieldType.Int => "0",
+                    DataClassFieldType.Float => "0f",
+                    DataClassFieldType.String => "string.Empty",
+                    DataClassFieldType.ListString => "new List<string>()",
+                    _ => "null"
+                };
+            }
+
+            // Parse and format the provided default value
+            return fieldType switch
+            {
+                DataClassFieldType.Bool => bool.TryParse(defaultValue, out _) ? defaultValue.ToLowerInvariant() : "false",
+                DataClassFieldType.Int => int.TryParse(defaultValue, out _) ? defaultValue : "0",
+                DataClassFieldType.Float => float.TryParse(defaultValue, out _) ? defaultValue + "f" : "0f",
+                DataClassFieldType.String => $"\"{CodeFormatter.EscapeString(defaultValue)}\"",
+                DataClassFieldType.ListString => GetListStringDefaultValue(defaultValue),
+                _ => "null"
+            };
+        }
+
+        /// <summary>
+        /// Parses a comma-separated or newline-separated string into a List<string> initialization.
+        /// </summary>
+        private string GetListStringDefaultValue(string defaultValue)
+        {
+            if (string.IsNullOrWhiteSpace(defaultValue))
+                return "new List<string>()";
+
+            // Split by comma or newline, trim each item
+            var items = defaultValue
+                .Split(new[] { ',', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(item => item.Trim())
+                .Where(item => !string.IsNullOrWhiteSpace(item))
+                .ToList();
+
+            if (items.Count == 0)
+                return "new List<string>()";
+
+            // Generate: new List<string> { "item1", "item2", "item3" }
+            var itemStrings = items.Select(item => $"\"{CodeFormatter.EscapeString(item)}\"");
+            return $"new List<string> {{ {string.Join(", ", itemStrings)} }}";
         }
 
         /// <summary>

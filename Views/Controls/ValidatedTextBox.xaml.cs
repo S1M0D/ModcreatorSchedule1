@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.Utils;
 
 namespace Schedule1ModdingTool.Views.Controls
@@ -30,6 +31,23 @@ namespace Schedule1ModdingTool.Views.Controls
             DependencyProperty.Register(nameof(AutoCorrect), typeof(bool), typeof(ValidatedTextBox),
                 new PropertyMetadata(true));
 
+        public ValidatedTextBox()
+        {
+            InitializeComponent();
+            Loaded += ValidatedTextBox_Loaded;
+        }
+
+        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            
+            // Revalidate when Tag (FieldType) changes for DataClassDefaultValue validation
+            if (e.Property == TagProperty && ValidationType == ValidationType.DataClassDefaultValue)
+            {
+                Validate();
+            }
+        }
+
         public string Text
         {
             get => (string)GetValue(TextProperty);
@@ -58,12 +76,6 @@ namespace Schedule1ModdingTool.Views.Controls
         {
             get => (bool)GetValue(AutoCorrectProperty);
             set => SetValue(AutoCorrectProperty, value);
-        }
-
-        public ValidatedTextBox()
-        {
-            InitializeComponent();
-            Loaded += ValidatedTextBox_Loaded;
         }
 
         private void ValidatedTextBox_Loaded(object sender, RoutedEventArgs e)
@@ -101,7 +113,7 @@ namespace Schedule1ModdingTool.Views.Controls
             Validate();
         }
 
-        private void Validate()
+        public void Validate()
         {
             bool isValid;
             string errorMessage = string.Empty;
@@ -129,6 +141,16 @@ namespace Schedule1ModdingTool.Views.Controls
                     if (!isValid)
                     {
                         errorMessage = ValidationHelpers.GetClassNameErrorMessage(Text);
+                    }
+                    break;
+
+                case ValidationType.DataClassDefaultValue:
+                    // Get FieldType from Tag property
+                    var fieldType = Tag as DataClassFieldType?;
+                    isValid = ValidationHelpers.IsValidDefaultValue(Text, fieldType);
+                    if (!isValid)
+                    {
+                        errorMessage = ValidationHelpers.GetDefaultValueErrorMessage(Text, fieldType);
                     }
                     break;
 
@@ -160,6 +182,10 @@ namespace Schedule1ModdingTool.Views.Controls
 
                 case ValidationType.ClassName:
                     corrected = ValidationHelpers.NormalizeClassName(Text);
+                    break;
+
+                case ValidationType.DataClassDefaultValue:
+                    // Don't auto-correct default values - let user fix manually
                     break;
             }
 
@@ -193,7 +219,8 @@ namespace Schedule1ModdingTool.Views.Controls
     {
         NpcId,
         QuestId,
-        ClassName
+        ClassName,
+        DataClassDefaultValue
     }
 }
 

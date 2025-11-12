@@ -13,6 +13,8 @@ namespace Schedule1ModdingTool.Models
         private QuestTriggerType _triggerType = QuestTriggerType.ActionTrigger;
         private string _targetAction = "";
         private string _targetNpcId = "";
+        private string _targetQuestId = "";
+        private int? _targetQuestEntryIndex = null;
         private QuestTriggerTarget _triggerTarget = QuestTriggerTarget.QuestStart;
         private int? _objectiveIndex = null;
         private TriggerMetadata _selectedTriggerMetadata;
@@ -47,6 +49,27 @@ namespace Schedule1ModdingTool.Models
         {
             get => _targetNpcId;
             set => SetProperty(ref _targetNpcId, value);
+        }
+
+        /// <summary>
+        /// The Quest ID for Quest-specific triggers (required when TriggerType is QuestEventTrigger)
+        /// </summary>
+        [JsonProperty("targetQuestId")]
+        public string TargetQuestId
+        {
+            get => _targetQuestId;
+            set => SetProperty(ref _targetQuestId, value);
+        }
+
+        /// <summary>
+        /// The QuestEntry index for QuestEntry-specific triggers (optional, only used when TargetAction starts with "QuestEntry.")
+        /// If null, subscribes to all entries. If set, subscribes only to the specific entry at this index.
+        /// </summary>
+        [JsonProperty("targetQuestEntryIndex")]
+        public int? TargetQuestEntryIndex
+        {
+            get => _targetQuestEntryIndex;
+            set => SetProperty(ref _targetQuestEntryIndex, value);
         }
 
         /// <summary>
@@ -110,6 +133,8 @@ namespace Schedule1ModdingTool.Models
                 TriggerType = TriggerType,
                 TargetAction = TargetAction,
                 TargetNpcId = TargetNpcId,
+                TargetQuestId = TargetQuestId,
+                TargetQuestEntryIndex = TargetQuestEntryIndex,
                 TriggerTarget = TriggerTarget,
                 ObjectiveIndex = ObjectiveIndex
             };
@@ -118,8 +143,10 @@ namespace Schedule1ModdingTool.Models
         public override string ToString()
         {
             var npcPart = !string.IsNullOrWhiteSpace(TargetNpcId) ? $" (NPC: {TargetNpcId})" : "";
+            var questPart = !string.IsNullOrWhiteSpace(TargetQuestId) ? $" (Quest: {TargetQuestId})" : "";
+            var entryPart = TargetQuestEntryIndex.HasValue ? $" (Entry: {TargetQuestEntryIndex})" : "";
             var objPart = ObjectiveIndex.HasValue ? $" (Objective: {ObjectiveIndex})" : "";
-            return $"{TriggerTarget}: {TargetAction}{npcPart}{objPart}";
+            return $"{TriggerTarget}: {TargetAction}{npcPart}{questPart}{entryPart}{objPart}";
         }
     }
 
@@ -137,6 +164,11 @@ namespace Schedule1ModdingTool.Models
         /// NPC instance event trigger (e.g., NPC.OnDeath for a specific NPC)
         /// </summary>
         NPCEventTrigger,
+
+        /// <summary>
+        /// Quest instance event trigger (e.g., Quest.OnComplete, QuestEntry.OnComplete for a specific quest)
+        /// </summary>
+        QuestEventTrigger,
 
         /// <summary>
         /// Custom trigger type for future extensibility

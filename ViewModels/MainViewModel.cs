@@ -334,6 +334,11 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand BuildModCommand => _buildModCommand!;
         public ICommand PlayGameCommand => _playGameCommand!;
         public ICommand OpenSettingsCommand => _openSettingsCommand!;
+
+        /// <summary>
+        /// Gets the current mod settings (including user experience level).
+        /// </summary>
+        public ModSettings Settings => _modSettings;
         public ICommand SelectNavigationCommand => _selectNavigationCommand!;
         public ICommand SelectCategoryCommand => _selectCategoryCommand!;
         public ICommand AddNpcCommand => _addNpcCommand!;

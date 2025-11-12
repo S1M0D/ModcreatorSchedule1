@@ -52,7 +52,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 
             foreach (var trigger in quest.QuestTriggers.Where(t => t.TriggerTarget == QuestTriggerTarget.QuestStart))
             {
-                if (trigger.TriggerType == QuestTriggerType.NPCEventTrigger &&
+                if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
                     !string.IsNullOrWhiteSpace(trigger.TargetAction))
                 {
                     var handlerName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex);
@@ -81,7 +81,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 
             foreach (var trigger in quest.QuestFinishTriggers)
             {
-                if (trigger.TriggerType == QuestTriggerType.NPCEventTrigger &&
+                if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
                     !string.IsNullOrWhiteSpace(trigger.TargetAction))
                 {
                     var finishMethod = trigger.FinishType switch
@@ -126,7 +126,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 {
                     foreach (var trigger in objective.StartTriggers)
                     {
-                        if (trigger.TriggerType == QuestTriggerType.NPCEventTrigger &&
+                        if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
                             !string.IsNullOrWhiteSpace(trigger.TargetAction))
                         {
                             var handlerName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex);
@@ -147,7 +147,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 {
                     foreach (var trigger in objective.FinishTriggers)
                     {
-                        if (trigger.TriggerType == QuestTriggerType.NPCEventTrigger &&
+                        if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
                             !string.IsNullOrWhiteSpace(trigger.TargetAction))
                         {
                             var handlerName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex);

@@ -41,6 +41,8 @@ namespace Schedule1ModdingTool.ViewModels
 
         public bool RequiresNpcId => Trigger.TriggerType == QuestTriggerType.NPCEventTrigger;
 
+        public bool RequiresQuestId => Trigger.TriggerType == QuestTriggerType.QuestEventTrigger;
+
         public bool RequiresObjectiveIndex => Trigger.TriggerTarget == QuestTriggerTarget.ObjectiveStart || 
                                              Trigger.TriggerTarget == QuestTriggerTarget.ObjectiveFinish;
 

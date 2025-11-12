@@ -35,6 +35,8 @@ namespace Schedule1ModdingTool.Models
         private ObservableCollection<QuestFinishTrigger> _questFinishTriggers = new ObservableCollection<QuestFinishTrigger>();
         private bool _trackOnBegin = true;
         private bool _autoCompleteOnAllEntriesComplete = true;
+        private ObservableCollection<QuestReward> _questRewardsList = new ObservableCollection<QuestReward>();
+        private ObservableCollection<DataClassField> _dataClassFields = new ObservableCollection<DataClassField>();
 
         [Required(ErrorMessage = "Class name is required")]
         [JsonProperty("className")]
@@ -138,7 +140,57 @@ namespace Schedule1ModdingTool.Models
         public bool QuestRewards
         {
             get => _questRewards;
-            set => SetProperty(ref _questRewards, value);
+            set
+            {
+                if (SetProperty(ref _questRewards, value))
+                {
+                    // If enabling rewards and list is empty, add a default reward
+                    if (value && (_questRewardsList == null || _questRewardsList.Count == 0))
+                    {
+                        if (_questRewardsList == null)
+                        {
+                            _questRewardsList = new ObservableCollection<QuestReward>();
+                        }
+                        _questRewardsList.Add(new QuestReward
+                        {
+                            RewardType = QuestRewardType.Money,
+                            Amount = 100
+                        });
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Collection of quest rewards (XP, Money, Items)
+        /// </summary>
+        [JsonProperty("questRewardsList")]
+        public ObservableCollection<QuestReward> QuestRewardsList
+        {
+            get => _questRewardsList;
+            set
+            {
+                if (SetProperty(ref _questRewardsList, value))
+                {
+                    // Update the boolean flag based on whether there are any rewards
+                    var hasRewards = _questRewardsList != null && _questRewardsList.Count > 0;
+                    if (_questRewards != hasRewards)
+                    {
+                        _questRewards = hasRewards;
+                        OnPropertyChanged(nameof(QuestRewards));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Collection of custom data class fields
+        /// </summary>
+        [JsonProperty("dataClassFields")]
+        public ObservableCollection<DataClassField> DataClassFields
+        {
+            get => _dataClassFields;
+            set => SetProperty(ref _dataClassFields, value);
         }
 
         [JsonProperty("generateDataClass")]
@@ -222,6 +274,10 @@ namespace Schedule1ModdingTool.Models
         {
             // Add default objective
             Objectives.Add(new QuestObjective("objective_1", "Complete objective"));
+            
+            // Initialize collections
+            _questRewardsList = new ObservableCollection<QuestReward>();
+            _dataClassFields = new ObservableCollection<DataClassField>();
         }
 
         public QuestBlueprint(QuestBlueprintType type) : this()
@@ -267,6 +323,27 @@ namespace Schedule1ModdingTool.Models
                     }
                 }
             }
+
+            // Backward compatibility: If QuestRewards boolean is true but QuestRewardsList is empty,
+            // create a default money reward
+            if (_questRewards && (_questRewardsList == null || _questRewardsList.Count == 0))
+            {
+                if (_questRewardsList == null)
+                {
+                    _questRewardsList = new ObservableCollection<QuestReward>();
+                }
+                _questRewardsList.Add(new QuestReward
+                {
+                    RewardType = QuestRewardType.Money,
+                    Amount = 100
+                });
+            }
+
+            // Initialize DataClassFields if null
+            if (_dataClassFields == null)
+            {
+                _dataClassFields = new ObservableCollection<DataClassField>();
+            }
         }
 
         public void AddObjective()
@@ -282,6 +359,39 @@ namespace Schedule1ModdingTool.Models
             {
                 Objectives.Remove(objective);
             }
+        }
+
+        public void AddReward()
+        {
+            QuestRewardsList.Add(new QuestReward
+            {
+                RewardType = QuestRewardType.Money,
+                Amount = 100
+            });
+            QuestRewards = true;
+        }
+
+        public void RemoveReward(QuestReward reward)
+        {
+            QuestRewardsList.Remove(reward);
+            if (QuestRewardsList.Count == 0)
+            {
+                QuestRewards = false;
+            }
+        }
+
+        public void AddDataClassField()
+        {
+            DataClassFields.Add(new DataClassField
+            {
+                FieldName = $"Field{DataClassFields.Count + 1}",
+                FieldType = DataClassFieldType.Bool
+            });
+        }
+
+        public void RemoveDataClassField(DataClassField field)
+        {
+            DataClassFields.Remove(field);
         }
 
         public void CopyFrom(QuestBlueprint source)
@@ -330,6 +440,24 @@ namespace Schedule1ModdingTool.Models
             foreach (var finishTrigger in source.QuestFinishTriggers)
             {
                 QuestFinishTriggers.Add(finishTrigger.DeepCopy());
+            }
+
+            QuestRewardsList.Clear();
+            if (source.QuestRewardsList != null)
+            {
+                foreach (var reward in source.QuestRewardsList)
+                {
+                    QuestRewardsList.Add(reward.DeepCopy());
+                }
+            }
+
+            DataClassFields.Clear();
+            if (source.DataClassFields != null)
+            {
+                foreach (var field in source.DataClassFields)
+                {
+                    DataClassFields.Add(field.DeepCopy());
+                }
             }
         }
 

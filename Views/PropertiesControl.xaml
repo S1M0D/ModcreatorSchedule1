@@ -14,6 +14,7 @@
     <UserControl.Resources>
         <utils:FilteredTriggersConverter x:Key="FilteredTriggersConverter" />
         <utils:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
+        <utils:QuestEntryVisibilityConverter x:Key="QuestEntryVisibilityConverter" />
     </UserControl.Resources>
 
     <Grid Margin="8" VerticalAlignment="Stretch">
@@ -125,18 +126,174 @@
                                                Visibility="{Binding SelectedQuest.IconFileName, Converter={StaticResource StringToVisibilityConverter}}" />
                                 </StackPanel>
 
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,2">
-                                    <CheckBox Content="Quest Rewards"
-                                              IsChecked="{Binding SelectedQuest.QuestRewards}"
-                                              Foreground="{StaticResource LightTextBrush}"/>
-                                    <views:InfoIcon TooltipText="If enabled, quest completion will grant rewards (XP, items, etc.) to the player"/>
+                                <!-- Quest Rewards Section -->
+                                <StackPanel Margin="0,8,0,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <CheckBox Content="Quest Rewards"
+                                                  IsChecked="{Binding SelectedQuest.QuestRewards}"
+                                                  Foreground="{StaticResource LightTextBrush}"/>
+                                        <views:InfoIcon TooltipText="If enabled, quest completion will grant rewards (XP, money, items) to the player"/>
+                                    </StackPanel>
+
+                                    <StackPanel Visibility="{Binding SelectedQuest.QuestRewards, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Margin="12,0,0,0">
+                                        <DockPanel Margin="0,0,0,8">
+                                            <TextBlock Text="Rewards" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                                            <Button Content="+ Add Reward"
+                                                    Click="AddReward_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    DockPanel.Dock="Right"
+                                                    HorizontalAlignment="Right"/>
+                                        </DockPanel>
+
+                                        <ItemsControl ItemsSource="{Binding SelectedQuest.QuestRewardsList}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{StaticResource DarkBackgroundBrush}"
+                                                            BorderBrush="{StaticResource DarkBorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="3"
+                                                            Margin="0,0,0,8"
+                                                            Padding="12">
+                                                        <StackPanel>
+                                                            <DockPanel Margin="0,0,0,8">
+                                                                <Button DockPanel.Dock="Right"
+                                                                        Click="RemoveReward_Click"
+                                                                        Tag="{Binding}"
+                                                                        Style="{StaticResource IconButtonStyle}"
+                                                                        ToolTip="Remove Reward">
+                                                                    <materialDesign:PackIcon Kind="{StaticResource DeleteIcon}" Width="16" Height="16"/>
+                                                                </Button>
+                                                            </DockPanel>
+
+                                                            <Label Content="Reward Type" Style="{StaticResource LabelStyle}"/>
+                                                            <ComboBox SelectedItem="{Binding RewardType}"
+                                                                      Style="{StaticResource ComboBoxStyle}"
+                                                                      IsEditable="False"
+                                                                      Loaded="RewardTypeComboBox_Loaded"/>
+
+                                                            <StackPanel Visibility="{Binding RewardType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Item}">
+                                                                <Label Content="Item ID" Style="{StaticResource LabelStyle}" Margin="0,8,0,0"/>
+                                                                <TextBox Text="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}"
+                                                                         Style="{StaticResource TextBoxStyle}"/>
+
+                                                                <Label Content="Quantity" Style="{StaticResource LabelStyle}" Margin="0,8,0,0"/>
+                                                                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                                                         Style="{StaticResource TextBoxStyle}"/>
+                                                            </StackPanel>
+
+                                                            <StackPanel Visibility="{Binding RewardType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=XP|Money}">
+                                                                <Label Content="Amount" Style="{StaticResource LabelStyle}" Margin="0,8,0,0"/>
+                                                                <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}"
+                                                                         Style="{StaticResource TextBoxStyle}"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </StackPanel>
 
-                                <StackPanel Orientation="Horizontal" Margin="0,2">
-                                    <CheckBox Content="Generate Data Class"
-                                              IsChecked="{Binding SelectedQuest.GenerateDataClass}"
-                                              Foreground="{StaticResource LightTextBrush}"/>
-                                    <views:InfoIcon TooltipText="If enabled, generates a separate data class for quest state persistence"/>
+                                <!-- Data Class Section -->
+                                <StackPanel Margin="0,8,0,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <CheckBox Content="Generate Data Class"
+                                                  IsChecked="{Binding SelectedQuest.GenerateDataClass}"
+                                                  Foreground="{StaticResource LightTextBrush}"/>
+                                        <views:InfoIcon TooltipText="If enabled, generates a separate data class for quest state persistence"/>
+                                    </StackPanel>
+
+                                    <StackPanel Visibility="{Binding SelectedQuest.GenerateDataClass, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Margin="12,0,0,0">
+                                        <DockPanel Margin="0,0,0,8">
+                                            <TextBlock Text="Custom Fields" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                                            <Button Content="+ Add Field"
+                                                    Click="AddDataClassField_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    DockPanel.Dock="Right"
+                                                    HorizontalAlignment="Right"/>
+                                        </DockPanel>
+
+                                        <ItemsControl ItemsSource="{Binding SelectedQuest.DataClassFields}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{StaticResource DarkBackgroundBrush}"
+                                                            BorderBrush="{StaticResource DarkBorderBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="3"
+                                                            Margin="0,0,0,8"
+                                                            Padding="12">
+                                                        <StackPanel>
+                                                            <DockPanel Margin="0,0,0,8">
+                                                                <Button DockPanel.Dock="Right"
+                                                                        Click="RemoveDataClassField_Click"
+                                                                        Tag="{Binding}"
+                                                                        Style="{StaticResource IconButtonStyle}"
+                                                                        ToolTip="Remove Field">
+                                                                    <materialDesign:PackIcon Kind="{StaticResource DeleteIcon}" Width="16" Height="16"/>
+                                                                </Button>
+                                                            </DockPanel>
+
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Label Content="Field Name" Style="{StaticResource LabelStyle}"/>
+                                                                <views:InfoIcon PropertyName="FieldName"
+                                                                                ExperienceLevel="{Binding DataContext.Settings.ExperienceLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                            </StackPanel>
+                                                            <controls:ValidatedTextBox Text="{Binding FieldName, UpdateSourceTrigger=PropertyChanged}"
+                                                                                       ValidationType="ClassName"/>
+
+                                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                                <Label Content="Field Type" Style="{StaticResource LabelStyle}"/>
+                                                                <views:InfoIcon PropertyName="FieldType"
+                                                                                ExperienceLevel="{Binding DataContext.Settings.ExperienceLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                            </StackPanel>
+                                                            <ComboBox SelectedItem="{Binding FieldType}"
+                                                                      Style="{StaticResource ComboBoxStyle}"
+                                                                      IsEditable="False"
+                                                                      Loaded="DataClassFieldTypeComboBox_Loaded"
+                                                                      SelectionChanged="DataClassFieldTypeComboBox_SelectionChanged"/>
+
+                                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                                <Label Content="Default Value (optional)" Style="{StaticResource LabelStyle}"/>
+                                                                <views:InfoIcon PropertyName="DefaultValue"
+                                                                                ExperienceLevel="{Binding DataContext.Settings.ExperienceLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                            </StackPanel>
+                                                            <StackPanel>
+                                                                <controls:ValidatedTextBox Text="{Binding DefaultValue, UpdateSourceTrigger=PropertyChanged}"
+                                                                                           ValidationType="DataClassDefaultValue"
+                                                                                           Tag="{Binding FieldType}"
+                                                                                           Visibility="{Binding FieldType, Converter={StaticResource InverseEnumToVisibilityConverter}, ConverterParameter=ListString}"/>
+                                                                <TextBox Text="{Binding DefaultValue, UpdateSourceTrigger=PropertyChanged}"
+                                                                         Style="{StaticResource TextBoxStyle}"
+                                                                         Height="80"
+                                                                         TextWrapping="Wrap"
+                                                                         AcceptsReturn="True"
+                                                                         VerticalScrollBarVisibility="Auto"
+                                                                         Visibility="{Binding FieldType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=ListString}">
+                                                                    <TextBox.ToolTip>
+                                                                        <TextBlock Text="Enter items separated by commas or one per line. Example: apple, banana, orange" TextWrapping="Wrap" MaxWidth="300"/>
+                                                                    </TextBox.ToolTip>
+                                                                </TextBox>
+                                                            </StackPanel>
+
+                                                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                                <Label Content="Comment (optional)" Style="{StaticResource LabelStyle}"/>
+                                                                <views:InfoIcon PropertyName="Comment"
+                                                                                ExperienceLevel="{Binding DataContext.Settings.ExperienceLevel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                                            </StackPanel>
+                                                            <TextBox Text="{Binding Comment, UpdateSourceTrigger=PropertyChanged}"
+                                                                     Style="{StaticResource TextBoxStyle}"
+                                                                     Height="60"
+                                                                     TextWrapping="Wrap"
+                                                                     AcceptsReturn="True"
+                                                                     VerticalScrollBarVisibility="Auto"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,2">
@@ -264,6 +421,71 @@
                                                                 </DataTemplate>
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>
+
+                                                        <Label Content="Quest ID (if Quest trigger)"
+                                                               Style="{StaticResource LabelStyle}"
+                                                               Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}" />
+                                                        <ComboBox SelectedValue="{Binding TargetQuestId, UpdateSourceTrigger=PropertyChanged}"
+                                                                  SelectedValuePath="Id"
+                                                                  Style="{StaticResource ComboBoxStyle}"
+                                                                  IsEditable="True"
+                                                                  Loaded="QuestComboBox_Loaded"
+                                                                  LostFocus="QuestComboBox_LostFocus"
+                                                                  SelectionChanged="QuestComboBox_SelectionChanged"
+                                                                  Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Margin="0,0,8,0" />
+                                                                        <TextBlock Text="(" Foreground="{StaticResource MediumTextBrush}" />
+                                                                        <TextBlock Text="{Binding Id}" Foreground="{StaticResource MediumTextBrush}" />
+                                                                        <TextBlock Text=")" Foreground="{StaticResource MediumTextBrush}" />
+                                                                        <TextBlock Text=" - " Foreground="{StaticResource MediumTextBrush}" Margin="4,0,4,0" />
+                                                                        <TextBlock Foreground="{StaticResource MediumTextBrush}" FontSize="10">
+                                                                            <TextBlock.Style>
+                                                                                <Style TargetType="TextBlock">
+                                                                                    <Setter Property="Text" Value="Base Game" />
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding IsModQuest}" Value="True">
+                                                                                            <Setter Property="Text" Value="Mod" />
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </TextBlock.Style>
+                                                                        </TextBlock>
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+
+                                                        <Label Content="Quest Entry (if QuestEntry trigger)"
+                                                               Style="{StaticResource LabelStyle}">
+                                                            <Label.Visibility>
+                                                                <MultiBinding Converter="{StaticResource QuestEntryVisibilityConverter}">
+                                                                    <Binding Path="TriggerType" />
+                                                                    <Binding Path="TargetAction" />
+                                                                </MultiBinding>
+                                                            </Label.Visibility>
+                                                        </Label>
+                                                        <ComboBox SelectedValue="{Binding TargetQuestEntryIndex, UpdateSourceTrigger=PropertyChanged}"
+                                                                  SelectedValuePath="Index"
+                                                                  Style="{StaticResource ComboBoxStyle}"
+                                                                  IsEditable="True"
+                                                                  Loaded="QuestEntryComboBox_Loaded"
+                                                                  LostFocus="QuestEntryComboBox_LostFocus"
+                                                                  SelectionChanged="QuestEntryComboBox_SelectionChanged">
+                                                            <ComboBox.Visibility>
+                                                                <MultiBinding Converter="{StaticResource QuestEntryVisibilityConverter}">
+                                                                    <Binding Path="TriggerType" />
+                                                                    <Binding Path="TargetAction" />
+                                                                </MultiBinding>
+                                                            </ComboBox.Visibility>
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
                                                     </StackPanel>
                                                 </Border>
                                             </DataTemplate>
@@ -366,6 +588,71 @@
                                                                             </TextBlock.Style>
                                                                         </TextBlock>
                                                                     </StackPanel>
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+
+                                                        <Label Content="Quest ID (if Quest trigger)"
+                                                               Style="{StaticResource LabelStyle}"
+                                                               Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}" />
+                                                        <ComboBox SelectedValue="{Binding TargetQuestId, UpdateSourceTrigger=PropertyChanged}"
+                                                                  SelectedValuePath="Id"
+                                                                  Style="{StaticResource ComboBoxStyle}"
+                                                                  IsEditable="True"
+                                                                  Loaded="QuestComboBox_Loaded"
+                                                                  LostFocus="QuestComboBox_LostFocus"
+                                                                  SelectionChanged="QuestComboBox_SelectionChanged"
+                                                                  Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Margin="0,0,8,0" />
+                                                                        <TextBlock Text="(" Foreground="{StaticResource MediumTextBrush}" />
+                                                                        <TextBlock Text="{Binding Id}" Foreground="{StaticResource MediumTextBrush}" />
+                                                                        <TextBlock Text=")" Foreground="{StaticResource MediumTextBrush}" />
+                                                                        <TextBlock Text=" - " Foreground="{StaticResource MediumTextBrush}" Margin="4,0,4,0" />
+                                                                        <TextBlock Foreground="{StaticResource MediumTextBrush}" FontSize="10">
+                                                                            <TextBlock.Style>
+                                                                                <Style TargetType="TextBlock">
+                                                                                    <Setter Property="Text" Value="Base Game" />
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding IsModQuest}" Value="True">
+                                                                                            <Setter Property="Text" Value="Mod" />
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </TextBlock.Style>
+                                                                        </TextBlock>
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+
+                                                        <Label Content="Quest Entry (if QuestEntry trigger)"
+                                                               Style="{StaticResource LabelStyle}">
+                                                            <Label.Visibility>
+                                                                <MultiBinding Converter="{StaticResource QuestEntryVisibilityConverter}">
+                                                                    <Binding Path="TriggerType" />
+                                                                    <Binding Path="TargetAction" />
+                                                                </MultiBinding>
+                                                            </Label.Visibility>
+                                                        </Label>
+                                                        <ComboBox SelectedValue="{Binding TargetQuestEntryIndex, UpdateSourceTrigger=PropertyChanged}"
+                                                                  SelectedValuePath="Index"
+                                                                  Style="{StaticResource ComboBoxStyle}"
+                                                                  IsEditable="True"
+                                                                  Loaded="QuestEntryComboBox_Loaded"
+                                                                  LostFocus="QuestEntryComboBox_LostFocus"
+                                                                  SelectionChanged="QuestEntryComboBox_SelectionChanged">
+                                                            <ComboBox.Visibility>
+                                                                <MultiBinding Converter="{StaticResource QuestEntryVisibilityConverter}">
+                                                                    <Binding Path="TriggerType" />
+                                                                    <Binding Path="TargetAction" />
+                                                                </MultiBinding>
+                                                            </ComboBox.Visibility>
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding DisplayName}" />
                                                                 </DataTemplate>
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>

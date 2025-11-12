@@ -37,6 +37,19 @@ namespace Schedule1ModdingTool.Services
         }
 
         /// <summary>
+        /// Gets triggers available for a specific Quest
+        /// </summary>
+        public static List<TriggerMetadata> GetQuestTriggers(string questId)
+        {
+            var allTriggers = GetAvailableTriggers();
+            return allTriggers
+                .Where(t => t.TriggerType == QuestTriggerType.QuestEventTrigger || 
+                           t.TargetAction.StartsWith("Quest.", StringComparison.OrdinalIgnoreCase) ||
+                           t.TargetAction.StartsWith("QuestEntry.", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        /// <summary>
         /// Validates a trigger configuration
         /// </summary>
         public static bool ValidateTrigger(QuestTrigger trigger)
@@ -49,6 +62,10 @@ namespace Schedule1ModdingTool.Services
 
             // Validate NPC triggers require NPC ID
             if (trigger.TriggerType == QuestTriggerType.NPCEventTrigger && string.IsNullOrWhiteSpace(trigger.TargetNpcId))
+                return false;
+
+            // Validate Quest triggers require Quest ID
+            if (trigger.TriggerType == QuestTriggerType.QuestEventTrigger && string.IsNullOrWhiteSpace(trigger.TargetQuestId))
                 return false;
 
             // Validate objective triggers require objective index
@@ -259,14 +276,76 @@ namespace Schedule1ModdingTool.Services
                 Parameters = new[] { "Player player" }
             });
 
-            // QuestEntry triggers (for objectives)
+            // Quest triggers (instance-based, require Quest ID)
             catalog.Add(new TriggerMetadata
             {
-                TriggerType = QuestTriggerType.ActionTrigger,
+                TriggerType = QuestTriggerType.QuestEventTrigger,
+                TargetAction = "Quest.OnComplete",
+                Description = "Triggered when a quest completes",
+                SourceClass = "S1API.Quests.Quest",
+                Parameters = Array.Empty<string>(),
+                RequiresQuestId = true
+            });
+
+            catalog.Add(new TriggerMetadata
+            {
+                TriggerType = QuestTriggerType.QuestEventTrigger,
+                TargetAction = "Quest.OnFail",
+                Description = "Triggered when a quest fails",
+                SourceClass = "S1API.Quests.Quest",
+                Parameters = Array.Empty<string>(),
+                RequiresQuestId = true
+            });
+
+            catalog.Add(new TriggerMetadata
+            {
+                TriggerType = QuestTriggerType.QuestEventTrigger,
+                TargetAction = "Quest.OnCancel",
+                Description = "Triggered when a quest is cancelled",
+                SourceClass = "S1API.Quests.Quest",
+                Parameters = Array.Empty<string>(),
+                RequiresQuestId = true
+            });
+
+            catalog.Add(new TriggerMetadata
+            {
+                TriggerType = QuestTriggerType.QuestEventTrigger,
+                TargetAction = "Quest.OnExpire",
+                Description = "Triggered when a quest expires",
+                SourceClass = "S1API.Quests.Quest",
+                Parameters = Array.Empty<string>(),
+                RequiresQuestId = true
+            });
+
+            catalog.Add(new TriggerMetadata
+            {
+                TriggerType = QuestTriggerType.QuestEventTrigger,
+                TargetAction = "Quest.OnBegin",
+                Description = "Triggered when a quest begins",
+                SourceClass = "S1API.Quests.Quest",
+                Parameters = Array.Empty<string>(),
+                RequiresQuestId = true
+            });
+
+            // QuestEntry triggers (instance-based, require Quest ID)
+            catalog.Add(new TriggerMetadata
+            {
+                TriggerType = QuestTriggerType.QuestEventTrigger,
                 TargetAction = "QuestEntry.OnComplete",
                 Description = "Triggered when a quest entry/objective completes",
                 SourceClass = "S1API.Quests.QuestEntry",
-                Parameters = Array.Empty<string>()
+                Parameters = Array.Empty<string>(),
+                RequiresQuestId = true
+            });
+
+            catalog.Add(new TriggerMetadata
+            {
+                TriggerType = QuestTriggerType.QuestEventTrigger,
+                TargetAction = "QuestEntry.OnBegin",
+                Description = "Triggered when a quest entry/objective begins",
+                SourceClass = "S1API.Quests.QuestEntry",
+                Parameters = Array.Empty<string>(),
+                RequiresQuestId = true
             });
 
             return catalog;
@@ -307,6 +386,11 @@ namespace Schedule1ModdingTool.Services
         /// Whether this trigger requires an NPC ID to be specified
         /// </summary>
         public bool RequiresNpcId { get; set; }
+
+        /// <summary>
+        /// Whether this trigger requires a Quest ID to be specified
+        /// </summary>
+        public bool RequiresQuestId { get; set; }
 
         public override string ToString()
         {

@@ -778,12 +778,6 @@
                                                                   Foreground="{StaticResource LightTextBrush}" Margin="0,2"/>
                                                         <views:InfoIcon PropertyName="AutoStart" Margin="8,0,0,0"/>
                                                     </StackPanel>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <CheckBox Content="Create POI Marker"
-                                                                  IsChecked="{Binding CreatePOI}"
-                                                                  Foreground="{StaticResource LightTextBrush}" Margin="0,2"/>
-                                                        <views:InfoIcon PropertyName="CreatePOI" Margin="8,0,0,0"/>
-                                                    </StackPanel>
                                                 </StackPanel>
 
                                                 <!-- Required Progress -->
@@ -802,14 +796,28 @@
                                                         <CheckBox Content="Has Location"
                                                                   IsChecked="{Binding HasLocation}"
                                                                   Foreground="{StaticResource LightTextBrush}"/>
-                                                        <views:InfoIcon TooltipText="If enabled, this objective has a specific location. Used for POI markers and location-based triggers"/>
+                                                        <views:InfoIcon TooltipText="If enabled, this objective has a specific location and will automatically create a POI marker. Used for location-based triggers and waypoints"/>
                                                     </StackPanel>
 
-                                                    <controls:Vector3Input X="{Binding LocationX, Mode=TwoWay}"
-                                                                          Y="{Binding LocationY, Mode=TwoWay}"
-                                                                          Z="{Binding LocationZ, Mode=TwoWay}"
-                                                                          Visibility="{Binding HasLocation, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                                          Margin="0,8,0,0"/>
+                                                    <StackPanel Visibility="{Binding HasLocation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                Margin="0,8,0,0">
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                            <CheckBox Content="Use NPC Location"
+                                                                      IsChecked="{Binding UseNpcLocation}"
+                                                                      Foreground="{StaticResource LightTextBrush}"/>
+                                                            <views:InfoIcon TooltipText="If enabled, the POI marker will follow the selected NPC as they move"/>
+                                                        </StackPanel>
+
+                                                        <views:NpcSelector SelectedNpcId="{Binding NpcId, Mode=TwoWay}"
+                                                                           AvailableNpcs="{Binding AvailableNpcs, RelativeSource={RelativeSource AncestorType=views:PropertiesControl}}"
+                                                                           Visibility="{Binding UseNpcLocation, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                           Margin="0,0,0,8"/>
+
+                                                        <controls:Vector3Input X="{Binding LocationX, Mode=TwoWay}"
+                                                                              Y="{Binding LocationY, Mode=TwoWay}"
+                                                                              Z="{Binding LocationZ, Mode=TwoWay}"
+                                                                              Visibility="{Binding UseNpcLocation, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                                    </StackPanel>
                                                 </StackPanel>
 
                                                 <!-- Objective Start Triggers -->

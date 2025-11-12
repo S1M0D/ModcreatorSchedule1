@@ -23,6 +23,11 @@ namespace Schedule1ModdingTool.Views
         private ObservableCollection<QuestInfo> _availableQuests;
         private Dictionary<string, ObservableCollection<QuestEntryInfo>> _questEntriesCache = new Dictionary<string, ObservableCollection<QuestEntryInfo>>();
 
+        /// <summary>
+        /// Available NPCs for selection in quest objectives
+        /// </summary>
+        public ObservableCollection<NpcInfo> AvailableNpcs => _availableNpcs;
+
         public PropertiesControl()
         {
             InitializeComponent();
@@ -108,54 +113,61 @@ namespace Schedule1ModdingTool.Views
 
             foreach (var trigger in quest.QuestTriggers)
             {
-                if (!string.IsNullOrWhiteSpace(trigger.TargetAction))
-                {
-                    // Match by both TargetAction AND TriggerType to preserve the saved trigger type
-                    var metadata = _availableTriggers.FirstOrDefault(t => 
-                        t.TargetAction == trigger.TargetAction && 
-                        t.TriggerType == trigger.TriggerType);
-                    
-                    // If no exact match, try to find by TargetAction only but preserve TriggerType
-                    if (metadata == null)
-                    {
-                        metadata = _availableTriggers.FirstOrDefault(t => t.TargetAction == trigger.TargetAction);
-                        // Only set if found and TriggerType matches (to avoid overwriting)
-                        if (metadata != null && metadata.TriggerType == trigger.TriggerType)
-                        {
-                            trigger.SelectedTriggerMetadata = metadata;
-                        }
-                    }
-                    else
-                    {
-                        trigger.SelectedTriggerMetadata = metadata;
-                    }
-                }
+                SyncSingleTriggerMetadata(trigger);
             }
 
             foreach (var trigger in quest.QuestFinishTriggers)
             {
-                if (!string.IsNullOrWhiteSpace(trigger.TargetAction))
+                SyncSingleTriggerMetadata(trigger);
+            }
+
+            // Sync objective-level triggers
+            if (quest.Objectives != null)
+            {
+                foreach (var objective in quest.Objectives)
                 {
-                    // Match by both TargetAction AND TriggerType to preserve the saved trigger type
-                    var metadata = _availableTriggers.FirstOrDefault(t => 
-                        t.TargetAction == trigger.TargetAction && 
-                        t.TriggerType == trigger.TriggerType);
-                    
-                    // If no exact match, try to find by TargetAction only but preserve TriggerType
-                    if (metadata == null)
+                    if (objective.StartTriggers != null)
                     {
-                        metadata = _availableTriggers.FirstOrDefault(t => t.TargetAction == trigger.TargetAction);
-                        // Only set if found and TriggerType matches (to avoid overwriting)
-                        if (metadata != null && metadata.TriggerType == trigger.TriggerType)
+                        foreach (var trigger in objective.StartTriggers)
                         {
-                            trigger.SelectedTriggerMetadata = metadata;
+                            SyncSingleTriggerMetadata(trigger);
                         }
                     }
-                    else
+
+                    if (objective.FinishTriggers != null)
                     {
-                        trigger.SelectedTriggerMetadata = metadata;
+                        foreach (var trigger in objective.FinishTriggers)
+                        {
+                            SyncSingleTriggerMetadata(trigger);
+                        }
                     }
                 }
+            }
+        }
+
+        private void SyncSingleTriggerMetadata(QuestTrigger trigger)
+        {
+            if (_availableTriggers == null || string.IsNullOrWhiteSpace(trigger.TargetAction))
+                return;
+
+            // Match by both TargetAction AND TriggerType to preserve the saved trigger type
+            var metadata = _availableTriggers.FirstOrDefault(t => 
+                t.TargetAction == trigger.TargetAction && 
+                t.TriggerType == trigger.TriggerType);
+            
+            // If no exact match, try to find by TargetAction only but preserve TriggerType
+            if (metadata == null)
+            {
+                metadata = _availableTriggers.FirstOrDefault(t => t.TargetAction == trigger.TargetAction);
+                // Only set if found and TriggerType matches (to avoid overwriting)
+                if (metadata != null && metadata.TriggerType == trigger.TriggerType)
+                {
+                    trigger.SelectedTriggerMetadata = metadata;
+                }
+            }
+            else
+            {
+                trigger.SelectedTriggerMetadata = metadata;
             }
         }
 
@@ -492,36 +504,20 @@ namespace Schedule1ModdingTool.Views
 
         private void QuestComboBox_Loaded(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("[QuestComboBox_Loaded] QuestComboBox Loaded event fired");
-            
             if (sender is ComboBox comboBox)
             {
-                System.Diagnostics.Debug.WriteLine($"[QuestComboBox_Loaded] ComboBox DataContext: {comboBox.DataContext}");
-                
-                if (comboBox.DataContext is QuestTrigger trigger)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[QuestComboBox_Loaded] Trigger.TriggerType: {trigger.TriggerType}");
-                    System.Diagnostics.Debug.WriteLine($"[QuestComboBox_Loaded] Trigger.TargetQuestId: {trigger.TargetQuestId}");
-                }
-                
                 // Ensure Quests are initialized
                 if (_availableQuests == null)
                 {
-                    System.Diagnostics.Debug.WriteLine("[QuestComboBox_Loaded] _availableQuests is null, initializing trigger data");
                     InitializeTriggerData();
                 }
                 
                 if (_availableQuests != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[QuestComboBox_Loaded] Setting ItemsSource with {_availableQuests.Count} quests");
                     comboBox.ItemsSource = _availableQuests;
                     
                     // Migrate existing Quest ID if needed
                     MigrateQuestIdInTrigger(comboBox);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("[QuestComboBox_Loaded] WARNING: _availableQuests is still null after initialization");
                 }
             }
         }
@@ -834,14 +830,8 @@ namespace Schedule1ModdingTool.Views
 
         private void TriggerTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] SelectionChanged event fired");
-            
             if (sender is ComboBox comboBox && comboBox.DataContext is QuestTrigger trigger)
             {
-                System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] ComboBox DataContext is QuestTrigger");
-                System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] SelectedItem: {comboBox.SelectedItem}");
-                System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Trigger.TriggerType: {trigger.TriggerType}");
-                
                 // Explicitly notify that TriggerType has changed to ensure all bindings update
                 trigger.OnPropertyChanged(nameof(QuestTrigger.TriggerType));
                 
@@ -856,13 +846,8 @@ namespace Schedule1ModdingTool.Views
                     
                     foreach (var questCb in questComboBoxes)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Found Quest ComboBox via visual tree walk - SelectedValuePath: {questCb.SelectedValuePath}");
                         var bindingExpr = System.Windows.Data.BindingOperations.GetBindingExpression(questCb, ComboBox.VisibilityProperty);
-                        if (bindingExpr != null)
-                        {
-                            bindingExpr.UpdateTarget();
-                            System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Quest ComboBox visibility updated via visual tree - Visibility: {questCb.Visibility}");
-                        }
+                        bindingExpr?.UpdateTarget();
                     }
                     
                     var questLabels = FindVisualChildren<System.Windows.Controls.Label>(container, lbl => 
@@ -871,13 +856,8 @@ namespace Schedule1ModdingTool.Views
                     
                     foreach (var questLabel in questLabels)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Found Quest Label via visual tree walk - Content: {questLabel.Content}");
                         var bindingExpr = System.Windows.Data.BindingOperations.GetBindingExpression(questLabel, System.Windows.Controls.Label.VisibilityProperty);
-                        if (bindingExpr != null)
-                        {
-                            bindingExpr.UpdateTarget();
-                            System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Quest Label visibility updated via visual tree - Visibility: {questLabel.Visibility}");
-                        }
+                        bindingExpr?.UpdateTarget();
                     }
                 }
                 
@@ -887,60 +867,22 @@ namespace Schedule1ModdingTool.Views
                 {
                     if (parent is StackPanel stackPanel)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Found StackPanel with {stackPanel.Children.Count} children");
-                        
                         // Find all ComboBoxes in this StackPanel to check visibility and force update bindings
-                        int comboBoxIndex = 0;
-                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Scanning all {stackPanel.Children.Count} children in StackPanel...");
                         foreach (var child in stackPanel.Children)
                         {
-                            System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   Child type: {child.GetType().Name}, DataContext: {((FrameworkElement)child).DataContext?.GetType().Name ?? "null"}");
-                            
-                            if (child is ComboBox childComboBox)
+                            if (child is ComboBox childComboBox && childComboBox.DataContext == trigger)
                             {
-                                comboBoxIndex++;
-                                var dataContextMatches = childComboBox.DataContext == trigger;
-                                System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Found ComboBox #{comboBoxIndex}: Name={childComboBox.Name ?? "Unnamed"}, SelectedValuePath={childComboBox.SelectedValuePath}, DataContext matches: {dataContextMatches}");
-                                
-                                if (dataContextMatches)
+                                // Check visibility binding for ALL ComboBoxes
+                                var binding = System.Windows.Data.BindingOperations.GetBinding(childComboBox, ComboBox.VisibilityProperty);
+                                if (binding != null)
                                 {
-                                    // Check visibility binding for ALL ComboBoxes
-                                    var binding = System.Windows.Data.BindingOperations.GetBinding(childComboBox, ComboBox.VisibilityProperty);
-                                    if (binding != null)
+                                    // Identify ComboBox type by ConverterParameter
+                                    if (binding.ConverterParameter?.ToString() == "QuestEventTrigger" ||
+                                        binding.ConverterParameter?.ToString() == "NPCEventTrigger")
                                     {
-                                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   ComboBox #{comboBoxIndex} Visibility Binding - ConverterParameter: {binding.ConverterParameter}, Path: {binding.Path?.Path}");
-                                        
-                                        // Identify ComboBox type by ConverterParameter
-                                        if (binding.ConverterParameter?.ToString() == "QuestEventTrigger")
-                                        {
-                                            System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   *** This is the Quest ComboBox! ***");
-                                            // Force update the visibility binding for Quest ComboBox
-                                            var bindingExpr = System.Windows.Data.BindingOperations.GetBindingExpression(childComboBox, ComboBox.VisibilityProperty);
-                                            if (bindingExpr != null)
-                                            {
-                                                bindingExpr.UpdateTarget();
-                                                System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   Quest ComboBox visibility updated - Current Visibility: {childComboBox.Visibility}");
-                                            }
-                                            else
-                                            {
-                                                System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   WARNING: Quest ComboBox binding expression is null!");
-                                            }
-                                        }
-                                        else if (binding.ConverterParameter?.ToString() == "NPCEventTrigger")
-                                        {
-                                            System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   *** This is the NPC ComboBox! ***");
-                                            // Force update the visibility binding for NPC ComboBox
-                                            var bindingExpr = System.Windows.Data.BindingOperations.GetBindingExpression(childComboBox, ComboBox.VisibilityProperty);
-                                            if (bindingExpr != null)
-                                            {
-                                                bindingExpr.UpdateTarget();
-                                                System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   NPC ComboBox visibility updated - Current Visibility: {childComboBox.Visibility}");
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   ComboBox #{comboBoxIndex} has no Visibility binding");
+                                        // Force update the visibility binding
+                                        var bindingExpr = System.Windows.Data.BindingOperations.GetBindingExpression(childComboBox, ComboBox.VisibilityProperty);
+                                        bindingExpr?.UpdateTarget();
                                     }
                                 }
                             }
@@ -954,32 +896,16 @@ namespace Schedule1ModdingTool.Views
                                 var labelBinding = System.Windows.Data.BindingOperations.GetBinding(label, System.Windows.Controls.Label.VisibilityProperty);
                                 if (labelBinding != null)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Found Label with Visibility Binding - ConverterParameter: {labelBinding.ConverterParameter}, Content: {label.Content}");
                                     var labelExpr = System.Windows.Data.BindingOperations.GetBindingExpression(label, System.Windows.Controls.Label.VisibilityProperty);
-                                    if (labelExpr != null)
-                                    {
-                                        labelExpr.UpdateTarget();
-                                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Label visibility updated - Current Visibility: {label.Visibility}");
-                                    }
-                                    
-                                    // Check if this is Quest-related
-                                    if (labelBinding.ConverterParameter?.ToString() == "QuestEventTrigger")
-                                    {
-                                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged]   *** This is the Quest Label! ***");
-                                    }
+                                    labelExpr?.UpdateTarget();
                                 }
                                 
                                 // Also check for MultiBinding (used by Quest Entry Label)
                                 var multiBinding = System.Windows.Data.BindingOperations.GetMultiBinding(label, System.Windows.Controls.Label.VisibilityProperty);
                                 if (multiBinding != null)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Found Label with MultiBinding Visibility - Content: {label.Content}");
                                     var multiExpr = System.Windows.Data.BindingOperations.GetMultiBindingExpression(label, System.Windows.Controls.Label.VisibilityProperty);
-                                    if (multiExpr != null)
-                                    {
-                                        multiExpr.UpdateTarget();
-                                        System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] MultiBinding Label visibility updated - Current Visibility: {label.Visibility}");
-                                    }
+                                    multiExpr?.UpdateTarget();
                                 }
                             }
                         }
@@ -992,7 +918,6 @@ namespace Schedule1ModdingTool.Views
                                 var multiBinding = System.Windows.Data.BindingOperations.GetMultiBinding(childComboBox, ComboBox.VisibilityProperty);
                                 if (multiBinding != null)
                                 {
-                                    System.Diagnostics.Debug.WriteLine($"[TriggerTypeComboBox_SelectionChanged] Found ComboBox with MultiBinding Visibility (Quest Entry)");
                                     System.Windows.Data.BindingOperations.GetMultiBindingExpression(childComboBox, ComboBox.VisibilityProperty)?.UpdateTarget();
                                 }
                             }

@@ -397,54 +397,61 @@ namespace Schedule1ModdingTool.ViewModels
 
             foreach (var trigger in _quest.QuestTriggers)
             {
-                if (!string.IsNullOrWhiteSpace(trigger.TargetAction))
-                {
-                    // Match by both TargetAction AND TriggerType to preserve the saved trigger type
-                    var metadata = AvailableTriggers.FirstOrDefault(t => 
-                        t.TargetAction == trigger.TargetAction && 
-                        t.TriggerType == trigger.TriggerType);
-                    
-                    // If no exact match, try to find by TargetAction only but preserve TriggerType
-                    if (metadata == null)
-                    {
-                        metadata = AvailableTriggers.FirstOrDefault(t => t.TargetAction == trigger.TargetAction);
-                        // Only set if found and TriggerType matches (to avoid overwriting)
-                        if (metadata != null && metadata.TriggerType == trigger.TriggerType)
-                        {
-                            trigger.SelectedTriggerMetadata = metadata;
-                        }
-                    }
-                    else
-                    {
-                        trigger.SelectedTriggerMetadata = metadata;
-                    }
-                }
+                SyncSingleTriggerMetadata(trigger);
             }
 
             foreach (var trigger in _quest.QuestFinishTriggers)
             {
-                if (!string.IsNullOrWhiteSpace(trigger.TargetAction))
+                SyncSingleTriggerMetadata(trigger);
+            }
+
+            // Sync objective-level triggers
+            if (_quest.Objectives != null)
+            {
+                foreach (var objective in _quest.Objectives)
                 {
-                    // Match by both TargetAction AND TriggerType to preserve the saved trigger type
-                    var metadata = AvailableTriggers.FirstOrDefault(t => 
-                        t.TargetAction == trigger.TargetAction && 
-                        t.TriggerType == trigger.TriggerType);
-                    
-                    // If no exact match, try to find by TargetAction only but preserve TriggerType
-                    if (metadata == null)
+                    if (objective.StartTriggers != null)
                     {
-                        metadata = AvailableTriggers.FirstOrDefault(t => t.TargetAction == trigger.TargetAction);
-                        // Only set if found and TriggerType matches (to avoid overwriting)
-                        if (metadata != null && metadata.TriggerType == trigger.TriggerType)
+                        foreach (var trigger in objective.StartTriggers)
                         {
-                            trigger.SelectedTriggerMetadata = metadata;
+                            SyncSingleTriggerMetadata(trigger);
                         }
                     }
-                    else
+
+                    if (objective.FinishTriggers != null)
                     {
-                        trigger.SelectedTriggerMetadata = metadata;
+                        foreach (var trigger in objective.FinishTriggers)
+                        {
+                            SyncSingleTriggerMetadata(trigger);
+                        }
                     }
                 }
+            }
+        }
+
+        private void SyncSingleTriggerMetadata(QuestTrigger trigger)
+        {
+            if (AvailableTriggers == null || string.IsNullOrWhiteSpace(trigger.TargetAction))
+                return;
+
+            // Match by both TargetAction AND TriggerType to preserve the saved trigger type
+            var metadata = AvailableTriggers.FirstOrDefault(t => 
+                t.TargetAction == trigger.TargetAction && 
+                t.TriggerType == trigger.TriggerType);
+            
+            // If no exact match, try to find by TargetAction only but preserve TriggerType
+            if (metadata == null)
+            {
+                metadata = AvailableTriggers.FirstOrDefault(t => t.TargetAction == trigger.TargetAction);
+                // Only set if found and TriggerType matches (to avoid overwriting)
+                if (metadata != null && metadata.TriggerType == trigger.TriggerType)
+                {
+                    trigger.SelectedTriggerMetadata = metadata;
+                }
+            }
+            else
+            {
+                trigger.SelectedTriggerMetadata = metadata;
             }
         }
 

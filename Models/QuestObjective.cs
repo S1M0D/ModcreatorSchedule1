@@ -21,6 +21,8 @@ namespace Schedule1ModdingTool.Models
         private ObservableCollection<QuestObjectiveTrigger> _finishTriggers = new ObservableCollection<QuestObjectiveTrigger>();
         private bool _autoStart = true;
         private bool _createPOI = true;
+        private bool _useNpcLocation = false;
+        private string _npcId = "";
 
         [Required(ErrorMessage = "Objective name is required")]
         [JsonProperty("name")]
@@ -50,7 +52,17 @@ namespace Schedule1ModdingTool.Models
         public bool HasLocation
         {
             get => _hasLocation;
-            set => SetProperty(ref _hasLocation, value);
+            set
+            {
+                if (SetProperty(ref _hasLocation, value))
+                {
+                    // Automatically enable POI creation when HasLocation is true
+                    if (value && !_createPOI)
+                    {
+                        CreatePOI = true;
+                    }
+                }
+            }
         }
 
         [JsonProperty("locationX")]
@@ -74,8 +86,40 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _locationZ, value);
         }
 
+        /// <summary>
+        /// Whether to use an NPC as the location source instead of static coordinates
+        /// </summary>
+        [JsonProperty("useNpcLocation")]
+        public bool UseNpcLocation
+        {
+            get => _useNpcLocation;
+            set => SetProperty(ref _useNpcLocation, value);
+        }
+
+        /// <summary>
+        /// The NPC ID to use as the location source (when UseNpcLocation is true)
+        /// </summary>
+        [JsonProperty("npcId")]
+        public string NpcId
+        {
+            get => _npcId;
+            set => SetProperty(ref _npcId, value);
+        }
+
         [JsonIgnore]
-        public string LocationText => HasLocation ? $"({LocationX:F2}, {LocationY:F2}, {LocationZ:F2})" : "No Location";
+        public string LocationText
+        {
+            get
+            {
+                if (!HasLocation)
+                    return "No Location";
+                
+                if (UseNpcLocation && !string.IsNullOrWhiteSpace(NpcId))
+                    return $"NPC: {NpcId}";
+                
+                return $"({LocationX:F2}, {LocationY:F2}, {LocationZ:F2})";
+            }
+        }
 
         /// <summary>
         /// Triggers that start this objective
@@ -145,6 +189,8 @@ namespace Schedule1ModdingTool.Models
             LocationZ = source.LocationZ;
             AutoStart = source.AutoStart;
             CreatePOI = source.CreatePOI;
+            UseNpcLocation = source.UseNpcLocation;
+            NpcId = source.NpcId;
 
             StartTriggers.Clear();
             foreach (var trigger in source.StartTriggers)

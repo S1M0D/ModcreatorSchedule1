@@ -113,7 +113,6 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0)
             {
                 _methodGenerator.GenerateRewardMethod(builder, quest);
-                _methodGenerator.GenerateOnCompletedMethod(builder, quest);
             }
 
             // Icon loading method if needed
@@ -125,6 +124,15 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             // Trigger handler fields
             var handlerInfos = _triggerCollector.CollectHandlers(quest);
             GenerateTriggerHandlerFields(builder, handlerInfos);
+
+            // Quest completion reward handler field if rewards are enabled
+            if (quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0)
+            {
+                builder.AppendComment("🔧 Generated from: Quest.QuestRewards = true");
+                builder.AppendComment("Quest completion event handler for rewards");
+                builder.AppendLine("private System.Action? _onQuestCompletedHandler;");
+                builder.AppendLine();
+            }
 
             // SubscribeToTriggers method
             _triggerSubscriptionGenerator.Generate(builder, quest, className, handlerInfos);

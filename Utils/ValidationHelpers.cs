@@ -158,7 +158,7 @@ namespace Schedule1ModdingTool.Utils
         }
 
         /// <summary>
-        /// Gets a user-friendly error message for an invalid NPC/Quest ID
+        /// Gets a user-friendly error message for an invalid NPC ID
         /// </summary>
         public static string GetNpcIdErrorMessage(string? id)
         {
@@ -178,6 +178,29 @@ namespace Schedule1ModdingTool.Utils
                 return "NPC ID must contain only lowercase letters, numbers, and underscores";
 
             return "Invalid NPC ID format";
+        }
+
+        /// <summary>
+        /// Gets a user-friendly error message for an invalid Quest ID
+        /// </summary>
+        public static string GetQuestIdErrorMessage(string? id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return "Quest ID cannot be empty";
+
+            if (id.Contains("__"))
+                return "Quest ID cannot contain consecutive underscores";
+
+            if (id.StartsWith("_") || id.EndsWith("_"))
+                return "Quest ID cannot start or end with an underscore";
+
+            if (id != id.ToLowerInvariant())
+                return "Quest ID must be lowercase";
+
+            if (!NpcIdPattern.IsMatch(id))
+                return "Quest ID must contain only lowercase letters, numbers, and underscores";
+
+            return "Invalid Quest ID format";
         }
 
         /// <summary>

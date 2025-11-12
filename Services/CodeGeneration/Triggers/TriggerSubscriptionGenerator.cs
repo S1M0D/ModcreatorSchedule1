@@ -39,6 +39,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             var hasTriggers = (quest.QuestTriggers?.Any() == true) ||
                              (quest.QuestFinishTriggers?.Any() == true) ||
                              (quest.Objectives?.Any(o => o.StartTriggers?.Any() == true || o.FinishTriggers?.Any() == true) == true);
+            var hasRewards = quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0;
 
             builder.AppendComment("🔧 Generated from: Quest.QuestTriggers, Quest.QuestFinishTriggers, Quest.Objectives[].StartTriggers, Quest.Objectives[].FinishTriggers");
             builder.AppendBlockComment(
@@ -47,7 +48,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 
             builder.OpenBlock("private void SubscribeToTriggers()");
 
-            if (!hasTriggers)
+            if (!hasTriggers && !hasRewards)
             {
                 builder.AppendComment("No triggers configured for this quest");
                 builder.CloseBlock();
@@ -63,6 +64,12 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 
             // Objective triggers
             GenerateObjectiveTriggers(builder, quest, className, handlerInfos);
+
+            // Quest completion reward subscription
+            if (hasRewards)
+            {
+                GenerateQuestRewardSubscription(builder, quest);
+            }
 
             builder.CloseBlock();
             builder.AppendLine();
@@ -599,6 +606,33 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 }
                 builder.CloseBlock(semicolon: true);
             }
+        }
+
+        /// <summary>
+        /// Generates subscription to quest completion event for rewards.
+        /// </summary>
+        private void GenerateQuestRewardSubscription(ICodeBuilder builder, QuestBlueprint quest)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+            if (quest == null)
+                throw new ArgumentNullException(nameof(quest));
+
+            builder.AppendComment("🔧 Generated from: Quest.QuestRewards = true");
+            builder.AppendBlockComment(
+                "Subscribe to quest completion event to grant rewards."
+            );
+
+            builder.AppendLine("// Subscribe to quest completion event for rewards");
+            builder.OpenBlock("try");
+            builder.AppendLine("_onQuestCompletedHandler ??= GrantQuestRewards;");
+            builder.AppendLine("OnComplete -= _onQuestCompletedHandler;");
+            builder.AppendLine("OnComplete += _onQuestCompletedHandler;");
+            builder.CloseBlock();
+            builder.OpenBlock("catch (Exception ex)");
+            builder.AppendLine("MelonLogger.Warning($\"Failed to subscribe to quest completion event: {{ex.Message}}\");");
+            builder.CloseBlock();
+            builder.AppendLine();
         }
     }
 }

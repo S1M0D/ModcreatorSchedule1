@@ -121,6 +121,7 @@ namespace Schedule1ModdingTool.ViewModels
                 if (string.IsNullOrEmpty(line)) continue;
 
                 var match = errorPattern.Match(line);
+                int continuationLines = 0;
                 
                 if (match.Success)
                 {
@@ -140,6 +141,7 @@ namespace Schedule1ModdingTool.ViewModels
                         if (errorPattern.IsMatch(nextLine) || simpleErrorPattern.IsMatch(nextLine) || multiLineErrorPattern.IsMatch(nextLine))
                             break;
                         fullText += "\n" + lines[j];
+                        continuationLines++;
                     }
 
                     var entry = new BuildLogEntry
@@ -161,6 +163,9 @@ namespace Schedule1ModdingTool.ViewModels
                     {
                         AllWarnings.Add(entry);
                     }
+
+                    // Skip continuation lines in the main loop
+                    i += continuationLines;
                 }
                 else
                 {
@@ -181,6 +186,7 @@ namespace Schedule1ModdingTool.ViewModels
                             if (errorPattern.IsMatch(nextLine) || simpleErrorPattern.IsMatch(nextLine) || multiLineErrorPattern.IsMatch(nextLine))
                                 break;
                             fullText += "\n" + lines[j];
+                            continuationLines++;
                         }
 
                         var entry = new BuildLogEntry
@@ -199,6 +205,9 @@ namespace Schedule1ModdingTool.ViewModels
                         {
                             AllWarnings.Add(entry);
                         }
+
+                        // Skip continuation lines in the main loop
+                        i += continuationLines;
                     }
                     else
                     {
@@ -227,6 +236,7 @@ namespace Schedule1ModdingTool.ViewModels
                                 if (errorPattern.IsMatch(nextLine) || simpleErrorPattern.IsMatch(nextLine) || multiLineErrorPattern.IsMatch(nextLine))
                                     break;
                                 fullText += "\n" + lines[j];
+                                continuationLines++;
                             }
 
                             var entry = new BuildLogEntry
@@ -247,6 +257,9 @@ namespace Schedule1ModdingTool.ViewModels
                             {
                                 AllWarnings.Add(entry);
                             }
+
+                            // Skip continuation lines in the main loop
+                            i += continuationLines;
                         }
                     }
                 }

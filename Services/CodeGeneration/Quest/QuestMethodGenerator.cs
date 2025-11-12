@@ -81,10 +81,29 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 builder.AppendComment($"Objective \"{CodeFormatter.EscapeString(objective.Title)}\" ({objective.Name})");
 
                 // Create entry
-                if (objective.HasLocation && objective.CreatePOI)
+                // HasLocation automatically implies POI creation
+                if (objective.HasLocation)
                 {
-                    builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, LocationX/Y/Z");
-                    builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", {CodeFormatter.FormatVector3(objective)});");
+                    if (objective.UseNpcLocation && !string.IsNullOrWhiteSpace(objective.NpcId))
+                    {
+                        builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, UseNpcLocation, NpcId");
+                        builder.AppendComment($"🔧 From: Objectives[{i}].NpcId = \"{CodeFormatter.EscapeString(objective.NpcId)}\"");
+                        builder.AppendLine($"var npc_{i} = NPC.All.FirstOrDefault(n => n.ID == \"{CodeFormatter.EscapeString(objective.NpcId)}\");");
+                        builder.OpenBlock($"if (npc_{i} != null)");
+                        builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", npc_{i});");
+                        builder.AppendComment("Ensure POI is created and follows NPC location (handles cases where NPC transform wasn't ready during AddEntry)");
+                        builder.AppendLine($"{objectiveVar}.SetPOIToNPC(npc_{i});");
+                        builder.CloseBlock();
+                        builder.OpenBlock("else");
+                        builder.AppendLine($"MelonLogger.Warning($\"[Quest] NPC '{CodeFormatter.EscapeString(objective.NpcId)}' not found for quest entry '{CodeFormatter.EscapeString(objective.Title)}'\");");
+                        builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\");");
+                        builder.CloseBlock();
+                    }
+                    else
+                    {
+                        builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, LocationX/Y/Z");
+                        builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", {CodeFormatter.FormatVector3(objective)});");
+                    }
                 }
                 else
                 {
@@ -174,10 +193,29 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 builder.AppendComment($"Objective \"{CodeFormatter.EscapeString(objective.Title)}\" ({objective.Name})");
 
                 // Create entry
-                if (objective.HasLocation && objective.CreatePOI)
+                // HasLocation automatically implies POI creation
+                if (objective.HasLocation)
                 {
-                    builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, LocationX/Y/Z");
-                    builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", {CodeFormatter.FormatVector3(objective)});");
+                    if (objective.UseNpcLocation && !string.IsNullOrWhiteSpace(objective.NpcId))
+                    {
+                        builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, UseNpcLocation, NpcId");
+                        builder.AppendComment($"🔧 From: Objectives[{i}].NpcId = \"{CodeFormatter.EscapeString(objective.NpcId)}\"");
+                        builder.AppendLine($"var npc_{i} = NPC.All.FirstOrDefault(n => n.ID == \"{CodeFormatter.EscapeString(objective.NpcId)}\");");
+                        builder.OpenBlock($"if (npc_{i} != null)");
+                        builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", npc_{i});");
+                        builder.AppendComment("Ensure POI is created and follows NPC location (handles cases where NPC transform wasn't ready during AddEntry)");
+                        builder.AppendLine($"{objectiveVar}.SetPOIToNPC(npc_{i});");
+                        builder.CloseBlock();
+                        builder.OpenBlock("else");
+                        builder.AppendLine($"MelonLogger.Warning($\"[Quest] NPC '{CodeFormatter.EscapeString(objective.NpcId)}' not found for quest entry '{CodeFormatter.EscapeString(objective.Title)}'\");");
+                        builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\");");
+                        builder.CloseBlock();
+                    }
+                    else
+                    {
+                        builder.AppendComment($"🔧 From: Objectives[{i}].Title, HasLocation, LocationX/Y/Z");
+                        builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", {CodeFormatter.FormatVector3(objective)});");
+                    }
                 }
                 else
                 {
@@ -300,26 +338,6 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.AppendLine();
         }
 
-        /// <summary>
-        /// Generates the OnCompleted override that grants rewards.
-        /// </summary>
-        public void GenerateOnCompletedMethod(ICodeBuilder builder, QuestBlueprint quest)
-        {
-            if (builder == null)
-                throw new ArgumentNullException(nameof(builder));
-            if (quest == null)
-                throw new ArgumentNullException(nameof(quest));
-
-            if (quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0)
-            {
-                builder.AppendComment("🔧 Generated from: Quest.QuestRewards = true");
-                builder.OpenBlock("protected override void OnCompleted()");
-                builder.AppendLine("base.OnCompleted();");
-                builder.AppendLine("GrantQuestRewards();");
-                builder.CloseBlock();
-                builder.AppendLine();
-            }
-        }
 
         /// <summary>
         /// Generates a custom icon loading method.

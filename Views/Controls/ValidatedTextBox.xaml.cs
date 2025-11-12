@@ -132,7 +132,7 @@ namespace Schedule1ModdingTool.Views.Controls
                     isValid = ValidationHelpers.IsValidQuestId(Text);
                     if (!isValid)
                     {
-                        errorMessage = ValidationHelpers.GetNpcIdErrorMessage(Text);
+                        errorMessage = ValidationHelpers.GetQuestIdErrorMessage(Text);
                     }
                     break;
 

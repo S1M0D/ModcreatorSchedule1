@@ -50,7 +50,7 @@
 		<!-- Menu Bar -->
 		<Menu Grid.Row="0" Style="{StaticResource DarkMenuStyle}">
 			<MenuItem Header="_File" Style="{StaticResource DarkMenuItemStyle}">
-				<MenuItem Header="_New Project" Command="{Binding NewProjectCommand}" InputGestureText="Ctrl+N"
+				<MenuItem Header="_New Project" Command="{Binding NewProjectCommand}" InputGestureText="F1"
 				          Style="{StaticResource DarkMenuItemStyle}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource NewProjectIcon}"
@@ -58,7 +58,7 @@
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>
 				</MenuItem>
-				<MenuItem Header="_Open Project..." Command="{Binding OpenProjectCommand}" InputGestureText="Ctrl+O"
+				<MenuItem Header="_Open Project..." Command="{Binding OpenProjectCommand}" InputGestureText="F2"
 				          Style="{StaticResource DarkMenuItemStyle}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource FolderOpenIcon}"
@@ -105,7 +105,7 @@
 				          Style="{StaticResource DarkMenuItemStyle}" />
 			</MenuItem>
 			<MenuItem Header="_Build" Style="{StaticResource DarkMenuItemStyle}">
-				<MenuItem Header="_Export Mod Project" Command="{Binding ExportModProjectCommand}"
+				<MenuItem Header="_Export Mod Project" Command="{Binding ExportModProjectCommand}" InputGestureText="F5"
 				          Style="{StaticResource DarkMenuItemStyle}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource ExportIcon}"
@@ -121,12 +121,28 @@
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>
 				</MenuItem>
+				<MenuItem Header="Build &amp; _Play" Command="{Binding BuildAndPlayCommand}" InputGestureText="F7"
+				          Style="{StaticResource DarkMenuItemStyle}">
+					<MenuItem.Icon>
+						<materialDesign:PackIcon Kind="{StaticResource PlayIcon}"
+						                         Foreground="{StaticResource LightTextBrush}"
+						                         Width="16" Height="16" />
+					</MenuItem.Icon>
+				</MenuItem>
 			</MenuItem>
 			<MenuItem Header="_View" Style="{StaticResource DarkMenuItemStyle}">
 				<MenuItem Header="Toggle _Code View" Command="{Binding ToggleCodeViewCommand}" IsCheckable="True"
 				          IsChecked="{Binding IsCodeVisible, Mode=OneWay}" Style="{StaticResource DarkMenuItemStyle}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource EyeIcon}"
+						                         Foreground="{StaticResource LightTextBrush}"
+						                         Width="16" Height="16" />
+					</MenuItem.Icon>
+				</MenuItem>
+				<Separator />
+				<MenuItem Header="Visit _Wiki" Command="{Binding VisitWikiCommand}" Style="{StaticResource DarkMenuItemStyle}">
+					<MenuItem.Icon>
+						<materialDesign:PackIcon Kind="BookOpenVariant"
 						                         Foreground="{StaticResource LightTextBrush}"
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>
@@ -145,17 +161,17 @@
 
 		<!-- Action Icons Toolbar -->
 		<ToolBar Grid.Row="1" Style="{StaticResource DarkToolbarStyle}">
-			<Button Command="{Binding NewProjectCommand}" ToolTip="New Project" Style="{StaticResource ToolbarButtonStyle}">
+			<Button Command="{Binding NewProjectCommand}" ToolTip="New Project (F1)" Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource NewProjectIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="18" Height="18" />
 			</Button>
-			<Button Command="{Binding OpenProjectCommand}" ToolTip="Open Project" Style="{StaticResource ToolbarButtonStyle}">
+			<Button Command="{Binding OpenProjectCommand}" ToolTip="Open Project (F2)" Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource FolderOpenIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="18" Height="18" />
 			</Button>
-			<Button Command="{Binding SaveProjectCommand}" ToolTip="Save Project" Style="{StaticResource ToolbarButtonStyle}">
+			<Button Command="{Binding SaveProjectCommand}" ToolTip="Save Project (Ctrl+S)" Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource SaveIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="18" Height="18" />
@@ -175,14 +191,14 @@
 			<Button ToolTip="Add Element" Style="{StaticResource ToolbarButtonStyle}" Click="AddElementButton_Click" x:Name="AddElementButton">
 				<Button.ContextMenu>
 					<ContextMenu x:Name="AddElementContextMenu">
-						<MenuItem Header="Quest" Click="AddQuestMenuItem_Click" Style="{StaticResource DarkMenuItemStyle}">
+						<MenuItem Header="Quest" Click="AddQuestMenuItem_Click" InputGestureText="Ctrl+Shift+Q" Style="{StaticResource DarkMenuItemStyle}">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource QuestIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>
 						</MenuItem>
-						<MenuItem Header="NPC" Click="AddNpcMenuItem_Click" Style="{StaticResource DarkMenuItemStyle}">
+						<MenuItem Header="NPC" Click="AddNpcMenuItem_Click" InputGestureText="Ctrl+Shift+N" Style="{StaticResource DarkMenuItemStyle}">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource NPCsIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
@@ -202,20 +218,20 @@
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="18" Height="18" />
 			</Button>
-			<Button Command="{Binding RemoveQuestCommand}" ToolTip="Remove Quest" Style="{StaticResource ToolbarButtonStyle}">
+			<Button Command="{Binding DeleteSelectedCommand}" ToolTip="Delete Selected (Delete)" Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource DeleteIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="18" Height="18" />
 			</Button>
 			<Separator Style="{StaticResource ToolbarSeparatorStyle}" />
-			<Button Command="{Binding RegenerateCodeCommand}" ToolTip="Regenerate Code - Auto-generates on save/build/tab switch (F5)"
+			<Button Command="{Binding RegenerateCodeCommand}" ToolTip="Regenerate Code - Auto-generates on save/build/tab switch"
 			        Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource CodeRefreshIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="16" Height="16" />
 			</Button>
 			<Separator Style="{StaticResource ToolbarSeparatorStyle}" />
-			<Button Command="{Binding ExportModProjectCommand}" ToolTip="Export Mod Project"
+			<Button Command="{Binding ExportModProjectCommand}" ToolTip="Export Project (F5)"
 			        Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource ExportIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
@@ -226,7 +242,7 @@
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="16" Height="16" />
 			</Button>
-			<Button Command="{Binding PlayGameCommand}" ToolTip="Play Game with Connector Mod" Style="{StaticResource ToolbarButtonStyle}">
+			<Button Command="{Binding BuildAndPlayCommand}" ToolTip="Build &amp; Play (F7)" Style="{StaticResource ToolbarButtonStyle}">
 				<materialDesign:PackIcon Kind="{StaticResource PlayIcon}"
 				                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
 				                         Width="16" Height="16" />

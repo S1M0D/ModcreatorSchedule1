@@ -317,11 +317,11 @@ namespace Schedule1ModdingTool.Views
             var vm = DataContext as MainViewModel;
             if (vm == null) return;
 
-            // Ctrl+N - New Project
-            InputBindings.Add(new KeyBinding(vm.NewProjectCommand, Key.N, ModifierKeys.Control));
+            // F1 - New Project
+            InputBindings.Add(new KeyBinding(vm.NewProjectCommand, Key.F1, ModifierKeys.None));
             
-            // Ctrl+O - Open Project
-            InputBindings.Add(new KeyBinding(vm.OpenProjectCommand, Key.O, ModifierKeys.Control));
+            // F2 - Open Project
+            InputBindings.Add(new KeyBinding(vm.OpenProjectCommand, Key.F2, ModifierKeys.None));
             
             // Ctrl+S - Save Project
             InputBindings.Add(new KeyBinding(vm.SaveProjectCommand, Key.S, ModifierKeys.Control));
@@ -329,17 +329,44 @@ namespace Schedule1ModdingTool.Views
             // Ctrl+Shift+S - Save Project As
             InputBindings.Add(new KeyBinding(vm.SaveProjectAsCommand, Key.S, ModifierKeys.Control | ModifierKeys.Shift));
             
+            // F5 - Export Project
+            InputBindings.Add(new KeyBinding(vm.ExportModProjectCommand, Key.F5, ModifierKeys.None));
+            
+            // F6 - Build Mod
+            InputBindings.Add(new KeyBinding(vm.BuildModCommand, Key.F6, ModifierKeys.None));
+            
+            // F7 - Build & Play
+            InputBindings.Add(new KeyBinding(vm.BuildAndPlayCommand, Key.F7, ModifierKeys.None));
+            
+            // Ctrl+Shift+Q - New Quest
+            InputBindings.Add(new KeyBinding(vm.NewQuestCommand, Key.Q, ModifierKeys.Control | ModifierKeys.Shift));
+            
+            // Ctrl+Shift+N - New NPC
+            InputBindings.Add(new KeyBinding(vm.NewNpcCommand, Key.N, ModifierKeys.Control | ModifierKeys.Shift));
+            
+            // Ctrl+D - Duplicate Selected
+            InputBindings.Add(new KeyBinding(vm.DuplicateSelectedCommand, Key.D, ModifierKeys.Control));
+            
             // Ctrl+Z - Undo
             InputBindings.Add(new KeyBinding(vm.UndoCommand, Key.Z, ModifierKeys.Control));
             
             // Ctrl+Y - Redo
             InputBindings.Add(new KeyBinding(vm.RedoCommand, Key.Y, ModifierKeys.Control));
             
-            // F5 - Regenerate Code
-            InputBindings.Add(new KeyBinding(vm.RegenerateCodeCommand, Key.F5, ModifierKeys.None));
-            
-            // F6 - Build Mod
-            InputBindings.Add(new KeyBinding(vm.BuildModCommand, Key.F6, ModifierKeys.None));
+            // Delete - Delete Selected (handled via KeyDown event)
+            KeyDown += MainWindow_KeyDown;
+        }
+
+        private void MainWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Delete && DataContext is MainViewModel vm)
+            {
+                if (vm.DeleteSelectedCommand.CanExecute(null))
+                {
+                    vm.DeleteSelectedCommand.Execute(null);
+                    e.Handled = true;
+                }
+            }
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

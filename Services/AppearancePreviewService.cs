@@ -268,6 +268,12 @@ namespace Schedule1ModdingTool.Services
         private void SendUpdateInternal(NpcAppearanceSettings appearance)
         {
             System.Diagnostics.Debug.WriteLine($"[DEBUG] SendUpdateInternal: Called (appearance={(appearance != null ? "not null" : "null")}, pipeServer={(_pipeServer != null ? "not null" : "null")}, IsConnected={_pipeServer?.IsConnected ?? false})");
+            if (appearance == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[DEBUG] SendUpdateInternal: Cannot send update - appearance is null");
+                return;
+            }
+
             if (_pipeServer == null || !_pipeServer.IsConnected)
             {
                 System.Diagnostics.Debug.WriteLine("[DEBUG] SendUpdateInternal: Cannot send update - pipe not connected");

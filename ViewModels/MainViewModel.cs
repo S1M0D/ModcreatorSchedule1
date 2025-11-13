@@ -317,6 +317,12 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _deleteFolderCommand;
         private ICommand? _undoCommand;
         private ICommand? _redoCommand;
+        private ICommand? _deleteSelectedCommand;
+        private ICommand? _duplicateSelectedCommand;
+        private ICommand? _buildAndPlayCommand;
+        private ICommand? _newQuestCommand;
+        private ICommand? _newNpcCommand;
+        private ICommand? _visitWikiCommand;
 
         public ICommand NewProjectCommand => _newProjectCommand!;
         public ICommand OpenProjectCommand => _openProjectCommand!;
@@ -355,6 +361,12 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand DeleteFolderCommand => _deleteFolderCommand!;
         public ICommand UndoCommand => _undoCommand!;
         public ICommand RedoCommand => _redoCommand!;
+        public ICommand DeleteSelectedCommand => _deleteSelectedCommand!;
+        public ICommand DuplicateSelectedCommand => _duplicateSelectedCommand!;
+        public ICommand BuildAndPlayCommand => _buildAndPlayCommand!;
+        public ICommand NewQuestCommand => _newQuestCommand!;
+        public ICommand NewNpcCommand => _newNpcCommand!;
+        public ICommand VisitWikiCommand => _visitWikiCommand!;
 
         #endregion
 
@@ -492,6 +504,12 @@ namespace Schedule1ModdingTool.ViewModels
             _deleteFolderCommand = new RelayCommand<ModFolder>(DeleteFolder);
             _undoCommand = new RelayCommand(Undo, () => _undoRedoService.CanUndo);
             _redoCommand = new RelayCommand(Redo, () => _undoRedoService.CanRedo);
+            _deleteSelectedCommand = new RelayCommand(DeleteSelected, () => SelectedQuest != null || SelectedNpc != null);
+            _duplicateSelectedCommand = new RelayCommand(DuplicateSelected, () => SelectedQuest != null || SelectedNpc != null);
+            _buildAndPlayCommand = new RelayCommand(BuildAndPlay, HasAnyElements);
+            _newQuestCommand = new RelayCommand(NewQuest);
+            _newNpcCommand = new RelayCommand(NewNpc);
+            _visitWikiCommand = new RelayCommand(VisitWiki);
             
             // Subscribe to undo/redo state changes
             _undoRedoService.StateChanged += (s, e) => CommandManager.InvalidateRequerySuggested();
@@ -893,6 +911,144 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        private void DeleteSelected()
+        {
+            if (SelectedQuest != null)
+            {
+                RemoveQuest();
+            }
+            else if (SelectedNpc != null)
+            {
+                RemoveNpc();
+            }
+        }
+
+        private void DuplicateSelected()
+        {
+            if (SelectedQuest != null)
+            {
+                DuplicateQuest(SelectedQuest);
+            }
+            else if (SelectedNpc != null)
+            {
+                DuplicateNpc(SelectedNpc);
+            }
+        }
+
+        private void BuildAndPlay()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_modSettings.GameInstallPath))
+                {
+                    AppUtils.ShowError("Game install path is not configured. Please set it in Settings.");
+                    return;
+                }
+
+                // Export mod project if needed
+                ProcessState = "Checking if export is needed...";
+                if (!TryExportModProject(showSuccessDialog: false, out var exportPath))
+                {
+                    ProcessState = "Export failed";
+                    return;
+                }
+
+                // Build user mod if needed
+                if (!string.IsNullOrWhiteSpace(exportPath) && Directory.Exists(exportPath))
+                {
+                    ProcessState = "Checking if build is needed...";
+                    var modDllPath = GetModDllPath(exportPath);
+                    var needsBuild = modDllPath == null || !File.Exists(modDllPath) || 
+                                     IsProjectNewerThanDll(exportPath, modDllPath);
+
+                    if (needsBuild)
+                    {
+                        ProcessState = "Building mod...";
+                        var buildResult = _modBuildService.BuildModProject(exportPath, _modSettings);
+                        if (!buildResult.Success)
+                        {
+                            ProcessState = "Build failed";
+                            ShowBuildResult(buildResult);
+                            return;
+                        }
+                        ProcessState = "Mod built successfully";
+                    }
+                    else
+                    {
+                        ProcessState = "Mod build is up to date";
+                    }
+                }
+
+                // Launch game
+                ProcessState = "Building connector mod and launching game...";
+                var useLocalDll = true;
+                var launchResult = _gameLaunchService.LaunchGame(_modSettings, useLocalDll, previewEnabled: false);
+
+                UpdateProcessState();
+
+                if (launchResult.Success)
+                {
+                    var message = "Game launched successfully!";
+                    if (launchResult.DllCopied)
+                    {
+                        message += $"\n\nModCreatorConnector DLL deployed to:\n{launchResult.DeployedDllPath}";
+                    }
+                    if (launchResult.Warnings.Count > 0)
+                    {
+                        message += $"\n\nWarnings:\n{string.Join("\n", launchResult.Warnings)}";
+                    }
+                    AppUtils.ShowInfo(message);
+                }
+                else
+                {
+                    ProcessState = "Launch failed";
+                    var errorMessage = $"Failed to launch game: {launchResult.ErrorMessage}";
+                    if (!string.IsNullOrEmpty(launchResult.BuildOutput))
+                    {
+                        errorMessage += $"\n\nBuild Output:\n{launchResult.BuildOutput}";
+                    }
+                    AppUtils.ShowError(errorMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                ProcessState = "Launch failed";
+                AppUtils.ShowError($"Failed to launch game: {ex.Message}");
+            }
+        }
+
+        private void NewQuest()
+        {
+            if (AvailableBlueprints.Count > 0)
+            {
+                AddQuest(AvailableBlueprints[0]);
+            }
+        }
+
+        private void NewNpc()
+        {
+            if (AvailableNpcBlueprints.Count > 0)
+            {
+                AddNpc(AvailableNpcBlueprints[0]);
+            }
+        }
+
+        private void VisitWiki()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://github.com/ESTONlA/ModcreatorSchedule1/wiki",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                AppUtils.ShowError($"Failed to open wiki: {ex.Message}");
+            }
+        }
+
         #endregion
 
         #region Tab Operations (Delegated to TabManagementService)
@@ -1241,7 +1397,7 @@ namespace Schedule1ModdingTool.ViewModels
                 // Store current appearance so it can be sent when the mod connects
                 if (SelectedNpc?.Appearance != null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[DEBUG] PreviewNpc: Setting current appearance (SelectedNpc={SelectedNpc?.FirstName} {SelectedNpc?.LastName})");
+                    System.Diagnostics.Debug.WriteLine($"[DEBUG] PreviewNpc: Setting current appearance (SelectedNpc={SelectedNpc.FirstName} {SelectedNpc.LastName})");
                     _appearancePreviewService.SetCurrentAppearance(SelectedNpc.Appearance);
                 }
                 else

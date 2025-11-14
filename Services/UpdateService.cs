@@ -101,13 +101,38 @@ namespace Schedule1ModdingTool.Services
                 {
                     debugLog.AppendLine($"[UpdateService] CheckForUpdateEvent fired");
 
+                    // Helper to dispatch UI operations to the UI thread
+                    void DispatchToUIThread(Action action)
+                    {
+                        var app = Application.Current;
+                        if (app == null)
+                        {
+                            debugLog.AppendLine("[UpdateService] Application.Current is null, cannot show UI");
+                            return;
+                        }
+
+                        if (app.Dispatcher.CheckAccess())
+                        {
+                            // Already on UI thread
+                            action();
+                        }
+                        else
+                        {
+                            // Dispatch to UI thread
+                            app.Dispatcher.BeginInvoke(action);
+                        }
+                    }
+
                     if (args == null)
                     {
                         debugLog.AppendLine("[UpdateService] args is null");
                         if (DebugMode || !silent)
                         {
-                            MessageBox.Show(debugLog.ToString() + "\n\nUpdate check returned null args.",
-                                "Update Check Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                            DispatchToUIThread(() =>
+                            {
+                                MessageBox.Show(debugLog.ToString() + "\n\nUpdate check returned null args.",
+                                    "Update Check Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                            });
                         }
                         return;
                     }
@@ -117,8 +142,11 @@ namespace Schedule1ModdingTool.Services
                         debugLog.AppendLine($"[UpdateService] Error: {args.Error.Message}");
                         if (DebugMode || !silent)
                         {
-                            MessageBox.Show(debugLog.ToString() + $"\n\nError: {args.Error.Message}",
-                                "Update Check Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            DispatchToUIThread(() =>
+                            {
+                                MessageBox.Show(debugLog.ToString() + $"\n\nError: {args.Error.Message}",
+                                    "Update Check Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            });
                         }
                         return;
                     }
@@ -137,21 +165,30 @@ namespace Schedule1ModdingTool.Services
                             debugLog.AppendLine("[UpdateService] Skipping beta release for stable channel user");
                             if (DebugMode)
                             {
-                                MessageBox.Show(debugLog.ToString(), "Update Check Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                                DispatchToUIThread(() =>
+                                {
+                                    MessageBox.Show(debugLog.ToString(), "Update Check Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                                });
                             }
                             return;
                         }
 
                         // Show update dialog (always show if update is available, silent only affects error messages)
                         debugLog.AppendLine("[UpdateService] Showing update dialog");
-                        AutoUpdater.ShowUpdateForm(args);
+                        DispatchToUIThread(() =>
+                        {
+                            AutoUpdater.ShowUpdateForm(args);
+                        });
                     }
                     else
                     {
                         debugLog.AppendLine("[UpdateService] No update available");
                         if (DebugMode || !silent)
                         {
-                            MessageBox.Show(debugLog.ToString(), "Update Check Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                            DispatchToUIThread(() =>
+                            {
+                                MessageBox.Show(debugLog.ToString(), "Update Check Debug", MessageBoxButton.OK, MessageBoxImage.Information);
+                            });
                         }
                     }
                 };
@@ -168,11 +205,31 @@ namespace Schedule1ModdingTool.Services
 
                 if (!silent || DebugMode)
                 {
-                    MessageBox.Show(
-                        debugLog.ToString() + $"\n\nFailed to check for updates: {ex.Message}",
-                        "Update Check Failed",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
+                    var app = Application.Current;
+                    if (app != null)
+                    {
+                        if (app.Dispatcher.CheckAccess())
+                        {
+                            // Already on UI thread
+                            MessageBox.Show(
+                                debugLog.ToString() + $"\n\nFailed to check for updates: {ex.Message}",
+                                "Update Check Failed",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                        }
+                        else
+                        {
+                            // Dispatch to UI thread
+                            app.Dispatcher.BeginInvoke(() =>
+                            {
+                                MessageBox.Show(
+                                    debugLog.ToString() + $"\n\nFailed to check for updates: {ex.Message}",
+                                    "Update Check Failed",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Warning);
+                            });
+                        }
+                    }
                 }
             }
         }

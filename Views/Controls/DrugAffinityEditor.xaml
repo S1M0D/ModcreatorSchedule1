@@ -38,7 +38,7 @@
                         </ComboBox>
 
                         <TextBox Grid.Column="1"
-                                 Text="{Binding AffinityValue, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                 Text="{Binding AffinityValue, UpdateSourceTrigger=LostFocus, StringFormat=F2}"
                                  Style="{StaticResource TextBoxStyle}"
                                  Margin="0,0,8,0"/>
 

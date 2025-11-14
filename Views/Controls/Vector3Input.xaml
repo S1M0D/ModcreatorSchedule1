@@ -15,21 +15,21 @@
         <StackPanel Grid.Column="0" Margin="0,0,4,0">
             <Label Content="X" Style="{StaticResource LabelStyle}" FontSize="11"/>
             <TextBox x:Name="XTextBox"
-                     Text="{Binding X, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged, StringFormat=F3}"
+                     Text="{Binding X, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=LostFocus, StringFormat=F3}"
                      Style="{StaticResource TextBoxStyle}"/>
         </StackPanel>
 
         <StackPanel Grid.Column="1" Margin="4,0,4,0">
             <Label Content="Y" Style="{StaticResource LabelStyle}" FontSize="11"/>
             <TextBox x:Name="YTextBox"
-                     Text="{Binding Y, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged, StringFormat=F3}"
+                     Text="{Binding Y, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=LostFocus, StringFormat=F3}"
                      Style="{StaticResource TextBoxStyle}"/>
         </StackPanel>
 
         <StackPanel Grid.Column="2" Margin="4,0,0,0">
             <Label Content="Z" Style="{StaticResource LabelStyle}" FontSize="11"/>
             <TextBox x:Name="ZTextBox"
-                     Text="{Binding Z, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged, StringFormat=F3}"
+                     Text="{Binding Z, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=LostFocus, StringFormat=F3}"
                      Style="{StaticResource TextBoxStyle}"/>
         </StackPanel>
     </Grid>

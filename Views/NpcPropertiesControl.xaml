@@ -152,7 +152,7 @@
                                         <Label Content="Starting Relationship Delta" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Initial relationship level (0-5): 0=Stranger, 1=Acquaintance, 2.5=Friend, 4=Good Friend, 5=Best Friend"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.RelationshipDefaults.StartingDelta, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.RelationshipDefaults.StartingDelta, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
@@ -240,42 +240,84 @@
                                         <Label Content="Gender (0-1)" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Gender value: 0.0 = male, 1.0 = female. Values between 0 and 1 blend characteristics"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.Appearance.Gender, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.Gender, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Height" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="NPC height value (0.0 = short, 1.0 = tall). Affects overall scale and proportions"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.Appearance.Height, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.Height, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Weight" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="NPC weight value (0.0 = thin, 1.0 = heavy). Affects body proportions and shape"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.Appearance.Weight, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.Weight, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Pupil Dilation" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Controls pupil dilation (0.0-1.0). Higher values = more dilated pupils"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.Appearance.PupilDilation, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.PupilDilation, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Eyebrow Scale" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Scale factor for eyebrow size (0.0-1.0). Affects eyebrow width"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowScale, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowScale, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Eyebrow Thickness" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Thickness value for eyebrows (0.0-1.0). Higher values = thicker eyebrows"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowThickness, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowThickness, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource TextBoxStyle}"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Eyebrow Resting Height" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Resting height of eyebrows (-1.0 to 1.0). Affects default eyebrow position"/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowRestingHeight, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource TextBoxStyle}"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Eyebrow Resting Angle" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Resting angle of eyebrows (-1.0 to 1.0). Affects default eyebrow rotation"/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.EyebrowRestingAngle, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource TextBoxStyle}"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Left Eye Top" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Top position of left eye (0.0-1.0). Controls eye opening"/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.LeftEyeTop, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource TextBoxStyle}"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Left Eye Bottom" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Bottom position of left eye (0.0-1.0). Controls eye opening"/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.LeftEyeBottom, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource TextBoxStyle}"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Right Eye Top" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Top position of right eye (0.0-1.0). Controls eye opening"/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.RightEyeTop, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource TextBoxStyle}"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Right Eye Bottom" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Bottom position of right eye (0.0-1.0). Controls eye opening"/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.Appearance.RightEyeBottom, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
                                 </StackPanel>
                             </Border>
@@ -609,14 +651,14 @@
                                         <Label Content="Min Weekly Spending" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Minimum amount ($) this customer will spend per week on products"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MinWeeklySpending, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MinWeeklySpending, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Max Weekly Spending" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Maximum amount ($) this customer will spend per week on products"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MaxWeeklySpending, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MaxWeeklySpending, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
@@ -702,11 +744,11 @@
                                     </StackPanel>
 
                                     <Label Content="Min (at 50% quality)" Style="{StaticResource LabelStyle}"/>
-                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MutualRelationMinAt50, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MutualRelationMinAt50, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <Label Content="Max (at 100% quality)" Style="{StaticResource LabelStyle}"/>
-                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MutualRelationMaxAt100, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.MutualRelationMaxAt100, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
                                 </StackPanel>
                             </Border>
@@ -720,21 +762,21 @@
                                         <Label Content="Call Police Chance (0-1)" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Probability (0.0-1.0) that customer will call police during a deal. 0 = never, 1 = always"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.CallPoliceChance, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.CallPoliceChance, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Base Addiction" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Base addiction level (0.0-1.0). Higher values = more addicted, affects buying behavior"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.BaseAddiction, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.BaseAddiction, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
 
                                     <StackPanel Orientation="Horizontal">
                                         <Label Content="Dependence Multiplier" Style="{StaticResource LabelStyle}"/>
                                         <views:InfoIcon TooltipText="Multiplier for addiction growth over time. Higher values = faster addiction increase"/>
                                     </StackPanel>
-                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.DependenceMultiplier, UpdateSourceTrigger=PropertyChanged}"
+                                    <TextBox Text="{Binding SelectedNpc.CustomerDefaults.DependenceMultiplier, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource TextBoxStyle}"/>
                                 </StackPanel>
                             </Border>
@@ -848,14 +890,14 @@
                                     <Label Content="Signing Fee ($)" Style="{StaticResource LabelStyle}"/>
                                     <views:InfoIcon TooltipText="One-time fee ($) player must pay to recruit this dealer"/>
                                 </StackPanel>
-                                <TextBox Text="{Binding SelectedNpc.DealerDefaults.SigningFee, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding SelectedNpc.DealerDefaults.SigningFee, UpdateSourceTrigger=LostFocus}"
                                          Style="{StaticResource TextBoxStyle}"/>
 
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="Commission Cut (0-1)" Style="{StaticResource LabelStyle}"/>
                                     <views:InfoIcon TooltipText="Dealer's commission rate (0.0-1.0). 0.15 = 15% commission on sales"/>
                                 </StackPanel>
-                                <TextBox Text="{Binding SelectedNpc.DealerDefaults.CommissionCut, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding SelectedNpc.DealerDefaults.CommissionCut, UpdateSourceTrigger=LostFocus}"
                                          Style="{StaticResource TextBoxStyle}"/>
 
                                 <StackPanel Orientation="Horizontal">
@@ -983,7 +1025,7 @@
                                     <Label Content="Min Cash Amount ($)" Style="{StaticResource LabelStyle}"/>
                                     <views:InfoIcon TooltipText="Minimum cash amount ($) NPC will spawn with (randomized between min and max)"/>
                                 </StackPanel>
-                                <TextBox Text="{Binding SelectedNpc.InventoryDefaults.RandomCashMin, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding SelectedNpc.InventoryDefaults.RandomCashMin, UpdateSourceTrigger=LostFocus}"
                                          Style="{StaticResource TextBoxStyle}"
                                          IsEnabled="{Binding SelectedNpc.InventoryDefaults.EnableRandomCash}"/>
 
@@ -991,7 +1033,7 @@
                                     <Label Content="Max Cash Amount ($)" Style="{StaticResource LabelStyle}"/>
                                     <views:InfoIcon TooltipText="Maximum cash amount ($) NPC will spawn with (randomized between min and max)"/>
                                 </StackPanel>
-                                <TextBox Text="{Binding SelectedNpc.InventoryDefaults.RandomCashMax, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox Text="{Binding SelectedNpc.InventoryDefaults.RandomCashMax, UpdateSourceTrigger=LostFocus}"
                                          Style="{StaticResource TextBoxStyle}"
                                          IsEnabled="{Binding SelectedNpc.InventoryDefaults.EnableRandomCash}"/>
                             </StackPanel>

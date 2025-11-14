@@ -119,13 +119,6 @@ namespace Schedule1ModdingTool.Services
 
             // Get default game path from settings or use default Steam path
             var defaultGamePath = settings?.GameInstallPath ?? "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Schedule I_alternate";
-            if (!string.IsNullOrEmpty(defaultGamePath) && !defaultGamePath.EndsWith("_alternate") && !defaultGamePath.EndsWith("_alternate\\"))
-            {
-                // If path doesn't end with _alternate, append it
-                defaultGamePath = Path.Combine(defaultGamePath, "Schedule I_alternate");
-            }
-            // Escape backslashes for XML
-            var escapedGamePath = defaultGamePath.Replace("\\", "\\\\");
 
             sb.AppendLine("<Project Sdk=\"Microsoft.NET.Sdk\">");
             sb.AppendLine("  <PropertyGroup>");
@@ -140,22 +133,22 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("    <Nullable>enable</Nullable>");
             sb.AppendLine("  </PropertyGroup>");
             sb.AppendLine();
-            sb.AppendLine("  <!-- CrossCompat configuration (default for S1API.Forked) -->");
-            sb.AppendLine("  <PropertyGroup Condition=\"'$(Configuration)'=='CrossCompat'\">");
-            sb.AppendLine("    <DefineConstants>CROSS_COMPAT</DefineConstants>");
-            sb.AppendLine($"    <AssemblyName>{modName}</AssemblyName>");
+            sb.AppendLine("  <!-- Path configuration (always available) -->");
+            sb.AppendLine("  <PropertyGroup>");
             sb.AppendLine("    <!-- Configure these paths to point to your Schedule One Mono installation -->");
-            sb.AppendLine($"    <GamePath Condition=\"'$(GamePath)'==''\">{escapedGamePath}</GamePath>");
+            sb.AppendLine($"    <GamePath Condition=\"'$(GamePath)'==''\">{defaultGamePath}</GamePath>");
             sb.AppendLine("    <ManagedPath Condition=\"'$(ManagedPath)'==''\">$(GamePath)\\Schedule I_Data\\Managed</ManagedPath>");
             sb.AppendLine("    <MelonLoaderPath Condition=\"'$(MelonLoaderPath)'==''\">$(GamePath)\\MelonLoader\\net35</MelonLoaderPath>");
             sb.AppendLine("  </PropertyGroup>");
             sb.AppendLine();
+            sb.AppendLine("  <!-- CrossCompat configuration (default for S1API.Forked) -->");
+            sb.AppendLine("  <PropertyGroup Condition=\"'$(Configuration)'=='CrossCompat'\">");
+            sb.AppendLine("    <DefineConstants>CROSS_COMPAT</DefineConstants>");
+            sb.AppendLine($"    <AssemblyName>{modName}</AssemblyName>");
+            sb.AppendLine("  </PropertyGroup>");
+            sb.AppendLine();
             var customS1ApiPath = settings?.S1ApiDllPath?.Trim();
             var useCustomS1Api = !string.IsNullOrWhiteSpace(customS1ApiPath);
-            if (useCustomS1Api)
-            {
-                customS1ApiPath = customS1ApiPath!.Replace("\\", "\\\\");
-            }
 
             sb.AppendLine("  <ItemGroup>");
             if (useCustomS1Api)
@@ -174,7 +167,7 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("  </ItemGroup>");
             sb.AppendLine();
             sb.AppendLine("  <!-- CrossCompat Unity references (Mono without Assembly-CSharp) -->");
-            sb.AppendLine("  <ItemGroup Condition=\"'$(Configuration)'=='CrossCompat'\">");
+            sb.AppendLine("  <ItemGroup>");
             sb.AppendLine("    <Reference Include=\"Newtonsoft.Json\">");
             sb.AppendLine("      <HintPath>$(ManagedPath)\\Newtonsoft.Json.dll</HintPath>");
             sb.AppendLine("    </Reference>");

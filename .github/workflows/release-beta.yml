@@ -164,9 +164,22 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add Schedule1ModdingTool.csproj AutoUpdater.xml
-        git commit -m "chore: update version to $env:BASE_VERSION (beta release $env:BETA_TAG)" || exit 0
-        git push origin beta || exit 0
-        Write-Host "✓ Committed and pushed version updates"
+
+        # Commit changes (ignore error if nothing to commit)
+        try {
+          git commit -m "chore: update version to $env:BASE_VERSION (beta release $env:BETA_TAG)"
+          Write-Host "✓ Created commit"
+        } catch {
+          Write-Host "⚠ No changes to commit"
+        }
+
+        # Push to beta branch (ignore error if nothing to push)
+        try {
+          git push origin beta
+          Write-Host "✓ Pushed to beta branch"
+        } catch {
+          Write-Host "⚠ Nothing to push"
+        }
 
     - name: Generate release notes
       id: release_notes

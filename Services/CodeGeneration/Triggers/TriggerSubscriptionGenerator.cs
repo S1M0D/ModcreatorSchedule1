@@ -2,6 +2,7 @@ using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.Services.CodeGeneration.Abstractions;
 using Schedule1ModdingTool.Services.CodeGeneration.Common;
 using Schedule1ModdingTool.Services.CodeGeneration.Quest;
+using System.Linq;
 
 namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 {
@@ -38,6 +39,9 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                              (quest.Objectives?.Any(o => o.StartTriggers?.Any() == true || o.FinishTriggers?.Any() == true) == true);
             var hasRewards = quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0;
 
+            // Check if we need delayed subscription for quest triggers
+            bool needsDelayedQuestSubscription = HasQuestEventTriggers(quest);
+
             builder.AppendComment("🔧 Generated from: Quest.QuestTriggers, Quest.QuestFinishTriggers, Quest.Objectives[].StartTriggers, Quest.Objectives[].FinishTriggers");
             builder.AppendBlockComment(
                 "Subscribes to triggers for this quest and its objectives."
@@ -50,6 +54,20 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 builder.AppendComment("No triggers configured for this quest");
                 builder.CloseBlock();
                 builder.AppendLine();
+                return;
+            }
+
+            // If we have quest event triggers, use delayed subscription
+            if (needsDelayedQuestSubscription)
+            {
+                builder.AppendComment("Quest event triggers require delayed subscription - start coroutine to wait for quests");
+                builder.AppendLine("MelonCoroutines.Start(WaitForQuestsAndSubscribe());");
+                builder.AppendLine("return;");
+                builder.CloseBlock();
+                builder.AppendLine();
+                
+                // Generate the coroutine method
+                GenerateWaitForQuestsCoroutine(builder, quest, className, handlerInfos, hasRewards);
                 return;
             }
 
@@ -70,6 +88,27 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 
             builder.CloseBlock();
             builder.AppendLine();
+        }
+
+        /// <summary>
+        /// Checks if the quest has any QuestEventTrigger triggers that need delayed subscription.
+        /// </summary>
+        private bool HasQuestEventTriggers(QuestBlueprint quest)
+        {
+            // Check quest-level triggers
+            if (quest.QuestTriggers?.Any(t => t.TriggerType == QuestTriggerType.QuestEventTrigger) == true)
+                return true;
+            
+            if (quest.QuestFinishTriggers?.Any(t => t.TriggerType == QuestTriggerType.QuestEventTrigger) == true)
+                return true;
+
+            // Check objective-level triggers
+            if (quest.Objectives?.Any(o => 
+                o.StartTriggers?.Any(t => t.TriggerType == QuestTriggerType.QuestEventTrigger) == true ||
+                o.FinishTriggers?.Any(t => t.TriggerType == QuestTriggerType.QuestEventTrigger) == true) == true)
+                return true;
+
+            return false;
         }
 
         /// <summary>
@@ -350,9 +389,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             string actionMethod,
             string? objectiveVar)
         {
-            var questId = CodeFormatter.EscapeString(trigger.TargetQuestId);
+            // Check if this is a base game quest with typed identifier
+            bool useTypedIdentifier = !string.IsNullOrWhiteSpace(trigger.TargetQuestIdentifierType);
+            var identifierTypeName = useTypedIdentifier ? trigger.TargetQuestIdentifierType.Trim() : null;
+            var questTitle = CodeFormatter.EscapeString(trigger.TargetQuestId);
             var actionParts = trigger.TargetAction.Split('.');
             string eventPath;
+            string questLookupCode;
 
             if (actionParts.Length >= 2)
             {
@@ -362,47 +405,108 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 if (componentType == "QuestEntry")
                 {
                     // For QuestEntry events, we need to access the quest's entries
-                    builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
-                    builder.OpenBlock("if (quest == null)");
-                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
-                    builder.CloseBlock();
-                    builder.OpenBlock("else");
-                    
-                    if (trigger.TargetQuestEntryIndex.HasValue)
+                    if (useTypedIdentifier)
                     {
-                        // Subscribe to specific entry
-                        builder.AppendLine($"// Subscribe to quest entry at index {trigger.TargetQuestEntryIndex.Value}");
-                        builder.OpenBlock($"if (quest.Entries.Count > {trigger.TargetQuestEntryIndex.Value})");
-                        builder.AppendLine($"var entry = quest.Entries[{trigger.TargetQuestEntryIndex.Value}];");
-                        eventPath = $"entry.{eventName}";
+                        builder.AppendLine($"MelonLogger.Msg($\"[Quest] Attempting to subscribe to quest trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}' using identifier '{identifierTypeName}'\");");
+                        builder.AppendLine($"var questWrapper = QuestManager.Get<S1API.Quests.Identifiers.{identifierTypeName}>();");
+                        builder.OpenBlock("if (questWrapper == null)");
+                        builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questTitle}' (identifier: {identifierTypeName}) not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'. Quest may not be initialized yet.\");");
+                        builder.CloseBlock();
+                        builder.OpenBlock("else");
+                        builder.AppendLine($"MelonLogger.Msg($\"[Quest] Successfully found quest '{questTitle}' (identifier: {identifierTypeName}) for trigger subscription\");");
+                        
+                        if (trigger.TargetQuestEntryIndex.HasValue)
+                        {
+                            // Subscribe to specific entry
+                            builder.AppendLine($"// Subscribe to quest entry at index {trigger.TargetQuestEntryIndex.Value}");
+                            builder.OpenBlock($"if (questWrapper.QuestEntries.Count > {trigger.TargetQuestEntryIndex.Value})");
+                            builder.AppendLine($"var entry = questWrapper.QuestEntries[{trigger.TargetQuestEntryIndex.Value}];");
+                            eventPath = $"entry.{eventName}";
+                        }
+                        else
+                        {
+                            // Subscribe to all entries
+                            builder.AppendLine("// Subscribe to all quest entries");
+                            builder.OpenBlock("foreach (var entry in questWrapper.QuestEntries)");
+                            eventPath = $"entry.{eventName}";
+                        }
                     }
                     else
                     {
-                        // Subscribe to all entries
-                        builder.AppendLine("// Subscribe to all quest entries");
-                        builder.OpenBlock("foreach (var entry in quest.Entries)");
-                        eventPath = $"entry.{eventName}";
+                        builder.AppendLine($"var quest = QuestManager.GetQuestByName(\"{questTitle}\");");
+                        builder.OpenBlock("if (quest == null)");
+                        builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questTitle}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
+                        builder.CloseBlock();
+                        builder.OpenBlock("else");
+                        
+                        if (trigger.TargetQuestEntryIndex.HasValue)
+                        {
+                            // Subscribe to specific entry
+                            builder.AppendLine($"// Subscribe to quest entry at index {trigger.TargetQuestEntryIndex.Value}");
+                            builder.OpenBlock($"if (quest.QuestEntries.Count > {trigger.TargetQuestEntryIndex.Value})");
+                            builder.AppendLine($"var entry = quest.QuestEntries[{trigger.TargetQuestEntryIndex.Value}];");
+                            eventPath = $"entry.{eventName}";
+                        }
+                        else
+                        {
+                            // Subscribe to all entries
+                            builder.AppendLine("// Subscribe to all quest entries");
+                            builder.OpenBlock("foreach (var entry in quest.QuestEntries)");
+                            eventPath = $"entry.{eventName}";
+                        }
                     }
                 }
                 else
                 {
                     // Quest events
-                    builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
-                    builder.OpenBlock("if (quest == null)");
-                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
-                    builder.CloseBlock();
-                    builder.OpenBlock("else");
+                    if (useTypedIdentifier)
+                    {
+                        builder.AppendLine($"MelonLogger.Msg($\"[Quest] Attempting to subscribe to quest trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}' using identifier '{identifierTypeName}'\");");
+                        builder.AppendLine($"var questWrapper = QuestManager.Get<S1API.Quests.Identifiers.{identifierTypeName}>();");
+                        builder.AppendLine("var quest = questWrapper;");
+                        builder.OpenBlock("if (quest == null)");
+                        builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questTitle}' (identifier: {identifierTypeName}) not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'. Quest may not be initialized yet.\");");
+                        builder.CloseBlock();
+                        builder.OpenBlock("else");
+                        builder.AppendLine($"MelonLogger.Msg($\"[Quest] Successfully found quest '{questTitle}' (identifier: {identifierTypeName}) for trigger subscription\");");
+                    }
+                    else
+                    {
+                        builder.AppendLine($"MelonLogger.Msg($\"[Quest] Attempting to subscribe to quest trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}' using quest title '{questTitle}'\");");
+                        builder.AppendLine($"var quest = QuestManager.GetQuestByName(\"{questTitle}\");");
+                        builder.OpenBlock("if (quest == null)");
+                        builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questTitle}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'. Quest may not be initialized yet.\");");
+                        builder.CloseBlock();
+                        builder.OpenBlock("else");
+                        builder.AppendLine($"MelonLogger.Msg($\"[Quest] Successfully found quest '{questTitle}' for trigger subscription\");");
+                    }
                     eventPath = $"quest.{eventName}";
                 }
             }
             else
             {
                 var actionName = trigger.TargetAction.Contains(".") ? trigger.TargetAction.Split('.')[1] : trigger.TargetAction;
-                builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
-                builder.OpenBlock("if (quest == null)");
-                builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
-                builder.CloseBlock();
-                builder.OpenBlock("else");
+                if (useTypedIdentifier)
+                {
+                    builder.AppendLine($"MelonLogger.Msg($\"[Quest] Attempting to subscribe to quest trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}' using identifier '{identifierTypeName}'\");");
+                    builder.AppendLine($"var questWrapper = QuestManager.Get<S1API.Quests.Identifiers.{identifierTypeName}>();");
+                    builder.AppendLine("var quest = questWrapper;");
+                    builder.OpenBlock("if (quest == null)");
+                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questTitle}' (identifier: {identifierTypeName}) not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'. Quest may not be initialized yet.\");");
+                    builder.CloseBlock();
+                    builder.OpenBlock("else");
+                    builder.AppendLine($"MelonLogger.Msg($\"[Quest] Successfully found quest '{questTitle}' (identifier: {identifierTypeName}) for trigger subscription\");");
+                }
+                else
+                {
+                    builder.AppendLine($"MelonLogger.Msg($\"[Quest] Attempting to subscribe to quest trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}' using quest title '{questTitle}'\");");
+                    builder.AppendLine($"var quest = QuestManager.GetQuestByName(\"{questTitle}\");");
+                    builder.OpenBlock("if (quest == null)");
+                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questTitle}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'. Quest may not be initialized yet.\");");
+                    builder.CloseBlock();
+                    builder.OpenBlock("else");
+                    builder.AppendLine($"MelonLogger.Msg($\"[Quest] Successfully found quest '{questTitle}' for trigger subscription\");");
+                }
                 eventPath = $"quest.{actionName}";
             }
 
@@ -451,12 +555,15 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 // Close the if block for specific entry, or foreach block for all entries
                 if (trigger.TargetQuestEntryIndex.HasValue)
                 {
-                    builder.CloseBlock(); // if (quest.Entries.Count > index)
+                    builder.CloseBlock(); // if (questWrapper/quest.QuestEntries.Count > index)
                 }
                 else
                 {
                     builder.CloseBlock(); // foreach
                 }
+                
+                // Close the outer if/else block (questWrapper/quest found)
+                builder.CloseBlock();
             }
             else
             {
@@ -603,6 +710,150 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 }
                 builder.CloseBlock(semicolon: true);
             }
+        }
+
+        /// <summary>
+        /// Generates a coroutine that waits for quests to be available before subscribing to triggers.
+        /// </summary>
+        private void GenerateWaitForQuestsCoroutine(
+            ICodeBuilder builder,
+            QuestBlueprint quest,
+            string className,
+            List<TriggerHandlerInfo> handlerInfos,
+            bool hasRewards)
+        {
+            builder.AppendComment("🔧 Generated from: Quest.QuestTriggers (delayed subscription)");
+            builder.AppendBlockComment(
+                "Coroutine that waits for target quests to be available before subscribing to their events.",
+                "This prevents subscription failures when quests haven't been initialized yet."
+            );
+            builder.OpenBlock("private System.Collections.IEnumerator WaitForQuestsAndSubscribe()");
+            
+            builder.AppendLine("float timeout = 10f;");
+            builder.AppendLine("float waited = 0f;");
+            builder.AppendLine();
+            builder.AppendComment("Wait for target quests to be available");
+            builder.OpenBlock("while (waited < timeout)");
+            
+            // Collect all quest identifiers/titles that need to be checked
+            var questIdentifiers = new System.Collections.Generic.HashSet<string>();
+            var questTitles = new System.Collections.Generic.HashSet<string>();
+            
+            if (quest.QuestTriggers != null)
+            {
+                foreach (var trigger in quest.QuestTriggers.Where(t => t.TriggerType == QuestTriggerType.QuestEventTrigger))
+                {
+                    if (!string.IsNullOrWhiteSpace(trigger.TargetQuestIdentifierType))
+                        questIdentifiers.Add(trigger.TargetQuestIdentifierType);
+                    else if (!string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+                        questTitles.Add(trigger.TargetQuestId);
+                }
+            }
+            
+            if (quest.QuestFinishTriggers != null)
+            {
+                foreach (var trigger in quest.QuestFinishTriggers.Where(t => t.TriggerType == QuestTriggerType.QuestEventTrigger))
+                {
+                    if (!string.IsNullOrWhiteSpace(trigger.TargetQuestIdentifierType))
+                        questIdentifiers.Add(trigger.TargetQuestIdentifierType);
+                    else if (!string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+                        questTitles.Add(trigger.TargetQuestId);
+                }
+            }
+            
+            if (quest.Objectives != null)
+            {
+                foreach (var objective in quest.Objectives)
+                {
+                    if (objective.StartTriggers != null)
+                    {
+                        foreach (var trigger in objective.StartTriggers.Where(t => t.TriggerType == QuestTriggerType.QuestEventTrigger))
+                        {
+                            if (!string.IsNullOrWhiteSpace(trigger.TargetQuestIdentifierType))
+                                questIdentifiers.Add(trigger.TargetQuestIdentifierType);
+                            else if (!string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+                                questTitles.Add(trigger.TargetQuestId);
+                        }
+                    }
+                    if (objective.FinishTriggers != null)
+                    {
+                        foreach (var trigger in objective.FinishTriggers.Where(t => t.TriggerType == QuestTriggerType.QuestEventTrigger))
+                        {
+                            if (!string.IsNullOrWhiteSpace(trigger.TargetQuestIdentifierType))
+                                questIdentifiers.Add(trigger.TargetQuestIdentifierType);
+                            else if (!string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+                                questTitles.Add(trigger.TargetQuestId);
+                        }
+                    }
+                }
+            }
+
+            // Check typed identifiers
+            foreach (var identifierType in questIdentifiers)
+            {
+                builder.AppendLine($"MelonLogger.Msg($\"[Quest] Waiting for quest with identifier '{identifierType}'...\");");
+                builder.AppendLine($"var questWrapper_{identifierType} = QuestManager.Get<S1API.Quests.Identifiers.{identifierType}>();");
+                builder.AppendLine($"if (questWrapper_{identifierType} != null) MelonLogger.Msg($\"[Quest] Found quest with identifier '{identifierType}'\");");
+            }
+            
+            // Check quest titles
+            foreach (var questTitle in questTitles)
+            {
+                var safeVarName = IdentifierSanitizer.MakeSafeIdentifier(questTitle.Replace(" ", ""), "quest");
+                builder.AppendLine($"MelonLogger.Msg($\"[Quest] Waiting for quest with title '{CodeFormatter.EscapeString(questTitle)}'...\");");
+                builder.AppendLine($"var {safeVarName} = QuestManager.GetQuestByName(\"{CodeFormatter.EscapeString(questTitle)}\");");
+                builder.AppendLine($"if ({safeVarName} != null) MelonLogger.Msg($\"[Quest] Found quest with title '{CodeFormatter.EscapeString(questTitle)}'\");");
+            }
+            
+            builder.AppendLine();
+            
+            // Build condition to check if all quests are found
+            var conditions = new List<string>();
+            foreach (var identifierType in questIdentifiers)
+            {
+                conditions.Add($"questWrapper_{identifierType} != null");
+            }
+            foreach (var questTitle in questTitles)
+            {
+                var safeVarName = IdentifierSanitizer.MakeSafeIdentifier(questTitle.Replace(" ", ""), "quest");
+                conditions.Add($"{safeVarName} != null");
+            }
+            
+            if (conditions.Count > 0)
+            {
+                builder.AppendLine($"if ({string.Join(" && ", conditions)})");
+                builder.OpenBlock();
+                builder.AppendLine("MelonLogger.Msg(\"[Quest] All target quests found, proceeding with trigger subscriptions\");");
+                builder.AppendLine("break; // All quests found");
+                builder.CloseBlock();
+            }
+            else
+            {
+                builder.AppendLine("// No quest triggers to wait for");
+                builder.AppendLine("break;");
+            }
+            
+            builder.AppendLine();
+            builder.AppendLine("yield return null; // Wait one frame");
+            builder.AppendLine("waited += UnityEngine.Time.deltaTime;");
+            builder.CloseBlock(); // while
+            
+            builder.AppendLine();
+            builder.AppendComment("Now subscribe to triggers");
+            
+            // Generate the actual trigger subscriptions
+            var questId = string.IsNullOrWhiteSpace(quest.QuestId) ? className : quest.QuestId.Trim();
+            GenerateQuestStartTriggers(builder, quest, className, questId, handlerInfos);
+            GenerateQuestFinishTriggers(builder, quest, className, questId, handlerInfos);
+            GenerateObjectiveTriggers(builder, quest, className, handlerInfos);
+            
+            if (hasRewards)
+            {
+                GenerateQuestRewardSubscription(builder, quest);
+            }
+            
+            builder.CloseBlock(); // coroutine
+            builder.AppendLine();
         }
 
         /// <summary>

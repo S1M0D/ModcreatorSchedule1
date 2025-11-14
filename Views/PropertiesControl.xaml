@@ -422,11 +422,11 @@
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>
 
-                                                        <Label Content="Quest ID (if Quest trigger)"
+                                                        <Label Content="Quest Title (if Quest trigger)"
                                                                Style="{StaticResource LabelStyle}"
                                                                Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}" />
                                                         <ComboBox SelectedValue="{Binding TargetQuestId, UpdateSourceTrigger=PropertyChanged}"
-                                                                  SelectedValuePath="Id"
+                                                                  SelectedValuePath="DisplayName"
                                                                   Style="{StaticResource ComboBoxStyle}"
                                                                   IsEditable="True"
                                                                   Loaded="QuestComboBox_Loaded"
@@ -592,11 +592,11 @@
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>
 
-                                                        <Label Content="Quest ID (if Quest trigger)"
+                                                        <Label Content="Quest Title (if Quest trigger)"
                                                                Style="{StaticResource LabelStyle}"
                                                                Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}" />
                                                         <ComboBox SelectedValue="{Binding TargetQuestId, UpdateSourceTrigger=PropertyChanged}"
-                                                                  SelectedValuePath="Id"
+                                                                  SelectedValuePath="DisplayName"
                                                                   Style="{StaticResource ComboBoxStyle}"
                                                                   IsEditable="True"
                                                                   Loaded="QuestComboBox_Loaded"
@@ -889,11 +889,11 @@
                                                                             </ComboBox.ItemTemplate>
                                                                         </ComboBox>
 
-                                                                        <Label Content="Quest ID (if Quest trigger)"
+                                                                        <Label Content="Quest Title (if Quest trigger)"
                                                                                Style="{StaticResource LabelStyle}"
                                                                                Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}" />
                                                                         <ComboBox SelectedValue="{Binding TargetQuestId, UpdateSourceTrigger=PropertyChanged}"
-                                                                                  SelectedValuePath="Id"
+                                                                                  SelectedValuePath="DisplayName"
                                                                                   Style="{StaticResource ComboBoxStyle}"
                                                                                   IsEditable="True"
                                                                                   Loaded="QuestComboBox_Loaded"
@@ -1035,11 +1035,11 @@
                                                                             </ComboBox.ItemTemplate>
                                                                         </ComboBox>
 
-                                                                        <Label Content="Quest ID (if Quest trigger)"
+                                                                        <Label Content="Quest Title (if Quest trigger)"
                                                                                Style="{StaticResource LabelStyle}"
                                                                                Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=QuestEventTrigger}" />
                                                                         <ComboBox SelectedValue="{Binding TargetQuestId, UpdateSourceTrigger=PropertyChanged}"
-                                                                                  SelectedValuePath="Id"
+                                                                                  SelectedValuePath="DisplayName"
                                                                                   Style="{StaticResource ComboBoxStyle}"
                                                                                   IsEditable="True"
                                                                                   Loaded="QuestComboBox_Loaded"

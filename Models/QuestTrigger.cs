@@ -17,6 +17,7 @@ namespace Schedule1ModdingTool.Models
         private QuestTriggerTarget _triggerTarget = QuestTriggerTarget.QuestStart;
         private int? _objectiveIndex = null;
         private TriggerMetadata? _selectedTriggerMetadata;
+        private string _targetQuestIdentifierType = "";
 
         /// <summary>
         /// The type of trigger (Action, NPC Event, or Custom)
@@ -51,13 +52,26 @@ namespace Schedule1ModdingTool.Models
         }
 
         /// <summary>
-        /// The Quest ID for Quest-specific triggers (required when TriggerType is QuestEventTrigger)
+        /// The Quest Title for Quest-specific triggers (required when TriggerType is QuestEventTrigger).
+        /// Uses the quest's Title (persistent across save files) rather than GUID (instance-specific).
+        /// For base game quests with typed identifiers, this stores the quest title.
         /// </summary>
         [JsonProperty("targetQuestId")]
         public string TargetQuestId
         {
             get => _targetQuestId;
             set => SetProperty(ref _targetQuestId, value);
+        }
+
+        /// <summary>
+        /// For base game quests with typed identifiers, the identifier type name (e.g., "DefeatCartel").
+        /// If set, code generation will use QuestManager.Get&lt;T&gt;() instead of GetQuestByName().
+        /// </summary>
+        [JsonProperty("targetQuestIdentifierType")]
+        public string TargetQuestIdentifierType
+        {
+            get => _targetQuestIdentifierType;
+            set => SetProperty(ref _targetQuestIdentifierType, value);
         }
 
         /// <summary>
@@ -133,6 +147,7 @@ namespace Schedule1ModdingTool.Models
                 TargetAction = TargetAction,
                 TargetNpcId = TargetNpcId,
                 TargetQuestId = TargetQuestId,
+                TargetQuestIdentifierType = TargetQuestIdentifierType,
                 TargetQuestEntryIndex = TargetQuestEntryIndex,
                 TriggerTarget = TriggerTarget,
                 ObjectiveIndex = ObjectiveIndex

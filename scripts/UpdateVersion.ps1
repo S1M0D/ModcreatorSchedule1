@@ -35,14 +35,34 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
     }
 }
 
+# Ask if this is a beta version
+$isBeta = Read-Host "Is this a beta version? (y/n)"
+$isBeta = $isBeta.Trim().ToLower()
+
+# Determine URL version (append -beta if beta, otherwise use version as-is)
+$urlVersion = $Version
+if ($isBeta -eq "y" -or $isBeta -eq "yes") {
+    # Only append -beta if it's not already in the version
+    if ($Version -notmatch "-beta") {
+        $urlVersion = "$Version-beta"
+    } else {
+        $urlVersion = $Version
+    }
+}
+
 Write-Host "Updating version to: $Version" -ForegroundColor Green
+if ($isBeta -eq "y" -or $isBeta -eq "yes") {
+    Write-Host "URL version will be: $urlVersion" -ForegroundColor Yellow
+}
 
 # Update Schedule1ModdingTool.csproj
 if (Test-Path $csprojPath) {
     $csprojContent = Get-Content $csprojPath -Raw
     $csprojContent = $csprojContent -replace '<Version>.*?</Version>', "<Version>$Version</Version>"
+    $csprojContent = $csprojContent -replace '<AssemblyVersion>.*?</AssemblyVersion>', "<AssemblyVersion>$Version</AssemblyVersion>"
+    $csprojContent = $csprojContent -replace '<FileVersion>.*?</FileVersion>', "<FileVersion>$Version</FileVersion>"
     $csprojContent | Set-Content $csprojPath -NoNewline
-    Write-Host "[OK] Updated Schedule1ModdingTool.csproj" -ForegroundColor Green
+    Write-Host "[OK] Updated Schedule1ModdingTool.csproj (Version, AssemblyVersion, FileVersion)" -ForegroundColor Green
 } else {
     Write-Host "[ERROR] Schedule1ModdingTool.csproj not found at: $csprojPath" -ForegroundColor Red
     exit 1
@@ -54,9 +74,9 @@ if (Test-Path $xmlPath) {
 <?xml version="1.0" encoding="UTF-8"?>
 <item>
     <version>$Version</version>
-    <url>https://github.com/ESTONlA/ModcreatorSchedule1/releases/download/v$Version/Schedule1ModdingTool-$Version.zip</url>
-    <changelog>https://github.com/ESTONlA/ModcreatorSchedule1/releases</changelog>
-    <mandatory>false</mandatory>
+    <url>https://github.com/S1M0D/ModcreatorSchedule1/releases/download/v$urlVersion/Schedule1ModdingTool-$urlVersion.zip</url>
+    <changelog>https://github.com/S1M0D/ModcreatorSchedule1/releases/latest</changelog>
+    <mandatory>true</mandatory>
 </item>
 "@
     $xmlContent | Out-File -FilePath $xmlPath -Encoding UTF8 -NoNewline

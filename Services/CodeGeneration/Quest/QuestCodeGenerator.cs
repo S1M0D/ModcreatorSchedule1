@@ -46,14 +46,6 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             var usingsBuilder = new UsingStatementsBuilder();
             usingsBuilder.AddQuestUsings();
             
-            // Add type alias for base game quests (needed for QuestEventTrigger)
-            builder.AppendLine("#if (IL2CPPMELON)");
-            builder.AppendLine("using S1Quests = Il2CppScheduleOne.Quests;");
-            builder.AppendLine("#elif (MONOMELON || MONOBEPINEX || IL2CPPBEPINEX)");
-            builder.AppendLine("using S1Quests = ScheduleOne.Quests;");
-            builder.AppendLine("#endif");
-            builder.AppendLine();
-            
             usingsBuilder.GenerateUsings(builder);
 
             // Namespace

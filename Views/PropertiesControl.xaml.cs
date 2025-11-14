@@ -75,13 +75,10 @@ namespace Schedule1ModdingTool.Views
 
                 _availableNpcs = new ObservableCollection<NpcInfo>(npcList.OrderBy(n => n.DisplayName));
 
-                // Build Quest list from project Quests and base game Quests
+                // Build Quest list from project Quests and base game Quests with typed identifiers
                 var questList = new List<QuestInfo>();
                 
-                // Add base game quests first
-                AddBaseGameQuests(questList);
-                
-                // Add project quests
+                // Add project quests first
                 if (vm.CurrentProject?.Quests != null)
                 {
                     foreach (var quest in vm.CurrentProject.Quests)
@@ -94,6 +91,10 @@ namespace Schedule1ModdingTool.Views
                         });
                     }
                 }
+                
+                // Add base game quests with typed identifiers (only DefeatCartel for now)
+                AddBaseGameQuests(questList);
+                
                 _availableQuests = new ObservableCollection<QuestInfo>(questList.OrderBy(q => q.DisplayName));
 
                 // Sync triggers for current quest
@@ -288,37 +289,31 @@ namespace Schedule1ModdingTool.Views
 
         private void AddBaseGameQuests(List<QuestInfo> questList)
         {
-            // Base game quests from Schedule One
-            // Quest IDs are the quest's StaticGUID (set in Unity inspector)
-            // Display names are derived from class names (Quest_ClassName -> "Class Name")
-            // Note: StaticGUIDs need to be looked up in-game or from Unity inspector
-            // For now, using class-name-based identifiers that users can replace with actual StaticGUIDs
-            var baseQuests = new[]
-            {
-                new QuestInfo { Id = "Quest_Botanists", DisplayName = "Botanists", IsModQuest = false },
-                new QuestInfo { Id = "Quest_WeNeedToCook", DisplayName = "We Need To Cook", IsModQuest = false },
-                new QuestInfo { Id = "Quest_WelcomeToHylandPoint", DisplayName = "Welcome To Hyland Point", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Warehouse", DisplayName = "Warehouse", IsModQuest = false },
-                new QuestInfo { Id = "Quest_UnfavourableAgreements", DisplayName = "Unfavourable Agreements", IsModQuest = false },
-                new QuestInfo { Id = "Quest_TheDeepEnd", DisplayName = "The Deep End", IsModQuest = false },
-                new QuestInfo { Id = "Quest_GearingUp", DisplayName = "Gearing Up", IsModQuest = false },
-                new QuestInfo { Id = "Quest_ExpandingOperations", DisplayName = "Expanding Operations", IsModQuest = false },
-                new QuestInfo { Id = "Quest_DownToBusiness", DisplayName = "Down To Business", IsModQuest = false },
-                new QuestInfo { Id = "Quest_DefeatCartel", DisplayName = "Defeat Cartel", IsModQuest = false },
-                new QuestInfo { Id = "Quest_DealForCartel", DisplayName = "Deal For Cartel", IsModQuest = false },
-                new QuestInfo { Id = "Quest_SinkOrSwim", DisplayName = "Sink Or Swim", IsModQuest = false },
-                new QuestInfo { Id = "Quest_OnTheGrind", DisplayName = "On The Grind", IsModQuest = false },
-                new QuestInfo { Id = "Quest_NeedingTheGreen", DisplayName = "Needing The Green", IsModQuest = false },
-                new QuestInfo { Id = "Quest_SecuringSupplies", DisplayName = "Securing Supplies", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Packagers", DisplayName = "Packagers", IsModQuest = false },
-                new QuestInfo { Id = "Quest_MovingUp", DisplayName = "Moving Up", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Connections", DisplayName = "Connections", IsModQuest = false },
-                new QuestInfo { Id = "Quest_GettingStarted", DisplayName = "Getting Started", IsModQuest = false },
-                new QuestInfo { Id = "Quest_CleanCash", DisplayName = "Clean Cash", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Cleaners", DisplayName = "Cleaners", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Chemists", DisplayName = "Chemists", IsModQuest = false },
-            };
-            questList.AddRange(baseQuests);
+            // Base game quests with typed identifiers from S1API.Quests.Identifiers
+            // Quest titles must match the [QuestName("...")] attribute values in the identifier classes
+            
+            questList.Add(new QuestInfo { Id = "Quest_GettingStarted", DisplayName = "Getting Started", IsModQuest = false, IdentifierTypeName = "GettingStarted" });
+            questList.Add(new QuestInfo { Id = "Quest_GearingUp", DisplayName = "Gearing Up", IsModQuest = false, IdentifierTypeName = "GearingUp" });
+            questList.Add(new QuestInfo { Id = "Quest_MoneyManagement", DisplayName = "Money Management", IsModQuest = false, IdentifierTypeName = "MoneyManagement" });
+            questList.Add(new QuestInfo { Id = "Quest_KeepingItFresh", DisplayName = "Keeping it Fresh", IsModQuest = false, IdentifierTypeName = "KeepingItFresh" });
+            questList.Add(new QuestInfo { Id = "Quest_Packin", DisplayName = "Packin'", IsModQuest = false, IdentifierTypeName = "Packin" });
+            questList.Add(new QuestInfo { Id = "Quest_OnTheGrind", DisplayName = "On the Grind", IsModQuest = false, IdentifierTypeName = "OnTheGrind" });
+            questList.Add(new QuestInfo { Id = "Quest_MovingUp", DisplayName = "Moving Up", IsModQuest = false, IdentifierTypeName = "MovingUp" });
+            questList.Add(new QuestInfo { Id = "Quest_DodgyDealing", DisplayName = "Dodgy Dealing", IsModQuest = false, IdentifierTypeName = "DodgyDealing" });
+            questList.Add(new QuestInfo { Id = "Quest_MixingMania", DisplayName = "Mixing Mania", IsModQuest = false, IdentifierTypeName = "MixingMania" });
+            questList.Add(new QuestInfo { Id = "Quest_WelcomeToHylandPoint", DisplayName = "Welcome to Hyland Point", IsModQuest = false, IdentifierTypeName = "WelcomeToHylandPoint" });
+            questList.Add(new QuestInfo { Id = "Quest_CleanCash", DisplayName = "Clean Cash", IsModQuest = false, IdentifierTypeName = "CleanCash" });
+            questList.Add(new QuestInfo { Id = "Quest_Warehouse", DisplayName = "Wretched Hive of Scum and Villainy", IsModQuest = false, IdentifierTypeName = "Warehouse" });
+            questList.Add(new QuestInfo { Id = "Quest_WeNeedToCook", DisplayName = "We Need To Cook", IsModQuest = false, IdentifierTypeName = "WeNeedToCook" });
+            questList.Add(new QuestInfo { Id = "Quest_Cleaners", DisplayName = "Cleaners", IsModQuest = false, IdentifierTypeName = "Cleaners" });
+            questList.Add(new QuestInfo { Id = "Quest_Botanists", DisplayName = "Botanists", IsModQuest = false, IdentifierTypeName = "Botanists" });
+            questList.Add(new QuestInfo { Id = "Quest_Packagers", DisplayName = "Handlers", IsModQuest = false, IdentifierTypeName = "Packagers" });
+            questList.Add(new QuestInfo { Id = "Quest_Chemists", DisplayName = "Chemists", IsModQuest = false, IdentifierTypeName = "Chemists" });
+            questList.Add(new QuestInfo { Id = "Quest_MakingTheRounds", DisplayName = "Making the Rounds", IsModQuest = false, IdentifierTypeName = "MakingTheRounds" });
+            questList.Add(new QuestInfo { Id = "Quest_NeedingTheGreen", DisplayName = "Needin' the Green", IsModQuest = false, IdentifierTypeName = "NeedingTheGreen" });
+            questList.Add(new QuestInfo { Id = "Quest_UnfavourableAgreements", DisplayName = "Unfavourable Agreements", IsModQuest = false, IdentifierTypeName = "UnfavourableAgreements" });
+            questList.Add(new QuestInfo { Id = "Quest_DealForCartel", DisplayName = "Deal for the Benzies Family", IsModQuest = false, IdentifierTypeName = "DealForCartel" });
+            questList.Add(new QuestInfo { Id = "Quest_DefeatCartel", DisplayName = "Finishing the Job", IsModQuest = false, IdentifierTypeName = "DefeatCartel" });
         }
 
         private void AddObjective_Click(object sender, RoutedEventArgs e)
@@ -515,6 +510,29 @@ namespace Schedule1ModdingTool.Views
                     
                     // Migrate existing Quest ID if needed
                     MigrateQuestIdInTrigger(comboBox);
+                    
+                    // Set SelectedItem based on TargetQuestIdentifierType or TargetQuestId
+                    if (comboBox.DataContext is QuestTrigger trigger)
+                    {
+                        QuestInfo? match = null;
+                        
+                        // Prefer typed identifier if available
+                        if (!string.IsNullOrWhiteSpace(trigger.TargetQuestIdentifierType))
+                        {
+                            match = _availableQuests.FirstOrDefault(q => q.IdentifierTypeName == trigger.TargetQuestIdentifierType);
+                        }
+                        
+                        // If not found by identifier, try by DisplayName
+                        if (match == null && !string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+                        {
+                            match = _availableQuests.FirstOrDefault(q => q.DisplayName == trigger.TargetQuestId);
+                        }
+                        
+                        if (match != null)
+                        {
+                            comboBox.SelectedItem = match;
+                        }
+                    }
                 }
             }
         }
@@ -532,14 +550,74 @@ namespace Schedule1ModdingTool.Views
         {
             if (sender is ComboBox comboBox && comboBox.DataContext is QuestTrigger trigger)
             {
-                // Update TargetQuestId when selection changes
+                // Update TargetQuestIdentifierType and TargetQuestId when selection changes
+                // For base game quests with typed identifiers, MatchValue returns IdentifierTypeName
+                // For mod quests or base game quests without identifiers, MatchValue returns DisplayName
                 if (comboBox.SelectedItem is QuestInfo questInfo)
                 {
-                    trigger.TargetQuestId = questInfo.Id;
+                    if (!questInfo.IsModQuest && !string.IsNullOrWhiteSpace(questInfo.IdentifierTypeName))
+                    {
+                        // Base game quest with typed identifier - store identifier type name
+                        trigger.TargetQuestIdentifierType = questInfo.IdentifierTypeName;
+                        trigger.TargetQuestId = questInfo.DisplayName; // Also store title for reference
+                    }
+                    else
+                    {
+                        // Mod quest or base game quest without identifier - store title, clear identifier type
+                        trigger.TargetQuestId = questInfo.DisplayName;
+                        trigger.TargetQuestIdentifierType = ""; // Clear identifier type
+                    }
                 }
-                else if (comboBox.SelectedValue is string questId)
+                else if (!string.IsNullOrWhiteSpace(comboBox.Text))
                 {
-                    trigger.TargetQuestId = questId;
+                    // User typed a value manually - try to find by MatchValue first, then DisplayName
+                    var matchValue = comboBox.Text.Trim();
+                    var matchedQuestInfo = _availableQuests?.FirstOrDefault(q => q.MatchValue == matchValue);
+                    if (matchedQuestInfo != null)
+                    {
+                        if (!matchedQuestInfo.IsModQuest && !string.IsNullOrWhiteSpace(matchedQuestInfo.IdentifierTypeName))
+                        {
+                            trigger.TargetQuestIdentifierType = matchedQuestInfo.IdentifierTypeName;
+                            trigger.TargetQuestId = matchedQuestInfo.DisplayName;
+                            // Update SelectedItem to match
+                            comboBox.SelectedItem = matchedQuestInfo;
+                        }
+                        else
+                        {
+                            trigger.TargetQuestId = matchedQuestInfo.DisplayName;
+                            trigger.TargetQuestIdentifierType = "";
+                            // Update SelectedItem to match
+                            comboBox.SelectedItem = matchedQuestInfo;
+                        }
+                    }
+                    else
+                    {
+                        // Try to find by DisplayName
+                        var matchByTitle = _availableQuests?.FirstOrDefault(q => q.DisplayName == matchValue);
+                        if (matchByTitle != null)
+                        {
+                            if (!matchByTitle.IsModQuest && !string.IsNullOrWhiteSpace(matchByTitle.IdentifierTypeName))
+                            {
+                                trigger.TargetQuestIdentifierType = matchByTitle.IdentifierTypeName;
+                                trigger.TargetQuestId = matchByTitle.DisplayName;
+                                // Update SelectedItem to match
+                                comboBox.SelectedItem = matchByTitle;
+                            }
+                            else
+                            {
+                                trigger.TargetQuestId = matchByTitle.DisplayName;
+                                trigger.TargetQuestIdentifierType = "";
+                                // Update SelectedItem to match
+                                comboBox.SelectedItem = matchByTitle;
+                            }
+                        }
+                        else
+                        {
+                            // Manually entered value - assume it's a quest title (for mod quests)
+                            trigger.TargetQuestId = matchValue;
+                            trigger.TargetQuestIdentifierType = "";
+                        }
+                    }
                 }
 
                 // Update QuestEntry ComboBox when quest selection changes
@@ -722,29 +800,61 @@ namespace Schedule1ModdingTool.Views
 
         private void MigrateQuestIdInTrigger(ComboBox comboBox)
         {
-            if (_availableQuests == null || comboBox.DataContext is not QuestTrigger trigger || string.IsNullOrWhiteSpace(trigger.TargetQuestId))
+            if (_availableQuests == null || comboBox.DataContext is not QuestTrigger trigger)
                 return;
 
-            var questId = trigger.TargetQuestId.Trim();
-
-            // Try to find matching Quest by ID (case-insensitive)
-            var match = _availableQuests.FirstOrDefault(q => 
-                q.Id.Equals(questId, StringComparison.OrdinalIgnoreCase));
-            
-            if (match != null && match.Id != questId)
+            // If we have a typed identifier, use that for matching
+            if (!string.IsNullOrWhiteSpace(trigger.TargetQuestIdentifierType))
             {
-                // Fix case sensitivity
-                trigger.TargetQuestId = match.Id;
-                return;
+                var match = _availableQuests.FirstOrDefault(q => 
+                    q.IdentifierTypeName.Equals(trigger.TargetQuestIdentifierType, StringComparison.OrdinalIgnoreCase));
+                
+                if (match != null)
+                {
+                    // Ensure TargetQuestId is set to DisplayName for reference
+                    trigger.TargetQuestId = match.DisplayName;
+                    return;
+                }
             }
 
-            // Try to find by display name (case-insensitive)
-            match = _availableQuests.FirstOrDefault(q => 
-                q.DisplayName.Equals(questId, StringComparison.OrdinalIgnoreCase));
-            
-            if (match != null)
+            // If TargetQuestId is set, try to match it
+            if (!string.IsNullOrWhiteSpace(trigger.TargetQuestId))
             {
-                trigger.TargetQuestId = match.Id;
+                var questIdentifier = trigger.TargetQuestId.Trim();
+
+                // Try to find matching Quest by DisplayName (Title) - this is what we store now (case-insensitive)
+                var match = _availableQuests.FirstOrDefault(q => 
+                    q.DisplayName.Equals(questIdentifier, StringComparison.OrdinalIgnoreCase));
+                
+                if (match != null)
+                {
+                    // Update to use typed identifier if available, otherwise use DisplayName
+                    if (!match.IsModQuest && !string.IsNullOrWhiteSpace(match.IdentifierTypeName))
+                    {
+                        trigger.TargetQuestIdentifierType = match.IdentifierTypeName;
+                    }
+                    // Update to use DisplayName (Title) if it's different (case sensitivity fix)
+                    if (match.DisplayName != questIdentifier)
+                    {
+                        trigger.TargetQuestId = match.DisplayName;
+                    }
+                    return;
+                }
+
+                // Migration: If stored value is an old Id, try to migrate to DisplayName/IdentifierTypeName
+                // Try to find by old ID format (for backward compatibility)
+                match = _availableQuests.FirstOrDefault(q => 
+                    q.Id.Equals(questIdentifier, StringComparison.OrdinalIgnoreCase));
+                
+                if (match != null)
+                {
+                    // Migrate from Id to DisplayName (Title) and IdentifierTypeName if available
+                    trigger.TargetQuestId = match.DisplayName;
+                    if (!match.IsModQuest && !string.IsNullOrWhiteSpace(match.IdentifierTypeName))
+                    {
+                        trigger.TargetQuestIdentifierType = match.IdentifierTypeName;
+                    }
+                }
             }
         }
 
@@ -1153,6 +1263,20 @@ namespace Schedule1ModdingTool.Views
         public string Id { get; set; } = "";
         public string DisplayName { get; set; } = "";
         public bool IsModQuest { get; set; }
+        /// <summary>
+        /// For base game quests, the typed identifier class name (e.g., "DefeatCartel").
+        /// For mod quests, this is empty.
+        /// </summary>
+        public string IdentifierTypeName { get; set; } = "";
+
+        /// <summary>
+        /// Gets the value to use for ComboBox SelectedValue matching.
+        /// For base game quests with identifiers, returns the identifier type name.
+        /// Otherwise, returns the DisplayName (quest title).
+        /// </summary>
+        public string MatchValue => !IsModQuest && !string.IsNullOrWhiteSpace(IdentifierTypeName) 
+            ? IdentifierTypeName 
+            : DisplayName;
 
         public override string ToString()
         {

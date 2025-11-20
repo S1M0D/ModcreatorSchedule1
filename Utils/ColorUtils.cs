@@ -185,5 +185,23 @@ namespace Schedule1ModdingTool.Utils
                 _ => 0
             };
         }
+
+        /// <summary>
+        /// Converts Unity Color format (r, g, b, a as floats 0-1) to hex string (#AARRGGBB).
+        /// </summary>
+        /// <param name="r">Red component (0-1)</param>
+        /// <param name="g">Green component (0-1)</param>
+        /// <param name="b">Blue component (0-1)</param>
+        /// <param name="a">Alpha component (0-1), defaults to 1.0</param>
+        /// <returns>Hex color string in format #AARRGGBB</returns>
+        public static string UnityColorToHex(double r, double g, double b, double a = 1.0)
+        {
+            var aByte = (byte)Math.Round(Math.Clamp(a, 0.0, 1.0) * 255);
+            var rByte = (byte)Math.Round(Math.Clamp(r, 0.0, 1.0) * 255);
+            var gByte = (byte)Math.Round(Math.Clamp(g, 0.0, 1.0) * 255);
+            var bByte = (byte)Math.Round(Math.Clamp(b, 0.0, 1.0) * 255);
+
+            return string.Format(CultureInfo.InvariantCulture, "#{0:X2}{1:X2}{2:X2}{3:X2}", aByte, rByte, gByte, bByte);
+        }
     }
 }

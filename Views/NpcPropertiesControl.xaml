@@ -1090,6 +1090,12 @@
                                         Style="{StaticResource BaseButtonStyle}"
                                         Foreground="{StaticResource AccentOrangeBrush}"
                                         HorizontalAlignment="Left"
+                                        Padding="20,8"
+                                        Margin="0,0,0,8"/>
+                                <Button Content="Import Appearance from JSON" 
+                                        Command="{Binding ImportAppearanceCommand}"
+                                        Style="{StaticResource BaseButtonStyle}"
+                                        HorizontalAlignment="Left"
                                         Padding="20,8"/>
                             </StackPanel>
                         </Border>

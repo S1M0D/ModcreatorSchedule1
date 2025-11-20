@@ -303,6 +303,7 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _buildModCommand;
         private ICommand? _playGameCommand;
         private ICommand? _previewNpcCommand;
+        private ICommand? _importAppearanceCommand;
         private ICommand? _openSettingsCommand;
         private ICommand? _selectNavigationCommand;
         private ICommand? _selectCategoryCommand;
@@ -343,6 +344,7 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand BuildModCommand => _buildModCommand!;
         public ICommand PlayGameCommand => _playGameCommand!;
         public ICommand PreviewNpcCommand => _previewNpcCommand!;
+        public ICommand ImportAppearanceCommand => _importAppearanceCommand!;
         public ICommand OpenSettingsCommand => _openSettingsCommand!;
 
         /// <summary>
@@ -491,6 +493,7 @@ namespace Schedule1ModdingTool.ViewModels
             _buildModCommand = new RelayCommand(BuildMod, HasAnyElements);
             _playGameCommand = new RelayCommand(PlayGame, () => !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
             _previewNpcCommand = new RelayCommand(PreviewNpc, () => SelectedNpc != null && !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
+            _importAppearanceCommand = new RelayCommand(ImportAppearance, () => SelectedNpc != null);
             _openSettingsCommand = new RelayCommand(OpenSettings);
             _selectNavigationCommand = new RelayCommand<NavigationItem>(item => _navigationService.SelectNavigation(item));
             _selectCategoryCommand = new RelayCommand<ModCategory>(category => _navigationService.SelectCategory(category));
@@ -1447,6 +1450,320 @@ namespace Schedule1ModdingTool.ViewModels
         private void PreviewNpc()
         {
             _ = PreviewNpcAsync();
+        }
+
+        private void ImportAppearance()
+        {
+            if (SelectedNpc == null)
+            {
+                AppUtils.ShowError("No NPC selected.");
+                return;
+            }
+
+            try
+            {
+                var dialog = new OpenFileDialog
+                {
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                    Title = "Import Appearance from JSON",
+                    CheckFileExists = true
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    var json = File.ReadAllText(dialog.FileName);
+                    ImportAppearanceFromJson(json);
+                    AppUtils.ShowInfo("Appearance imported successfully!");
+                }
+            }
+            catch (Exception ex)
+            {
+                AppUtils.ShowError($"Failed to import appearance: {ex.Message}");
+            }
+        }
+
+        private void ImportAppearanceFromJson(string json)
+        {
+            if (SelectedNpc?.Appearance == null)
+                return;
+
+            using var reader = new System.IO.StringReader(json);
+            using var jsonReader = new Newtonsoft.Json.JsonTextReader(reader);
+            var jobj = Newtonsoft.Json.Linq.JObject.Load(jsonReader);
+
+            var appearance = SelectedNpc.Appearance;
+
+            // Basic properties
+            if (jobj["Gender"] != null)
+                appearance.Gender = jobj.Value<double>("Gender");
+            
+            if (jobj["Weight"] != null)
+                appearance.Weight = jobj.Value<double>("Weight");
+
+            // Convert Unity Color objects to hex strings
+            if (jobj["SkinColor"] != null)
+            {
+                var skinColor = jobj["SkinColor"] as Newtonsoft.Json.Linq.JObject;
+                if (skinColor != null)
+                {
+                    appearance.SkinColor = Utils.ColorUtils.UnityColorToHex(
+                        skinColor.Value<double>("r"),
+                        skinColor.Value<double>("g"),
+                        skinColor.Value<double>("b"),
+                        skinColor.Value<double>("a"));
+                }
+            }
+
+            if (jobj["HairColor"] != null)
+            {
+                var hairColor = jobj["HairColor"] as Newtonsoft.Json.Linq.JObject;
+                if (hairColor != null)
+                {
+                    appearance.HairColor = Utils.ColorUtils.UnityColorToHex(
+                        hairColor.Value<double>("r"),
+                        hairColor.Value<double>("g"),
+                        hairColor.Value<double>("b"),
+                        hairColor.Value<double>("a"));
+                }
+            }
+
+            if (jobj["EyeballColor"] != null)
+            {
+                var eyeballColor = jobj["EyeballColor"] as Newtonsoft.Json.Linq.JObject;
+                if (eyeballColor != null)
+                {
+                    appearance.EyeBallTint = Utils.ColorUtils.UnityColorToHex(
+                        eyeballColor.Value<double>("r"),
+                        eyeballColor.Value<double>("g"),
+                        eyeballColor.Value<double>("b"),
+                        eyeballColor.Value<double>("a"));
+                }
+            }
+
+            // Hair style
+            if (jobj["HairStyle"] != null)
+                appearance.HairPath = jobj.Value<string>("HairStyle") ?? string.Empty;
+
+            // Eye properties
+            if (jobj["UpperEyeLidRestingPosition"] != null)
+            {
+                var upperPos = jobj.Value<double>("UpperEyeLidRestingPosition");
+                appearance.LeftEyeTop = upperPos;
+                appearance.RightEyeTop = upperPos;
+            }
+
+            if (jobj["LowerEyeLidRestingPosition"] != null)
+            {
+                var lowerPos = jobj.Value<double>("LowerEyeLidRestingPosition");
+                appearance.LeftEyeBottom = lowerPos;
+                appearance.RightEyeBottom = lowerPos;
+            }
+
+            if (jobj["PupilDilation"] != null)
+                appearance.PupilDilation = jobj.Value<double>("PupilDilation");
+
+            // Eyebrow properties
+            if (jobj["EyebrowScale"] != null)
+                appearance.EyebrowScale = jobj.Value<double>("EyebrowScale");
+
+            if (jobj["EyebrowThickness"] != null)
+                appearance.EyebrowThickness = jobj.Value<double>("EyebrowThickness");
+
+            if (jobj["EyebrowRestingHeight"] != null)
+                appearance.EyebrowRestingHeight = jobj.Value<double>("EyebrowRestingHeight");
+
+            if (jobj["EyebrowRestingAngle"] != null)
+                appearance.EyebrowRestingAngle = jobj.Value<double>("EyebrowRestingAngle");
+
+            // Clear existing layers
+            appearance.FaceLayers.Clear();
+            appearance.BodyLayers.Clear();
+            appearance.AccessoryLayers.Clear();
+
+            // Import face layers
+            if (jobj["Mouth"] != null)
+            {
+                var mouthPath = jobj.Value<string>("Mouth");
+                if (!string.IsNullOrWhiteSpace(mouthPath))
+                {
+                    appearance.FaceLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = mouthPath,
+                        ColorHex = "#FFFFFFFF"
+                    });
+                }
+            }
+
+            if (jobj["FacialHair"] != null)
+            {
+                var facialHairPath = jobj.Value<string>("FacialHair");
+                if (!string.IsNullOrWhiteSpace(facialHairPath))
+                {
+                    appearance.FaceLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = facialHairPath,
+                        ColorHex = "#FFFFFFFF"
+                    });
+                }
+            }
+
+            if (jobj["FacialDetails"] != null)
+            {
+                var facialDetailsPath = jobj.Value<string>("FacialDetails");
+                if (!string.IsNullOrWhiteSpace(facialDetailsPath))
+                {
+                    var intensity = jobj["FacialDetailsIntensity"] != null 
+                        ? jobj.Value<double>("FacialDetailsIntensity") 
+                        : 0.5;
+                    appearance.FaceLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = facialDetailsPath,
+                        ColorHex = Utils.ColorUtils.UnityColorToHex(intensity, intensity, intensity, 1.0)
+                    });
+                }
+            }
+
+            // Import body layers
+            if (jobj["Top"] != null)
+            {
+                var topPath = jobj.Value<string>("Top");
+                if (!string.IsNullOrWhiteSpace(topPath))
+                {
+                    var topColor = jobj["TopColor"] as Newtonsoft.Json.Linq.JObject;
+                    var colorHex = topColor != null
+                        ? Utils.ColorUtils.UnityColorToHex(
+                            topColor.Value<double>("r"),
+                            topColor.Value<double>("g"),
+                            topColor.Value<double>("b"),
+                            topColor.Value<double>("a"))
+                        : "#FFFFFFFF";
+                    
+                    appearance.BodyLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = topPath,
+                        ColorHex = colorHex
+                    });
+                }
+            }
+
+            if (jobj["Bottom"] != null)
+            {
+                var bottomPath = jobj.Value<string>("Bottom");
+                if (!string.IsNullOrWhiteSpace(bottomPath))
+                {
+                    var bottomColor = jobj["BottomColor"] as Newtonsoft.Json.Linq.JObject;
+                    var colorHex = bottomColor != null
+                        ? Utils.ColorUtils.UnityColorToHex(
+                            bottomColor.Value<double>("r"),
+                            bottomColor.Value<double>("g"),
+                            bottomColor.Value<double>("b"),
+                            bottomColor.Value<double>("a"))
+                        : "#FFFFFFFF";
+                    
+                    appearance.BodyLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = bottomPath,
+                        ColorHex = colorHex
+                    });
+                }
+            }
+
+            // Import accessory layers
+            if (jobj["Shoes"] != null)
+            {
+                var shoesPath = jobj.Value<string>("Shoes");
+                if (!string.IsNullOrWhiteSpace(shoesPath))
+                {
+                    var shoesColor = jobj["ShoesColor"] as Newtonsoft.Json.Linq.JObject;
+                    var colorHex = shoesColor != null
+                        ? Utils.ColorUtils.UnityColorToHex(
+                            shoesColor.Value<double>("r"),
+                            shoesColor.Value<double>("g"),
+                            shoesColor.Value<double>("b"),
+                            shoesColor.Value<double>("a"))
+                        : "#FFFFFFFF";
+                    
+                    appearance.AccessoryLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = shoesPath,
+                        ColorHex = colorHex
+                    });
+                }
+            }
+
+            if (jobj["Headwear"] != null)
+            {
+                var headwearPath = jobj.Value<string>("Headwear");
+                if (!string.IsNullOrWhiteSpace(headwearPath))
+                {
+                    var headwearColor = jobj["HeadwearColor"] as Newtonsoft.Json.Linq.JObject;
+                    var colorHex = headwearColor != null
+                        ? Utils.ColorUtils.UnityColorToHex(
+                            headwearColor.Value<double>("r"),
+                            headwearColor.Value<double>("g"),
+                            headwearColor.Value<double>("b"),
+                            headwearColor.Value<double>("a"))
+                        : "#FFFFFFFF";
+                    
+                    appearance.AccessoryLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = headwearPath,
+                        ColorHex = colorHex
+                    });
+                }
+            }
+
+            if (jobj["Eyewear"] != null)
+            {
+                var eyewearPath = jobj.Value<string>("Eyewear");
+                if (!string.IsNullOrWhiteSpace(eyewearPath))
+                {
+                    var eyewearColor = jobj["EyewearColor"] as Newtonsoft.Json.Linq.JObject;
+                    var colorHex = eyewearColor != null
+                        ? Utils.ColorUtils.UnityColorToHex(
+                            eyewearColor.Value<double>("r"),
+                            eyewearColor.Value<double>("g"),
+                            eyewearColor.Value<double>("b"),
+                            eyewearColor.Value<double>("a"))
+                        : "#FFFFFFFF";
+                    
+                    appearance.AccessoryLayers.Add(new NpcAppearanceLayer
+                    {
+                        LayerPath = eyewearPath,
+                        ColorHex = colorHex
+                    });
+                }
+            }
+
+            // Import tattoos
+            if (jobj["Tattoos"] != null && jobj["Tattoos"] is Newtonsoft.Json.Linq.JArray tattoosArray)
+            {
+                foreach (var tattoo in tattoosArray)
+                {
+                    if (tattoo is Newtonsoft.Json.Linq.JObject tattooObj)
+                    {
+                        var path = tattooObj.Value<string>("Path") ?? tattooObj.Value<string>("path");
+                        var color = tattooObj["Color"] ?? tattooObj["color"] as Newtonsoft.Json.Linq.JObject;
+                        
+                        if (!string.IsNullOrWhiteSpace(path))
+                        {
+                            var colorHex = color != null
+                                ? Utils.ColorUtils.UnityColorToHex(
+                                    color.Value<double>("r"),
+                                    color.Value<double>("g"),
+                                    color.Value<double>("b"),
+                                    color.Value<double>("a"))
+                                : "#FFFFFFFF";
+                            
+                            appearance.AccessoryLayers.Add(new NpcAppearanceLayer
+                            {
+                                LayerPath = path,
+                                ColorHex = colorHex
+                            });
+                        }
+                    }
+                }
+            }
         }
 
         private async Task PreviewNpcAsync()

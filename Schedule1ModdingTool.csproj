@@ -37,6 +37,15 @@
     <Content Remove="ModCreatorConnector\**" />
     <EmbeddedResource Remove="ModCreatorConnector\**" />
   </ItemGroup>
+
+  <!-- Exclude bundled S1API source/docs from the WPF editor build -->
+  <ItemGroup>
+    <Compile Remove="S1API-3.0.0\**" />
+    <None Remove="S1API-3.0.0\**" />
+    <Content Remove="S1API-3.0.0\**" />
+    <EmbeddedResource Remove="S1API-3.0.0\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Remove="Resources\Contributors\IfBars.png" />
     <Resource Include="Resources\Contributors\IfBars.png" />

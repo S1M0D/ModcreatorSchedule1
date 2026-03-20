@@ -1,4 +1,5 @@
 using Schedule1ModdingTool.Models;
+using Schedule1ModdingTool.Services;
 using Schedule1ModdingTool.Services.CodeGeneration.Abstractions;
 using Schedule1ModdingTool.Services.CodeGeneration.Common;
 using Schedule1ModdingTool.Services.CodeGeneration.Quest;
@@ -25,6 +26,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             ICodeBuilder builder,
             QuestBlueprint quest,
             string className,
+            string targetNamespace,
             List<TriggerHandlerInfo> handlerInfos)
         {
             if (builder == null)
@@ -33,6 +35,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 throw new ArgumentNullException(nameof(quest));
 
             var questId = string.IsNullOrWhiteSpace(quest.QuestId) ? className : quest.QuestId.Trim();
+            var rootNamespace = GetRootNamespace(targetNamespace);
             var hasTriggers = (quest.QuestTriggers?.Any() == true) ||
                              (quest.QuestFinishTriggers?.Any() == true) ||
                              (quest.Objectives?.Any(o => o.StartTriggers?.Any() == true || o.FinishTriggers?.Any() == true) == true);
@@ -54,13 +57,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             }
 
             // Quest start triggers
-            GenerateQuestStartTriggers(builder, quest, className, questId, handlerInfos);
+            GenerateQuestStartTriggers(builder, quest, className, questId, handlerInfos, rootNamespace);
 
             // Quest finish triggers
-            GenerateQuestFinishTriggers(builder, quest, className, questId, handlerInfos);
+            GenerateQuestFinishTriggers(builder, quest, className, questId, handlerInfos, rootNamespace);
 
             // Objective triggers
-            GenerateObjectiveTriggers(builder, quest, className, handlerInfos);
+            GenerateObjectiveTriggers(builder, quest, className, handlerInfos, rootNamespace);
 
             // Quest completion reward subscription
             if (hasRewards)
@@ -80,7 +83,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             QuestBlueprint quest,
             string className,
             string questId,
-            List<TriggerHandlerInfo> handlerInfos)
+            List<TriggerHandlerInfo> handlerInfos,
+            string rootNamespace)
         {
             if (quest.QuestTriggers?.Any(t => t.TriggerTarget == QuestTriggerTarget.QuestStart) != true)
                 return;
@@ -91,7 +95,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 var handlerInfo = handlerInfos.FirstOrDefault(h =>
                     h.Trigger == trigger && h.TriggerCategory == TriggerCategory.QuestStart);
 
-                AppendTriggerSubscription(builder, trigger, handlerInfo?.FieldName, handlerInfo?.ActionMethod ?? "Begin()");
+                AppendTriggerSubscription(builder, trigger, handlerInfo?.FieldName, handlerInfo?.ActionMethod ?? "Begin()", rootNamespace);
             }
         }
 
@@ -103,7 +107,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             QuestBlueprint quest,
             string className,
             string questId,
-            List<TriggerHandlerInfo> handlerInfos)
+            List<TriggerHandlerInfo> handlerInfos,
+            string rootNamespace)
         {
             if (quest.QuestFinishTriggers?.Any() != true)
                 return;
@@ -123,7 +128,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 var handlerInfo = handlerInfos.FirstOrDefault(h =>
                     h.Trigger == trigger && h.TriggerCategory == TriggerCategory.QuestFinish);
 
-                AppendTriggerSubscription(builder, trigger, handlerInfo?.FieldName, finishMethod);
+                AppendTriggerSubscription(builder, trigger, handlerInfo?.FieldName, finishMethod, rootNamespace);
             }
         }
 
@@ -134,7 +139,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             ICodeBuilder builder,
             QuestBlueprint quest,
             string className,
-            List<TriggerHandlerInfo> handlerInfos)
+            List<TriggerHandlerInfo> handlerInfos,
+            string rootNamespace)
         {
             if (quest.Objectives?.Any() != true)
                 return;
@@ -157,7 +163,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                             h.ObjectiveIndex == i && h.TriggerCategory == TriggerCategory.ObjectiveStart &&
                             h.Trigger?.TargetAction == trigger.TargetAction);
 
-                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, "Begin()");
+                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, "Begin()", rootNamespace);
                     }
                 }
 
@@ -171,7 +177,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                             h.ObjectiveIndex == i && h.TriggerCategory == TriggerCategory.ObjectiveFinish &&
                             h.Trigger?.TargetAction == trigger.TargetAction);
 
-                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, "Complete()");
+                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, "Complete()", rootNamespace);
                     }
                 }
             }
@@ -184,7 +190,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             ICodeBuilder builder,
             QuestTrigger trigger,
             string? handlerFieldName,
-            string actionMethod)
+            string actionMethod,
+            string rootNamespace)
         {
             if (string.IsNullOrWhiteSpace(trigger.TargetAction))
                 return;
@@ -198,7 +205,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             }
             else if (trigger.TriggerType == QuestTriggerType.QuestEventTrigger && !string.IsNullOrWhiteSpace(trigger.TargetQuestId))
             {
-                GenerateQuestTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, null);
+                GenerateQuestTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, null, rootNamespace);
             }
             else
             {
@@ -220,7 +227,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             QuestObjectiveTrigger trigger,
             string objectiveVar,
             string? handlerFieldName,
-            string actionMethod)
+            string actionMethod,
+            string rootNamespace)
         {
             if (string.IsNullOrWhiteSpace(trigger.TargetAction))
                 return;
@@ -234,7 +242,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             }
             else if (trigger.TriggerType == QuestTriggerType.QuestEventTrigger && !string.IsNullOrWhiteSpace(trigger.TargetQuestId))
             {
-                GenerateQuestTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, objectiveVar);
+                GenerateQuestTriggerSubscription(builder, trigger, handlerFieldName, actionMethod, objectiveVar, rootNamespace);
             }
             else
             {
@@ -348,70 +356,56 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             QuestTrigger trigger,
             string? handlerFieldName,
             string actionMethod,
-            string? objectiveVar)
+            string? objectiveVar,
+            string rootNamespace)
         {
             var questId = CodeFormatter.EscapeString(trigger.TargetQuestId);
             var actionParts = trigger.TargetAction.Split('.');
-            string eventPath;
+            var componentType = actionParts.Length >= 2 ? actionParts[0] : "Quest";
+            var eventName = actionParts.Length >= 2
+                ? actionParts[1]
+                : (trigger.TargetAction.Contains(".") ? trigger.TargetAction.Split('.')[1] : trigger.TargetAction);
 
-            if (actionParts.Length >= 2)
+            if (!IsSupportedQuestTrigger(componentType, eventName))
             {
-                var componentType = actionParts[0]; // Quest or QuestEntry
-                var eventName = actionParts[1]; // OnComplete, OnFail, OnBegin, etc.
+                builder.AppendLine($"MelonLogger.Warning(\"[Quest] Trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}' is not supported by S1API 3.0.0 and was skipped.\");");
+                return;
+            }
 
-                if (componentType == "QuestEntry")
-                {
-                    // For QuestEntry events, we need to access the quest's entries
-                    builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
-                    builder.OpenBlock("if (quest == null)");
-                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
-                    builder.CloseBlock();
-                    builder.OpenBlock("else");
-                    
-                    if (trigger.TargetQuestEntryIndex.HasValue)
-                    {
-                        // Subscribe to specific entry
-                        builder.AppendLine($"// Subscribe to quest entry at index {trigger.TargetQuestEntryIndex.Value}");
-                        builder.OpenBlock($"if (quest.Entries.Count > {trigger.TargetQuestEntryIndex.Value})");
-                        builder.AppendLine($"var entry = quest.Entries[{trigger.TargetQuestEntryIndex.Value}];");
-                        eventPath = $"entry.{eventName}";
-                    }
-                    else
-                    {
-                        // Subscribe to all entries
-                        builder.AppendLine("// Subscribe to all quest entries");
-                        builder.OpenBlock("foreach (var entry in quest.Entries)");
-                        eventPath = $"entry.{eventName}";
-                    }
-                }
-                else
-                {
-                    // Quest events
-                    builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
-                    builder.OpenBlock("if (quest == null)");
-                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
-                    builder.CloseBlock();
-                    builder.OpenBlock("else");
-                    eventPath = $"quest.{eventName}";
-                }
+            var lambdaSignature = GetLambdaSignature(trigger.TargetAction);
+
+            if (TryResolveBaseGameQuest(trigger.TargetQuestId, out var baseGameQuest))
+            {
+                builder.AppendLine($"var quest = QuestManager.Get<{baseGameQuest.IdentifierName}>();");
             }
             else
             {
-                var actionName = trigger.TargetAction.Contains(".") ? trigger.TargetAction.Split('.')[1] : trigger.TargetAction;
-                builder.AppendLine($"var quest = S1Quests.Quest.Quests.FirstOrDefault(q => q.StaticGUID == \"{questId}\");");
-                builder.OpenBlock("if (quest == null)");
-                builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
-                builder.CloseBlock();
-                builder.OpenBlock("else");
-                eventPath = $"quest.{actionName}";
+                builder.AppendLine($"var quest = global::{rootNamespace}.Core.GetRegisteredQuest(\"{questId}\") ?? QuestManager.GetQuestByGuid(\"{questId}\") ?? QuestManager.GetQuestByName(\"{questId}\");");
             }
 
-            // Get lambda signature for parameterized events
-            var lambdaSignature = GetLambdaSignature(trigger.TargetAction);
+            builder.OpenBlock("if (quest == null)");
+            builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' not found when subscribing to trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
+            builder.CloseBlock();
+            builder.OpenBlock("else");
 
-            if (actionParts.Length >= 2 && actionParts[0] == "QuestEntry")
+            if (componentType == "QuestEntry")
             {
-                // QuestEntry subscription - either specific entry or foreach loop
+                string eventPath;
+
+                if (trigger.TargetQuestEntryIndex.HasValue)
+                {
+                    builder.AppendLine($"// Subscribe to quest entry at index {trigger.TargetQuestEntryIndex.Value}");
+                    builder.OpenBlock($"if (quest.QuestEntries.Count > {trigger.TargetQuestEntryIndex.Value})");
+                    builder.AppendLine($"var entry = quest.QuestEntries[{trigger.TargetQuestEntryIndex.Value}];");
+                    eventPath = $"entry.{eventName}";
+                }
+                else
+                {
+                    builder.AppendLine("// Subscribe to all quest entries");
+                    builder.OpenBlock("foreach (var entry in quest.QuestEntries)");
+                    eventPath = $"entry.{eventName}";
+                }
+
                 if (!string.IsNullOrWhiteSpace(handlerFieldName))
                 {
                     builder.AppendLine($"{handlerFieldName} ??= {lambdaSignature} =>");
@@ -447,20 +441,23 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                     }
                     builder.CloseBlock(semicolon: true);
                 }
-                
-                // Close the if block for specific entry, or foreach block for all entries
+
                 if (trigger.TargetQuestEntryIndex.HasValue)
                 {
-                    builder.CloseBlock(); // if (quest.Entries.Count > index)
+                    builder.CloseBlock();
+                    builder.OpenBlock("else");
+                    builder.AppendLine($"MelonLogger.Warning($\"[Quest] Quest '{questId}' does not have entry index {trigger.TargetQuestEntryIndex.Value} for trigger '{CodeFormatter.EscapeString(trigger.TargetAction)}'\");");
+                    builder.CloseBlock();
                 }
                 else
                 {
-                    builder.CloseBlock(); // foreach
+                    builder.CloseBlock();
                 }
             }
             else
             {
-                // Quest subscription
+                var eventPath = $"quest.{eventName}";
+
                 if (!string.IsNullOrWhiteSpace(handlerFieldName))
                 {
                     builder.AppendLine($"{handlerFieldName} ??= {lambdaSignature} =>");
@@ -499,6 +496,36 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             }
 
             builder.CloseBlock(); // else (quest found)
+        }
+
+        private static bool IsSupportedQuestTrigger(string componentType, string eventName)
+        {
+            if (componentType == "Quest")
+            {
+                return eventName == "OnComplete" || eventName == "OnFail";
+            }
+
+            if (componentType == "QuestEntry")
+            {
+                return eventName == "OnComplete";
+            }
+
+            return false;
+        }
+
+        private static string GetRootNamespace(string targetNamespace)
+        {
+            var normalizedNamespace = NamespaceNormalizer.Normalize(targetNamespace);
+            const string questSuffix = ".Quests";
+
+            return normalizedNamespace.EndsWith(questSuffix, StringComparison.Ordinal)
+                ? normalizedNamespace.Substring(0, normalizedNamespace.Length - questSuffix.Length)
+                : normalizedNamespace;
+        }
+
+        private static bool TryResolveBaseGameQuest(string? targetQuestId, out BaseGameQuestDefinition questDefinition)
+        {
+            return BaseGameQuestCatalogService.TryResolve(targetQuestId, out questDefinition);
         }
 
         /// <summary>

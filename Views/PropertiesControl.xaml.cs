@@ -288,37 +288,15 @@ namespace Schedule1ModdingTool.Views
 
         private void AddBaseGameQuests(List<QuestInfo> questList)
         {
-            // Base game quests from Schedule One
-            // Quest IDs are the quest's StaticGUID (set in Unity inspector)
-            // Display names are derived from class names (Quest_ClassName -> "Class Name")
-            // Note: StaticGUIDs need to be looked up in-game or from Unity inspector
-            // For now, using class-name-based identifiers that users can replace with actual StaticGUIDs
-            var baseQuests = new[]
+            foreach (var baseQuest in BaseGameQuestCatalogService.GetQuests())
             {
-                new QuestInfo { Id = "Quest_Botanists", DisplayName = "Botanists", IsModQuest = false },
-                new QuestInfo { Id = "Quest_WeNeedToCook", DisplayName = "We Need To Cook", IsModQuest = false },
-                new QuestInfo { Id = "Quest_WelcomeToHylandPoint", DisplayName = "Welcome To Hyland Point", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Warehouse", DisplayName = "Warehouse", IsModQuest = false },
-                new QuestInfo { Id = "Quest_UnfavourableAgreements", DisplayName = "Unfavourable Agreements", IsModQuest = false },
-                new QuestInfo { Id = "Quest_TheDeepEnd", DisplayName = "The Deep End", IsModQuest = false },
-                new QuestInfo { Id = "Quest_GearingUp", DisplayName = "Gearing Up", IsModQuest = false },
-                new QuestInfo { Id = "Quest_ExpandingOperations", DisplayName = "Expanding Operations", IsModQuest = false },
-                new QuestInfo { Id = "Quest_DownToBusiness", DisplayName = "Down To Business", IsModQuest = false },
-                new QuestInfo { Id = "Quest_DefeatCartel", DisplayName = "Defeat Cartel", IsModQuest = false },
-                new QuestInfo { Id = "Quest_DealForCartel", DisplayName = "Deal For Cartel", IsModQuest = false },
-                new QuestInfo { Id = "Quest_SinkOrSwim", DisplayName = "Sink Or Swim", IsModQuest = false },
-                new QuestInfo { Id = "Quest_OnTheGrind", DisplayName = "On The Grind", IsModQuest = false },
-                new QuestInfo { Id = "Quest_NeedingTheGreen", DisplayName = "Needing The Green", IsModQuest = false },
-                new QuestInfo { Id = "Quest_SecuringSupplies", DisplayName = "Securing Supplies", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Packagers", DisplayName = "Packagers", IsModQuest = false },
-                new QuestInfo { Id = "Quest_MovingUp", DisplayName = "Moving Up", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Connections", DisplayName = "Connections", IsModQuest = false },
-                new QuestInfo { Id = "Quest_GettingStarted", DisplayName = "Getting Started", IsModQuest = false },
-                new QuestInfo { Id = "Quest_CleanCash", DisplayName = "Clean Cash", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Cleaners", DisplayName = "Cleaners", IsModQuest = false },
-                new QuestInfo { Id = "Quest_Chemists", DisplayName = "Chemists", IsModQuest = false },
-            };
-            questList.AddRange(baseQuests);
+                questList.Add(new QuestInfo
+                {
+                    Id = baseQuest.IdentifierName,
+                    DisplayName = baseQuest.DisplayName,
+                    IsModQuest = false
+                });
+            }
         }
 
         private void AddObjective_Click(object sender, RoutedEventArgs e)
@@ -745,6 +723,12 @@ namespace Schedule1ModdingTool.Views
             if (match != null)
             {
                 trigger.TargetQuestId = match.Id;
+                return;
+            }
+
+            if (BaseGameQuestCatalogService.TryResolve(questId, out var baseGameQuest))
+            {
+                trigger.TargetQuestId = baseGameQuest.IdentifierName;
             }
         }
 

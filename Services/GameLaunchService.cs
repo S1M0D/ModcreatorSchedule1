@@ -32,7 +32,11 @@ namespace Schedule1ModdingTool.Services
                 return result;
             }
 
-            var gameExePath = Path.Combine(settings.GameInstallPath, "Schedule I.exe");
+            var resolvedGamePath = GameInstallPathResolver.TryResolve(settings.GameInstallPath, out var gameInstallPath)
+                ? gameInstallPath
+                : settings.GameInstallPath;
+
+            var gameExePath = Path.Combine(resolvedGamePath, "Schedule I.exe");
             if (!File.Exists(gameExePath))
             {
                 result.Success = false;
@@ -84,7 +88,7 @@ namespace Schedule1ModdingTool.Services
                 }
 
                 // Copy DLL to Mods folder
-                var modsPath = Path.Combine(settings.GameInstallPath, "Mods");
+                var modsPath = Path.Combine(resolvedGamePath, "Mods");
                 if (!Directory.Exists(modsPath))
                 {
                     Directory.CreateDirectory(modsPath);
@@ -114,7 +118,7 @@ namespace Schedule1ModdingTool.Services
                 var processStartInfo = new ProcessStartInfo
                 {
                     FileName = gameExePath,
-                    WorkingDirectory = settings.GameInstallPath,
+                    WorkingDirectory = resolvedGamePath,
                     UseShellExecute = true
                 };
 

@@ -117,13 +117,9 @@ namespace Schedule1ModdingTool.Services
             var csprojPath = Path.Combine(modPath, $"{modName}.csproj");
             var sb = new StringBuilder();
 
-            // Get default game path from settings or use default Steam path
-            var defaultGamePath = settings?.GameInstallPath ?? "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Schedule I_alternate";
-            if (!string.IsNullOrEmpty(defaultGamePath) && !defaultGamePath.EndsWith("_alternate") && !defaultGamePath.EndsWith("_alternate\\"))
-            {
-                // If path doesn't end with _alternate, append it
-                defaultGamePath = Path.Combine(defaultGamePath, "Schedule I_alternate");
-            }
+            // Resolve the configured path to the actual game install directory.
+            // Users may select the game folder itself, its parent folder, or the exe path.
+            var defaultGamePath = GameInstallPathResolver.ResolveOrDefault(settings?.GameInstallPath);
             // Escape backslashes for XML
             var escapedGamePath = defaultGamePath.Replace("\\", "\\\\");
 
@@ -447,7 +443,7 @@ namespace Schedule1ModdingTool.Services
                     sb.AppendLine($"                if (existingQuest != null)");
                     sb.AppendLine("                {");
                     sb.AppendLine("                    // Quest was already loaded from save data, skip creation");
-                    sb.AppendLine($"                    _registeredQuests[\"{EscapeString(quest.QuestId ?? className)}\"] = existingQuest as {className};");
+                    sb.AppendLine($"                    _registeredQuests[\"{questId}\"] = existingQuest as {className};");
                     sb.AppendLine("                }");
                     sb.AppendLine("                else");
                     sb.AppendLine("                {");
@@ -458,7 +454,7 @@ namespace Schedule1ModdingTool.Services
                     sb.AppendLine("                        // Quest initialization happens when Unity calls Start() on the base game quest component");
                     sb.AppendLine("                        // This triggers CreateInternal() via Harmony patch, which calls InitializeQuest() to set up HUD UI");
                     sb.AppendLine("                        // For AutoBegin quests, CreateInternal() will automatically call Begin()");
-                    sb.AppendLine($"                        _registeredQuests[\"{EscapeString(quest.QuestId ?? className)}\"] = {questKey};");
+                    sb.AppendLine($"                        _registeredQuests[\"{questId}\"] = {questKey};");
                     sb.AppendLine("                    }");
                     sb.AppendLine("                }");
                     sb.AppendLine("            }");
@@ -469,6 +465,14 @@ namespace Schedule1ModdingTool.Services
                     sb.AppendLine();
                 }
 
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        public static Quest? GetRegisteredQuest(string questId)");
+                sb.AppendLine("        {");
+                sb.AppendLine("            if (Instance == null || string.IsNullOrWhiteSpace(questId))");
+                sb.AppendLine("                return null;");
+                sb.AppendLine();
+                sb.AppendLine("            return Instance._registeredQuests.TryGetValue(questId, out var quest) ? quest : null;");
                 sb.AppendLine("        }");
                 sb.AppendLine();
                 sb.AppendLine("        private void SubscribeToNPCEvents()");

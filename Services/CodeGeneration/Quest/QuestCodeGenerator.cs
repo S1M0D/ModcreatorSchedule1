@@ -45,22 +45,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             // Using statements
             var usingsBuilder = new UsingStatementsBuilder();
             usingsBuilder.AddQuestUsings();
-            
-            // Add type alias for base game quests (needed for QuestEventTrigger)
-            builder.AppendLine("#if (IL2CPPMELON)");
-            builder.AppendLine("using S1Quests = Il2CppScheduleOne.Quests;");
-            builder.AppendLine("#elif (MONOMELON || MONOBEPINEX || IL2CPPBEPINEX)");
-            builder.AppendLine("using S1Quests = ScheduleOne.Quests;");
-            builder.AppendLine("#endif");
-            builder.AppendLine();
-            
             usingsBuilder.GenerateUsings(builder);
 
             // Namespace
             builder.OpenBlock($"namespace {targetNamespace}");
 
             // Quest class
-            GenerateQuestClass(builder, quest, className);
+            GenerateQuestClass(builder, quest, className, targetNamespace);
 
             builder.CloseBlock(); // namespace
 
@@ -70,7 +61,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
         /// <summary>
         /// Generates the quest class definition with all members.
         /// </summary>
-        private void GenerateQuestClass(ICodeBuilder builder, QuestBlueprint quest, string className)
+        private void GenerateQuestClass(ICodeBuilder builder, QuestBlueprint quest, string className, string targetNamespace)
         {
             var questId = string.IsNullOrWhiteSpace(quest.QuestId) ? className : quest.QuestId.Trim();
 
@@ -138,7 +129,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             }
 
             // SubscribeToTriggers method
-            _triggerSubscriptionGenerator.Generate(builder, quest, className, handlerInfos);
+            _triggerSubscriptionGenerator.Generate(builder, quest, className, targetNamespace, handlerInfos);
 
             builder.CloseBlock(); // class
         }

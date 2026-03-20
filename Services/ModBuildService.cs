@@ -41,10 +41,17 @@ namespace Schedule1ModdingTool.Services
 
             try
             {
+                var resolvedGamePath = settings != null && GameInstallPathResolver.TryResolve(settings.GameInstallPath, out var gameInstallPath)
+                    ? gameInstallPath
+                    : null;
+                var gamePathArgument = !string.IsNullOrWhiteSpace(resolvedGamePath)
+                    ? $" /p:GamePath=\"{resolvedGamePath}\""
+                    : string.Empty;
+
                 var processStartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = $"build \"{csprojFile}\" -c CrossCompat --verbosity normal",
+                    Arguments = $"build \"{csprojFile}\" -c CrossCompat --verbosity normal{gamePathArgument}",
                     WorkingDirectory = projectPath,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -149,7 +156,8 @@ namespace Schedule1ModdingTool.Services
                         // Optionally copy to game Mods folder if path is configured
                         if (result.Success && !string.IsNullOrEmpty(result.OutputDllPath) && settings != null && !string.IsNullOrEmpty(settings.GameInstallPath))
                         {
-                            TryCopyToModsFolder(result.OutputDllPath, settings.GameInstallPath, result);
+                            var deployGamePath = resolvedGamePath ?? settings.GameInstallPath;
+                            TryCopyToModsFolder(result.OutputDllPath, deployGamePath, result);
                         }
                     }
                     else

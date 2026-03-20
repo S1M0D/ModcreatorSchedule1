@@ -293,52 +293,12 @@ namespace Schedule1ModdingTool.Services
                 RequiresQuestId = true
             });
 
-            catalog.Add(new TriggerMetadata
-            {
-                TriggerType = QuestTriggerType.QuestEventTrigger,
-                TargetAction = "Quest.OnCancel",
-                Description = "Triggered when a quest is cancelled",
-                SourceClass = "S1API.Quests.Quest",
-                Parameters = Array.Empty<string>(),
-                RequiresQuestId = true
-            });
-
-            catalog.Add(new TriggerMetadata
-            {
-                TriggerType = QuestTriggerType.QuestEventTrigger,
-                TargetAction = "Quest.OnExpire",
-                Description = "Triggered when a quest expires",
-                SourceClass = "S1API.Quests.Quest",
-                Parameters = Array.Empty<string>(),
-                RequiresQuestId = true
-            });
-
-            catalog.Add(new TriggerMetadata
-            {
-                TriggerType = QuestTriggerType.QuestEventTrigger,
-                TargetAction = "Quest.OnBegin",
-                Description = "Triggered when a quest begins",
-                SourceClass = "S1API.Quests.Quest",
-                Parameters = Array.Empty<string>(),
-                RequiresQuestId = true
-            });
-
             // QuestEntry triggers (instance-based, require Quest ID)
             catalog.Add(new TriggerMetadata
             {
                 TriggerType = QuestTriggerType.QuestEventTrigger,
                 TargetAction = "QuestEntry.OnComplete",
                 Description = "Triggered when a quest entry/objective completes",
-                SourceClass = "S1API.Quests.QuestEntry",
-                Parameters = Array.Empty<string>(),
-                RequiresQuestId = true
-            });
-
-            catalog.Add(new TriggerMetadata
-            {
-                TriggerType = QuestTriggerType.QuestEventTrigger,
-                TargetAction = "QuestEntry.OnBegin",
-                Description = "Triggered when a quest entry/objective begins",
                 SourceClass = "S1API.Quests.QuestEntry",
                 Parameters = Array.Empty<string>(),
                 RequiresQuestId = true

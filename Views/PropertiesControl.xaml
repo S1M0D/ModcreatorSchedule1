@@ -174,8 +174,11 @@
 
                                                             <StackPanel Visibility="{Binding RewardType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=Item}">
                                                                 <Label Content="Item ID" Style="{StaticResource LabelStyle}" Margin="0,8,0,0"/>
-                                                                <TextBox Text="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}"
-                                                                         Style="{StaticResource TextBoxStyle}"/>
+                                                                <ComboBox ItemsSource="{Binding DataContext.AvailableItemReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                          DisplayMemberPath="DisplayLabel"
+                                                                          Text="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}"
+                                                                          Style="{StaticResource ComboBoxStyle}"
+                                                                          IsEditable="True"/>
 
                                                                 <Label Content="Quantity" Style="{StaticResource LabelStyle}" Margin="0,8,0,0"/>
                                                                 <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"

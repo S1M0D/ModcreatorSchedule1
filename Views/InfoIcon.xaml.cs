@@ -124,6 +124,17 @@ namespace Schedule1ModdingTool.Views
                         MessageBoxButton.OK, 
                         MessageBoxImage.Error);
                 }
+
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(TooltipText))
+            {
+                MessageBox.Show(
+                    TooltipText,
+                    "Help",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
         }
     }

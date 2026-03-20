@@ -91,12 +91,14 @@ namespace Schedule1ModdingTool.Services
                 foreach (var npc in project.Npcs)
                 {
                     GenerateNpcFile(modPath, npc, result);
+                    GenerateNpcHookFile(modPath, npc, result);
                 }
 
                 // Generate Item files
                 foreach (var item in project.Items)
                 {
                     GenerateItemFile(modPath, item, result);
+                    GenerateItemHookFile(modPath, item, result);
                 }
 
                 // Clean up old generated files that no longer match current NPCs/Quests
@@ -593,6 +595,82 @@ namespace Schedule1ModdingTool.Services
             result.GeneratedFiles.Add(npcPath);
         }
 
+        private void GenerateNpcHookFile(string modPath, NpcBlueprint npc, ModProjectGenerationResult result)
+        {
+            if (!npc.GenerateHookScaffold)
+            {
+                return;
+            }
+
+            var className = MakeSafeIdentifier(npc.ClassName, "GeneratedNpc");
+            var targetNamespace = CodeGeneration.Common.NamespaceNormalizer.NormalizeForNpc(npc.Namespace);
+            var hookPath = Path.Combine(modPath, "NPCs", $"{className}.Hooks.cs");
+            var sb = new StringBuilder();
+
+            sb.AppendLine("using S1API.Entities;");
+            sb.AppendLine("using S1API.Messaging;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace {targetNamespace}");
+            sb.AppendLine("{");
+            sb.AppendLine($"    public sealed partial class {className}");
+            sb.AppendLine("    {");
+            sb.AppendLine("        partial void ConfigureGeneratedPrefab(NPCPrefabBuilder builder)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnAfterCreatedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnAfterLoadedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnResponseLoadedGenerated(Response response)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnCustomerUnlockedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnCustomerDealCompletedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnCustomerContractAssignedGenerated(float payment, int quantity, int startTime, int endTime)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnDealerRecruitedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnDealerContractAcceptedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnDealerRecommendedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnRelationshipChangedGenerated(float relationshipDelta)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnRelationshipUnlockedGenerated(NPCRelationship.UnlockType unlockType, bool alreadyUnlocked)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+
+            if (!File.Exists(hookPath))
+            {
+                File.WriteAllText(hookPath, sb.ToString());
+                result.GeneratedFiles.Add(hookPath);
+            }
+        }
+
         private void GenerateItemFile(string modPath, ItemBlueprint item, ModProjectGenerationResult result)
         {
             var itemCode = _codeGenService.GenerateItemCode(item);
@@ -601,6 +679,49 @@ namespace Schedule1ModdingTool.Services
 
             File.WriteAllText(itemPath, itemCode);
             result.GeneratedFiles.Add(itemPath);
+        }
+
+        private void GenerateItemHookFile(string modPath, ItemBlueprint item, ModProjectGenerationResult result)
+        {
+            if (!item.GenerateHookScaffold)
+            {
+                return;
+            }
+
+            var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+            var targetNamespace = CodeGeneration.Common.NamespaceNormalizer.NormalizeForItem(item.Namespace);
+            var hookPath = Path.Combine(modPath, "Items", $"{className}.Hooks.cs");
+            var sb = new StringBuilder();
+
+            sb.AppendLine("using S1API.Items;");
+            sb.AppendLine();
+            sb.AppendLine($"namespace {targetNamespace}");
+            sb.AppendLine("{");
+            sb.AppendLine($"    public static partial class {className}");
+            sb.AppendLine("    {");
+            sb.AppendLine("        static partial void ConfigureDefinition(StorableItemDefinition definition)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        static partial void ConfigureEquippableBuilder(EquippableBuilder equippableBuilder)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        static partial void OnAfterRegister(StorableItemDefinition definition)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        static partial void OnUse(ItemInstance itemInstance)");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+
+            if (!File.Exists(hookPath))
+            {
+                File.WriteAllText(hookPath, sb.ToString());
+                result.GeneratedFiles.Add(hookPath);
+            }
         }
 
         /// <summary>
@@ -620,6 +741,10 @@ namespace Schedule1ModdingTool.Services
                 {
                     var className = MakeSafeIdentifier(npc.ClassName, "GeneratedNpc");
                     expectedNpcFiles.Add($"{className}.cs");
+                    if (npc.GenerateHookScaffold)
+                    {
+                        expectedNpcFiles.Add($"{className}.Hooks.cs");
+                    }
                 }
 
                 foreach (var quest in project.Quests)
@@ -632,6 +757,10 @@ namespace Schedule1ModdingTool.Services
                 {
                     var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
                     expectedItemFiles.Add($"{className}.cs");
+                    if (item.GenerateHookScaffold)
+                    {
+                        expectedItemFiles.Add($"{className}.Hooks.cs");
+                    }
                 }
 
                 // Clean up NPC files

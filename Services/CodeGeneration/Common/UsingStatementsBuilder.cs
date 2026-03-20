@@ -70,10 +70,16 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         {
             return Add(
                 "System",
+                "System.Linq",
                 "S1API.Entities",
+                "S1API.Entities.Dialogue",
+                "S1API.Entities.Equippables",
                 "S1API.Entities.Schedule",
+                "S1API.Dialogues",
                 "S1API.GameTime",
                 "S1API.Economy",
+                "S1API.Casino",
+                "S1API.Messaging",
                 "S1API.Products",
                 "S1API.Properties",
                 "S1API.Map",
@@ -94,8 +100,10 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
                 "System.Linq",
                 "System.Reflection",
                 "MelonLoader",
+                "S1API.Growing",
                 "S1API.Items",
                 "S1API.Shops",
+                "S1API.Stations",
                 "S1API.Utils",
                 "UnityEngine"
             );

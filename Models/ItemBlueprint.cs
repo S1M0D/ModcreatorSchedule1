@@ -56,6 +56,12 @@ namespace Schedule1ModdingTool.Models
         private float _qualityChange;
         private float _yieldMultiplier = 1f;
         private float _instantGrowth;
+        private bool _allowOnGrowContainers;
+        private bool _enableUseCallbackHook;
+        private bool _generateHookScaffold;
+        private bool _registerAvatarEquippableFromEmbeddedBundle;
+        private string _avatarBundleResourcePath = string.Empty;
+        private string _avatarBundlePrefabName = string.Empty;
         private string _folderId = QuestProject.RootFolderId;
         private string _modName = "Schedule 1 Item Pack";
         private string _modAuthor = "Item Creator";
@@ -76,6 +82,8 @@ namespace Schedule1ModdingTool.Models
                 OnPropertyChanged(nameof(BlockedClothingSlots));
                 OnPropertyChanged(nameof(HasBlockedClothingSlots));
             };
+
+            ChemistryRecipes.CollectionChanged += ChemistryRecipesOnCollectionChanged;
         }
 
         [JsonProperty("className")]
@@ -169,7 +177,14 @@ namespace Schedule1ModdingTool.Models
         public float BasePurchasePrice
         {
             get => _basePurchasePrice;
-            set => SetProperty(ref _basePurchasePrice, value < 0f ? 0f : value);
+            set
+            {
+                if (SetProperty(ref _basePurchasePrice, value < 0f ? 0f : value))
+                {
+                    OnPropertyChanged(nameof(EffectiveShopPrice));
+                    OnPropertyChanged(nameof(EffectiveShopPriceDisplay));
+                }
+            }
         }
 
         [JsonProperty("resellMultiplier")]
@@ -210,14 +225,28 @@ namespace Schedule1ModdingTool.Models
         public bool UseCustomShopPrice
         {
             get => _useCustomShopPrice;
-            set => SetProperty(ref _useCustomShopPrice, value);
+            set
+            {
+                if (SetProperty(ref _useCustomShopPrice, value))
+                {
+                    OnPropertyChanged(nameof(EffectiveShopPrice));
+                    OnPropertyChanged(nameof(EffectiveShopPriceDisplay));
+                }
+            }
         }
 
         [JsonProperty("customShopPrice")]
         public float CustomShopPrice
         {
             get => _customShopPrice;
-            set => SetProperty(ref _customShopPrice, value < 0f ? 0f : value);
+            set
+            {
+                if (SetProperty(ref _customShopPrice, value < 0f ? 0f : value))
+                {
+                    OnPropertyChanged(nameof(EffectiveShopPrice));
+                    OnPropertyChanged(nameof(EffectiveShopPriceDisplay));
+                }
+            }
         }
 
         [JsonProperty("shopNames")]
@@ -240,6 +269,8 @@ namespace Schedule1ModdingTool.Models
                 {
                     OnPropertyChanged(nameof(UsesEquippable));
                     OnPropertyChanged(nameof(UsesViewmodelEquippable));
+                    OnPropertyChanged(nameof(SupportsUseCallbackHook));
+                    OnPropertyChanged(nameof(UsesAvatarBundleRegistration));
                 }
             }
         }
@@ -339,7 +370,13 @@ namespace Schedule1ModdingTool.Models
         public bool HasAvatarEquippable
         {
             get => _hasAvatarEquippable;
-            set => SetProperty(ref _hasAvatarEquippable, value);
+            set
+            {
+                if (SetProperty(ref _hasAvatarEquippable, value))
+                {
+                    OnPropertyChanged(nameof(UsesAvatarBundleRegistration));
+                }
+            }
         }
 
         [JsonProperty("avatarEquippableAssetPath")]
@@ -457,6 +494,63 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _instantGrowth, Math.Clamp(value, 0f, 1f));
         }
 
+        [JsonProperty("allowOnGrowContainers")]
+        public bool AllowOnGrowContainers
+        {
+            get => _allowOnGrowContainers;
+            set => SetProperty(ref _allowOnGrowContainers, value);
+        }
+
+        [JsonProperty("enableUseCallbackHook")]
+        public bool EnableUseCallbackHook
+        {
+            get => _enableUseCallbackHook;
+            set
+            {
+                if (SetProperty(ref _enableUseCallbackHook, value) && value)
+                {
+                    GenerateHookScaffold = true;
+                }
+            }
+        }
+
+        [JsonProperty("generateHookScaffold")]
+        public bool GenerateHookScaffold
+        {
+            get => _generateHookScaffold;
+            set => SetProperty(ref _generateHookScaffold, value);
+        }
+
+        [JsonProperty("registerAvatarEquippableFromEmbeddedBundle")]
+        public bool RegisterAvatarEquippableFromEmbeddedBundle
+        {
+            get => _registerAvatarEquippableFromEmbeddedBundle;
+            set
+            {
+                if (SetProperty(ref _registerAvatarEquippableFromEmbeddedBundle, value))
+                {
+                    OnPropertyChanged(nameof(UsesAvatarBundleRegistration));
+                }
+            }
+        }
+
+        [JsonProperty("avatarBundleResourcePath")]
+        public string AvatarBundleResourcePath
+        {
+            get => _avatarBundleResourcePath;
+            set => SetProperty(ref _avatarBundleResourcePath, value ?? string.Empty);
+        }
+
+        [JsonProperty("avatarBundlePrefabName")]
+        public string AvatarBundlePrefabName
+        {
+            get => _avatarBundlePrefabName;
+            set => SetProperty(ref _avatarBundlePrefabName, value ?? string.Empty);
+        }
+
+        [JsonProperty("chemistryRecipes")]
+        public ObservableCollection<ChemistryRecipeBlueprint> ChemistryRecipes { get; } = new ObservableCollection<ChemistryRecipeBlueprint>();
+
         [JsonProperty("folderId")]
         public string FolderId
         {
@@ -548,6 +642,26 @@ namespace Schedule1ModdingTool.Models
         public bool SupportsDisplayMaterial => ItemType == ItemKindOption.Additive;
 
         [JsonIgnore]
+        public bool SupportsGrowContainerIntegration => ItemType == ItemKindOption.Additive;
+
+        [JsonIgnore]
+        public bool SupportsChemistryRecipes => true;
+
+        [JsonIgnore]
+        public bool SupportsUseCallbackHook => UsesViewmodelEquippable;
+
+        [JsonIgnore]
+        public bool UsesAvatarBundleRegistration => UsesViewmodelEquippable
+            && HasAvatarEquippable
+            && RegisterAvatarEquippableFromEmbeddedBundle;
+
+        [JsonIgnore]
+        public float EffectiveShopPrice => UseCustomShopPrice ? CustomShopPrice : BasePurchasePrice;
+
+        [JsonIgnore]
+        public string EffectiveShopPriceDisplay => $"{EffectiveShopPrice:0.##}";
+
+        [JsonIgnore]
         public bool UsesCompatibleShops => ShopIntegrationMode == ShopIntegrationModeOption.Compatible;
 
         [JsonIgnore]
@@ -626,6 +740,19 @@ namespace Schedule1ModdingTool.Models
             QualityChange = source.QualityChange;
             YieldMultiplier = source.YieldMultiplier;
             InstantGrowth = source.InstantGrowth;
+            AllowOnGrowContainers = source.AllowOnGrowContainers;
+            EnableUseCallbackHook = source.EnableUseCallbackHook;
+            GenerateHookScaffold = source.GenerateHookScaffold;
+            RegisterAvatarEquippableFromEmbeddedBundle = source.RegisterAvatarEquippableFromEmbeddedBundle;
+            AvatarBundleResourcePath = source.AvatarBundleResourcePath;
+            AvatarBundlePrefabName = source.AvatarBundlePrefabName;
+
+            ChemistryRecipes.Clear();
+            foreach (var recipe in source.ChemistryRecipes)
+            {
+                ChemistryRecipes.Add(recipe.DeepCopy());
+            }
+
             FolderId = source.FolderId;
             ModName = source.ModName;
             ModAuthor = source.ModAuthor;
@@ -657,12 +784,42 @@ namespace Schedule1ModdingTool.Models
             OnPropertyChanged(nameof(SupportsClothingOptions));
             OnPropertyChanged(nameof(SupportsAdditiveOptions));
             OnPropertyChanged(nameof(SupportsDisplayMaterial));
+            OnPropertyChanged(nameof(SupportsGrowContainerIntegration));
+            OnPropertyChanged(nameof(SupportsChemistryRecipes));
+            OnPropertyChanged(nameof(SupportsUseCallbackHook));
+            OnPropertyChanged(nameof(UsesAvatarBundleRegistration));
         }
 
         private void RaiseShopModeProperties()
         {
             OnPropertyChanged(nameof(UsesCompatibleShops));
             OnPropertyChanged(nameof(UsesSpecificShops));
+        }
+
+        private void ChemistryRecipesOnCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var recipe in e.NewItems.OfType<ChemistryRecipeBlueprint>())
+                {
+                    recipe.PropertyChanged += ChemistryRecipeOnPropertyChanged;
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var recipe in e.OldItems.OfType<ChemistryRecipeBlueprint>())
+                {
+                    recipe.PropertyChanged -= ChemistryRecipeOnPropertyChanged;
+                }
+            }
+
+            OnPropertyChanged(nameof(ChemistryRecipes));
+        }
+
+        private void ChemistryRecipeOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(ChemistryRecipes));
         }
     }
 

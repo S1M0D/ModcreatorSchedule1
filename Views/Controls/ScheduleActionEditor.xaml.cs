@@ -136,10 +136,12 @@ namespace Schedule1ModdingTool.Views.Controls
             WalkToFields.Visibility = Visibility.Collapsed;
             StayInBuildingFields.Visibility = Visibility.Collapsed;
             LocationDialogueFields.Visibility = Visibility.Collapsed;
+            LocationBasedFields.Visibility = Visibility.Collapsed;
             DriveToCarParkFields.Visibility = Visibility.Collapsed;
             SitAtSeatSetFields.Visibility = Visibility.Collapsed;
             UseVendingMachineFields.Visibility = Visibility.Collapsed;
             UseATMFields.Visibility = Visibility.Collapsed;
+            SlotMachineFields.Visibility = Visibility.Collapsed;
             NoExtraFields.Visibility = Visibility.Collapsed;
 
             // Show relevant panel based on action type
@@ -157,6 +159,10 @@ namespace Schedule1ModdingTool.Views.Controls
                     LocationDialogueFields.Visibility = Visibility.Visible;
                     break;
 
+                case ScheduleActionType.LocationBased:
+                    LocationBasedFields.Visibility = Visibility.Visible;
+                    break;
+
                 case ScheduleActionType.DriveToCarPark:
                     DriveToCarParkFields.Visibility = Visibility.Visible;
                     break;
@@ -171,6 +177,10 @@ namespace Schedule1ModdingTool.Views.Controls
 
                 case ScheduleActionType.UseATM:
                     UseATMFields.Visibility = Visibility.Visible;
+                    break;
+
+                case ScheduleActionType.UseSlotMachine:
+                    SlotMachineFields.Visibility = Visibility.Visible;
                     break;
 
                 case ScheduleActionType.HandleDeal:

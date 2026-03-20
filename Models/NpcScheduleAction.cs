@@ -50,6 +50,23 @@ namespace Schedule1ModdingTool.Models
         
         // SitAtSeatSet parameters
         private string _seatSetName = string.Empty;
+        private string _seatSetPath = string.Empty;
+
+        // LocationBased parameters
+        private LocationArriveBehaviourOption _locationArriveBehaviour = LocationArriveBehaviourOption.None;
+        private string _itemEquippablePath = string.Empty;
+        private string _drinkEquippablePath = string.Empty;
+        private string _graffitiRegion = "Downtown";
+        private string _graffitiSurfaceGuid = string.Empty;
+
+        // Slot machine parameters
+        private NpcGamblingSessionMode _slotMachineSessionMode = NpcGamblingSessionMode.SingleSpin;
+        private int _slotMachineEndTime = 1700;
+        private int _slotMachineBetAmount = 10;
+        private int _slotMachineSpinCount = 5;
+        private float _slotMachineTimeBetweenSpins = 10f;
+        private float _slotMachineMaxSearchDistance = 5f;
+        private bool _slotMachineStopIfBroke = true;
         
         // Custom name for actions
         private string _actionName = string.Empty;
@@ -305,6 +322,97 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _seatSetName, value ?? string.Empty);
         }
 
+        [JsonProperty("seatSetPath")]
+        public string SeatSetPath
+        {
+            get => _seatSetPath;
+            set => SetProperty(ref _seatSetPath, value ?? string.Empty);
+        }
+
+        [JsonProperty("locationArriveBehaviour")]
+        public LocationArriveBehaviourOption LocationArriveBehaviour
+        {
+            get => _locationArriveBehaviour;
+            set => SetProperty(ref _locationArriveBehaviour, value);
+        }
+
+        [JsonProperty("itemEquippablePath")]
+        public string ItemEquippablePath
+        {
+            get => _itemEquippablePath;
+            set => SetProperty(ref _itemEquippablePath, value ?? string.Empty);
+        }
+
+        [JsonProperty("drinkEquippablePath")]
+        public string DrinkEquippablePath
+        {
+            get => _drinkEquippablePath;
+            set => SetProperty(ref _drinkEquippablePath, value ?? string.Empty);
+        }
+
+        [JsonProperty("graffitiRegion")]
+        public string GraffitiRegion
+        {
+            get => _graffitiRegion;
+            set => SetProperty(ref _graffitiRegion, string.IsNullOrWhiteSpace(value) ? "Downtown" : value);
+        }
+
+        [JsonProperty("graffitiSurfaceGuid")]
+        public string GraffitiSurfaceGuid
+        {
+            get => _graffitiSurfaceGuid;
+            set => SetProperty(ref _graffitiSurfaceGuid, value ?? string.Empty);
+        }
+
+        [JsonProperty("slotMachineSessionMode")]
+        public NpcGamblingSessionMode SlotMachineSessionMode
+        {
+            get => _slotMachineSessionMode;
+            set => SetProperty(ref _slotMachineSessionMode, value);
+        }
+
+        [JsonProperty("slotMachineEndTime")]
+        public int SlotMachineEndTime
+        {
+            get => _slotMachineEndTime;
+            set => SetProperty(ref _slotMachineEndTime, value);
+        }
+
+        [JsonProperty("slotMachineBetAmount")]
+        public int SlotMachineBetAmount
+        {
+            get => _slotMachineBetAmount;
+            set => SetProperty(ref _slotMachineBetAmount, value < 1 ? 1 : value);
+        }
+
+        [JsonProperty("slotMachineSpinCount")]
+        public int SlotMachineSpinCount
+        {
+            get => _slotMachineSpinCount;
+            set => SetProperty(ref _slotMachineSpinCount, value < 1 ? 1 : value);
+        }
+
+        [JsonProperty("slotMachineTimeBetweenSpins")]
+        public float SlotMachineTimeBetweenSpins
+        {
+            get => _slotMachineTimeBetweenSpins;
+            set => SetProperty(ref _slotMachineTimeBetweenSpins, value <= 0f ? 1f : value);
+        }
+
+        [JsonProperty("slotMachineMaxSearchDistance")]
+        public float SlotMachineMaxSearchDistance
+        {
+            get => _slotMachineMaxSearchDistance;
+            set => SetProperty(ref _slotMachineMaxSearchDistance, value <= 0f ? 0.5f : value);
+        }
+
+        [JsonProperty("slotMachineStopIfBroke")]
+        public bool SlotMachineStopIfBroke
+        {
+            get => _slotMachineStopIfBroke;
+            set => SetProperty(ref _slotMachineStopIfBroke, value);
+        }
+
         [JsonProperty("actionName")]
         public string ActionName
         {
@@ -313,7 +421,9 @@ namespace Schedule1ModdingTool.Models
         }
 
         [JsonIgnore]
-        public string DisplayName => $"{StartTime:D4} - {ActionType}";
+        public string DisplayName => string.IsNullOrWhiteSpace(ActionName)
+            ? $"{StartTime:D4} - {ActionType}"
+            : $"{StartTime:D4} - {ActionName}";
 
         public NpcScheduleAction DeepCopy()
         {
@@ -349,9 +459,40 @@ namespace Schedule1ModdingTool.Models
                 ATMGUID = ATMGUID,
                 OverrideParkingType = OverrideParkingType,
                 SeatSetName = SeatSetName,
+                SeatSetPath = SeatSetPath,
+                LocationArriveBehaviour = LocationArriveBehaviour,
+                ItemEquippablePath = ItemEquippablePath,
+                DrinkEquippablePath = DrinkEquippablePath,
+                GraffitiRegion = GraffitiRegion,
+                GraffitiSurfaceGuid = GraffitiSurfaceGuid,
+                SlotMachineSessionMode = SlotMachineSessionMode,
+                SlotMachineEndTime = SlotMachineEndTime,
+                SlotMachineBetAmount = SlotMachineBetAmount,
+                SlotMachineSpinCount = SlotMachineSpinCount,
+                SlotMachineTimeBetweenSpins = SlotMachineTimeBetweenSpins,
+                SlotMachineMaxSearchDistance = SlotMachineMaxSearchDistance,
+                SlotMachineStopIfBroke = SlotMachineStopIfBroke,
                 ActionName = ActionName
             };
         }
+    }
+
+    public enum LocationArriveBehaviourOption
+    {
+        None,
+        SmokeBreak,
+        Graffiti,
+        Drinking,
+        HoldItem
+    }
+
+    public enum NpcGamblingSessionMode
+    {
+        SingleSpin,
+        SpinCount,
+        UntilTime,
+        UntilBroke,
+        UntilTimeOrBroke
     }
 
     /// <summary>
@@ -367,6 +508,9 @@ namespace Schedule1ModdingTool.Models
 
         [Description("Location Dialogue")]
         LocationDialogue,
+
+        [Description("Location Based Action")]
+        LocationBased,
 
         [Description("Use Vending Machine")]
         UseVendingMachine,
@@ -384,6 +528,9 @@ namespace Schedule1ModdingTool.Models
         EnsureDealSignal,
 
         [Description("Sit at Seat Set")]
-        SitAtSeatSet
+        SitAtSeatSet,
+
+        [Description("Use Slot Machine")]
+        UseSlotMachine
     }
 }

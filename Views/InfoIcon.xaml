@@ -14,8 +14,13 @@
             Background="Transparent"
             BorderThickness="0"
             Cursor="Hand"
-            ToolTip="{Binding TooltipText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+            ToolTipService.ShowDuration="60000"
             Click="InfoButton_Click">
+        <Button.ToolTip>
+            <TextBlock Text="{Binding TooltipText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       TextWrapping="Wrap"
+                       MaxWidth="360"/>
+        </Button.ToolTip>
         <TextBlock Text="?"
                    FontSize="12"
                    FontWeight="SemiBold"

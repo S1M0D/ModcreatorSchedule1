@@ -9,7 +9,7 @@ namespace Schedule1ModdingTool.Services
     /// </summary>
     public static class ItemEditorCatalogService
     {
-        public static IReadOnlyList<string> SuggestedShopNames { get; } = BuildSuggestedShopNames();
+        public static IReadOnlyList<string> SuggestedShopNames { get; } = SafeBuildSuggestedShopNames();
 
         public static IReadOnlyList<string> AvatarEquippablePaths { get; } = new[]
         {
@@ -29,6 +29,18 @@ namespace Schedule1ModdingTool.Services
             "avatar/equippables/Taser",
             "avatar/equippables/TrashBag"
         };
+
+        private static IReadOnlyList<string> SafeBuildSuggestedShopNames()
+        {
+            try
+            {
+                return BuildSuggestedShopNames();
+            }
+            catch
+            {
+                return new[] { "General Store", "Hardware Store", "Pillville", "Supermarket", "Slop Shop", "West Gas Mart" };
+            }
+        }
 
         private static IReadOnlyList<string> BuildSuggestedShopNames()
         {

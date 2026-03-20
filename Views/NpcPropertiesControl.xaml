@@ -1,4 +1,5 @@
 <UserControl x:Class="Schedule1ModdingTool.Views.NpcPropertiesControl"
+             x:Name="RootControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -916,7 +917,494 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Tab 6: Inventory -->
+            <!-- Tab 6: Runtime & Dialogue -->
+            <TabItem Header="Runtime &amp; Dialogue">
+                <TabItem.HeaderTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ChatProcessing"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,8,0"
+                                                   Foreground="{Binding RelativeSource={RelativeSource AncestorType=TabItem}, Path=Foreground}"/>
+                            <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </TabItem.HeaderTemplate>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <Grid Margin="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
+                                <StackPanel Margin="12">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Runtime Settings" Style="{StaticResource PanelHeaderStyle}"/>
+                                        <views:InfoIcon TooltipText="These toggles override runtime values on the generated NPC. Leave a toggle off to keep S1API or prefab defaults."/>
+                                    </StackPanel>
+                                    <TextBlock Text="Use these only when you want to override the default runtime behavior S1API would otherwise keep."
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,12"/>
+
+                                    <CheckBox Content="Set Aggressiveness" IsChecked="{Binding SelectedNpc.RuntimeSettings.SetAggressiveness}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Aggressiveness" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Raw aggressiveness float used by the NPC runtime. Start around 0 to 1 unless you are deliberately pushing the behavior harder."/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.RuntimeSettings.Aggressiveness, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,8" IsEnabled="{Binding SelectedNpc.RuntimeSettings.SetAggressiveness}"/>
+
+                                    <CheckBox Content="Set Region" IsChecked="{Binding SelectedNpc.RuntimeSettings.SetRegion}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Region" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="Region gate and runtime region. Use one of the main region names such as Northtown, Downtown, or Docks."/>
+                                    </StackPanel>
+                                    <ComboBox Text="{Binding SelectedNpc.RuntimeSettings.Region, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Style="{StaticResource ComboBoxStyle}" Margin="0,0,0,8" IsEnabled="{Binding SelectedNpc.RuntimeSettings.SetRegion}">
+                                        <ComboBoxItem Content="Northtown"/>
+                                        <ComboBoxItem Content="Westville"/>
+                                        <ComboBoxItem Content="Downtown"/>
+                                        <ComboBoxItem Content="Docks"/>
+                                        <ComboBoxItem Content="Suburbia"/>
+                                        <ComboBoxItem Content="Uptown"/>
+                                    </ComboBox>
+
+                                    <CheckBox Content="Set Scale" IsChecked="{Binding SelectedNpc.RuntimeSettings.SetScale}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Scale" Style="{StaticResource LabelStyle}"/>
+                                        <views:InfoIcon TooltipText="1.0 is default size. Values above 1 make the NPC larger and values below 1 make the NPC smaller."/>
+                                    </StackPanel>
+                                    <TextBox Text="{Binding SelectedNpc.RuntimeSettings.Scale, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,8" IsEnabled="{Binding SelectedNpc.RuntimeSettings.SetScale}"/>
+
+                                    <CheckBox Content="Override RequiresRegionUnlocked" IsChecked="{Binding SelectedNpc.RuntimeSettings.OverrideRequiresRegionUnlocked}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="16,0,0,0">
+                                        <CheckBox Content="Requires Region Unlocked" IsChecked="{Binding SelectedNpc.RuntimeSettings.RequiresRegionUnlocked}" Foreground="{StaticResource LightTextBrush}" IsEnabled="{Binding SelectedNpc.RuntimeSettings.OverrideRequiresRegionUnlocked}"/>
+                                        <views:InfoIcon TooltipText="Only used when the override above is enabled. If checked, the NPC stays gated until that region is unlocked in-game."/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
+                                <StackPanel Margin="12">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Prefab Behaviors" Style="{StaticResource PanelHeaderStyle}"/>
+                                        <views:InfoIcon TooltipText="Adds built-in S1API prefab behaviours like smoke breaks, graffiti, drinking, and held items. Most path fields expect a Resources path to an AvatarEquippable or prefab."/>
+                                    </StackPanel>
+                                    <TextBlock Text="These options attach ready-made S1API behavior components. If a path is blank, S1API uses its fallback where available."
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,12"/>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox Content="Enable Smoke Break" IsChecked="{Binding SelectedNpc.RuntimeSettings.EnableSmokeBreak}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                        <views:InfoIcon TooltipText="Adds SmokeBreakBehaviour. Leave the cigarette path blank to let S1API try its fallback. Set a custom path when you ship your own lit cigarette prefab."/>
+                                    </StackPanel>
+                                    <StackPanel Margin="16,0,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Content="Cigarette Prefab Path (Optional)" Style="{StaticResource LabelStyle}"/>
+                                            <views:InfoIcon TooltipText="Resources path to the cigarette prefab used while smoking. Example: 'MyMod/Cigarette_Lit'. Leave blank to let S1API try its built-in fallback."/>
+                                        </StackPanel>
+                                        <TextBox Text="{Binding SelectedNpc.RuntimeSettings.SmokeBreakCigarettePath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,4" IsEnabled="{Binding SelectedNpc.RuntimeSettings.EnableSmokeBreak}"/>
+                                        <TextBlock Text="Example: MyMod/Cigarette_Lit. Leave blank if you do not ship a custom cigarette prefab."
+                                                   Foreground="{StaticResource DimTextBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <CheckBox Content="Smoke Break Debug Mode" IsChecked="{Binding SelectedNpc.RuntimeSettings.EnableSmokeBreakDebugMode}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8" IsEnabled="{Binding SelectedNpc.RuntimeSettings.EnableSmokeBreak}"/>
+                                            <views:InfoIcon TooltipText="Turns on verbose smoke break logging. Only use this while testing because it is debug noise, not gameplay behavior."/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox Content="Enable Graffiti" IsChecked="{Binding SelectedNpc.RuntimeSettings.EnableGraffiti}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                        <views:InfoIcon TooltipText="Adds graffiti behaviour. If the path is blank S1API tries the built-in spray paint equippable automatically."/>
+                                    </StackPanel>
+                                    <StackPanel Margin="16,0,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Content="Spray Paint Equippable Path (Optional)" Style="{StaticResource LabelStyle}"/>
+                                            <views:InfoIcon TooltipText="Resources path to the spray paint AvatarEquippable. Example: 'Weapons/SprayPaint/SprayPaint_AvatarEquippable'."/>
+                                        </StackPanel>
+                                        <TextBox Text="{Binding SelectedNpc.RuntimeSettings.SprayPaintEquippablePath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,4" IsEnabled="{Binding SelectedNpc.RuntimeSettings.EnableGraffiti}"/>
+                                        <TextBlock Text="Example: Weapons/SprayPaint/SprayPaint_AvatarEquippable"
+                                                   Foreground="{StaticResource DimTextBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,8"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox Content="Enable Drinking" IsChecked="{Binding SelectedNpc.RuntimeSettings.EnableDrinking}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                        <views:InfoIcon TooltipText="Adds drink behaviour. If the path is blank, S1API defaults to a base-game drink such as beer."/>
+                                    </StackPanel>
+                                    <StackPanel Margin="16,0,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Content="Drink Equippable Path (Optional)" Style="{StaticResource LabelStyle}"/>
+                                            <views:InfoIcon TooltipText="Resources path to the drink AvatarEquippable. Examples: 'Avatar/Equippables/Beer' or 'Avatar/Equippables/Coffee'."/>
+                                        </StackPanel>
+                                        <TextBox Text="{Binding SelectedNpc.RuntimeSettings.DrinkEquippablePath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,4" IsEnabled="{Binding SelectedNpc.RuntimeSettings.EnableDrinking}"/>
+                                        <TextBlock Text="Example: Avatar/Equippables/Beer"
+                                                   Foreground="{StaticResource DimTextBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,8"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox Content="Enable Item Holding" IsChecked="{Binding SelectedNpc.RuntimeSettings.EnableItemHolding}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,8"/>
+                                        <views:InfoIcon TooltipText="Adds generic held-item behaviour. If the path is blank, S1API defaults to a lowered phone."/>
+                                    </StackPanel>
+                                    <StackPanel Margin="16,0,0,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Label Content="Held Item Equippable Path (Optional)" Style="{StaticResource LabelStyle}"/>
+                                            <views:InfoIcon TooltipText="Resources path to the AvatarEquippable to hold. Examples: 'Avatar/Equippables/Phone_Lowered' or 'Tools/Flashlight/Flashlight_AvatarEquippable'."/>
+                                        </StackPanel>
+                                        <TextBox Text="{Binding SelectedNpc.RuntimeSettings.HeldItemEquippablePath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,4" IsEnabled="{Binding SelectedNpc.RuntimeSettings.EnableItemHolding}"/>
+                                        <TextBlock Text="Examples: Avatar/Equippables/Phone_Lowered, Tools/Flashlight/Flashlight_AvatarEquippable"
+                                                   Foreground="{StaticResource DimTextBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,8"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <CheckBox Content="Generate Hook Scaffold" IsChecked="{Binding SelectedNpc.GenerateHookScaffold}" Foreground="{StaticResource LightTextBrush}"/>
+                                        <views:InfoIcon TooltipText="Creates a partial hooks file in the exported mod so you can add advanced runtime code without editing generated files."/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource PanelStyle}">
+                                <StackPanel Margin="12">
+                                    <DockPanel Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                            <TextBlock Text="Dialogue Database" Style="{StaticResource PanelHeaderStyle}"/>
+                                            <views:InfoIcon TooltipText="Defines dialogue text entries for this NPC. Each line in the Text box becomes one possible spoken variant in the generated database."/>
+                                        </StackPanel>
+                                        <Button Content="+ Add Entry" Style="{StaticResource IconButtonStyle}" Click="AddDialogueDatabaseEntry_Click" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <TextBlock Text="Use this for reusable dialogue text keys. Module Name is optional, Key is the internal ID, and each text line becomes a possible variant."
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,12"/>
+                                    <ItemsControl ItemsSource="{Binding SelectedNpc.DialogueDatabaseEntries}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type models:NpcDialogueDatabaseEntryBlueprint}">
+                                                <Border BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Module Name (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Optional grouping name. Leave blank for generic entries. Example: 'QuestIntro'."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding ModuleName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Key" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Internal lookup key used by dialogue containers or code. Keep it unique inside its module. Example: 'GREETING_01'."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Text" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Player-facing NPC line. Use multiple lines to generate multiple possible variants for the same key."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" AcceptsReturn="True" Height="72" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                                        <Button Content="Remove Entry" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueDatabaseEntry_Click" Tag="{Binding}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
+                                <StackPanel Margin="12">
+                                    <DockPanel Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                            <TextBlock Text="Dialogue Containers" Style="{StaticResource PanelHeaderStyle}"/>
+                                            <views:InfoIcon TooltipText="Build full conversation trees here. Container Name is the internal ID; Node Labels are the jump targets used by choices, callbacks, and event reactions."/>
+                                        </StackPanel>
+                                        <Button Content="+ Add Container" Style="{StaticResource IconButtonStyle}" Click="AddDialogueContainer_Click" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <TextBlock Text="Use one container with UseOnInteract or UseOnInteractOnce when you want it to open during normal interaction. Node labels are internal jump targets, not player text."
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,12"/>
+                                    <ItemsControl ItemsSource="{Binding SelectedNpc.DialogueContainers}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type models:NpcDialogueContainerBlueprint}">
+                                                <Expander Header="{Binding DisplayName}" Margin="0,0,0,8" IsExpanded="False">
+                                                    <StackPanel Margin="8">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Container Name" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Internal container ID. Use a stable name like 'ShopDialogue' or 'QuestIntro'. This must match exactly when other fields jump into the container."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <CheckBox Content="Allow Exit" IsChecked="{Binding AllowExit}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,6"/>
+                                                            <views:InfoIcon TooltipText="If disabled, the player cannot naturally back out of this container. Only scripted jumps or choices can end the conversation."/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Interact Mode" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="None keeps the container registered but does not auto-open it. UseOnInteract opens it every time you talk. UseOnInteractOnce overrides the next interaction once, then returns to normal."/>
+                                                        </StackPanel>
+                                                        <ComboBox ItemsSource="{Binding Source={x:Type models:NpcDialogueInteractMode}, Converter={StaticResource EnumToCollectionConverter}}" SelectedItem="{Binding InteractMode}" Style="{StaticResource ComboBoxStyle}" Margin="0,0,0,8"/>
+                                                        <Button Content="+ Add Node" Style="{StaticResource IconButtonStyle}" Click="AddDialogueNode_Click" Tag="{Binding}" Margin="0,0,0,8"/>
+                                                        <ItemsControl ItemsSource="{Binding Nodes}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate DataType="{x:Type models:NpcDialogueNodeBlueprint}">
+                                                                    <Border BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                                                        <StackPanel>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Label Content="Node Label" Style="{StaticResource LabelStyle}"/>
+                                                                                <views:InfoIcon TooltipText="Internal node ID used for jumps and callback matching. Examples: 'ENTRY', 'SHOP_MENU', or 'ASK_STATUS'."/>
+                                                                            </StackPanel>
+                                                                            <TextBox Text="{Binding NodeLabel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Label Content="Node Text" Style="{StaticResource LabelStyle}"/>
+                                                                                <views:InfoIcon TooltipText="NPC text shown when this node is displayed."/>
+                                                                            </StackPanel>
+                                                                            <TextBox Text="{Binding NodeText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" AcceptsReturn="True" Height="72" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                                                            <Button Content="+ Add Choice" Style="{StaticResource IconButtonStyle}" Click="AddDialogueChoice_Click" Tag="{Binding}" Margin="0,0,0,6"/>
+                                                                            <ItemsControl ItemsSource="{Binding Choices}">
+                                                                                <ItemsControl.ItemTemplate>
+                                                                                    <DataTemplate DataType="{x:Type models:NpcDialogueChoiceBlueprint}">
+                                                                                        <Border BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,6">
+                                                                                            <StackPanel>
+                                                                                                <StackPanel Orientation="Horizontal">
+                                                                                                    <Label Content="Choice Label" Style="{StaticResource LabelStyle}"/>
+                                                                                                    <views:InfoIcon TooltipText="Internal choice ID used by OnChoiceSelected callbacks. Keep it unique inside the container. Example: 'ASK_JOB'."/>
+                                                                                                </StackPanel>
+                                                                                                <TextBox Text="{Binding ChoiceLabel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                                                                <StackPanel Orientation="Horizontal">
+                                                                                                    <Label Content="Choice Text" Style="{StaticResource LabelStyle}"/>
+                                                                                                    <views:InfoIcon TooltipText="Player-facing text shown for this choice."/>
+                                                                                                </StackPanel>
+                                                                                                <TextBox Text="{Binding ChoiceText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                                                                <StackPanel Orientation="Horizontal">
+                                                                                                    <Label Content="Target Node Label (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                                                                    <views:InfoIcon TooltipText="Node label to jump to after the player selects this choice. Leave blank for a terminal or callback-only option."/>
+                                                                                                </StackPanel>
+                                                                                                <TextBox Text="{Binding TargetNodeLabel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                                                                <Button Content="Remove Choice" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueChoice_Click" Tag="{Binding}"/>
+                                                                                            </StackPanel>
+                                                                                        </Border>
+                                                                                    </DataTemplate>
+                                                                                </ItemsControl.ItemTemplate>
+                                                                            </ItemsControl>
+                                                                            <Button Content="Remove Node" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueNode_Click" Tag="{Binding}"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                        <Button Content="Remove Container" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueContainer_Click" Tag="{Binding}"/>
+                                                    </StackPanel>
+                                                </Expander>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
+                                <StackPanel Margin="12">
+                                    <DockPanel Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                            <TextBlock Text="Dialogue Callbacks" Style="{StaticResource PanelHeaderStyle}"/>
+                                            <views:InfoIcon TooltipText="Run simple generated actions when dialogue events happen. Match Key uses a choice label for ChoiceSelected, a node label for NodeDisplayed, and is ignored for ConversationStarted."/>
+                                        </StackPanel>
+                                        <Button Content="+ Add Callback" Style="{StaticResource IconButtonStyle}" Click="AddDialogueCallback_Click" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <TextBlock Text="Callbacks can send a text message, jump into another container and node, or stop the current override. Use hook scaffolds for anything more complex than that."
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,12"/>
+                                    <ItemsControl ItemsSource="{Binding SelectedNpc.DialogueCallbacks}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type models:NpcDialogueCallbackBlueprint}">
+                                                <Border BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Callback Type" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="ChoiceSelected watches a choice label, NodeDisplayed watches a node label, and ConversationStarted fires as soon as the conversation begins."/>
+                                                        </StackPanel>
+                                                        <ComboBox ItemsSource="{Binding Source={x:Type models:NpcDialogueCallbackType}, Converter={StaticResource EnumToCollectionConverter}}" SelectedItem="{Binding CallbackType}" Style="{StaticResource ComboBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Match Key" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="For ChoiceSelected use a choice label. For NodeDisplayed use a node label. ConversationStarted ignores this field."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding MatchKey, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Message Text (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Optional SMS-style text message to send when this callback fires."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Jump To Container Name (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Optional container to jump into when the callback fires. Fill both jump fields if you want a dialogue jump."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding JumpToContainerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Jump To Node Label (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Node label inside the target container to jump to. This is a node label, not a GUID."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding JumpToNodeLabel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <CheckBox Content="Stop Dialogue Override" IsChecked="{Binding StopDialogueOverride}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,6"/>
+                                                            <views:InfoIcon TooltipText="Stops the current dialogue override before the rest of the generated action runs. Safe for choice callbacks. Avoid enabling this on NodeDisplayed because it can recurse."/>
+                                                        </StackPanel>
+                                                        <Button Content="Remove Callback" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueCallback_Click" Tag="{Binding}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
+                                <StackPanel Margin="12">
+                                    <DockPanel Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                            <TextBlock Text="Dialogue Injections" Style="{StaticResource PanelHeaderStyle}"/>
+                                            <views:InfoIcon TooltipText="Adds one extra choice into an existing vanilla or custom dialogue container. Container name and node GUIDs must match the target NPC's live dialogue exactly."/>
+                                        </StackPanel>
+                                        <Button Content="+ Add Injection" Style="{StaticResource IconButtonStyle}" Click="AddDialogueInjection_Click" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <TextBlock Text="This is advanced dialogue work. GUID fields are not node labels; use injections only when you know the exact target container and node GUIDs you want to patch."
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,12"/>
+                                    <ItemsControl ItemsSource="{Binding SelectedNpc.DialogueInjections}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type models:NpcDialogueInjectionBlueprint}">
+                                                <Border BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Target NPC" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="NPC ID to inject into. Leave blank to target this generated NPC. Use the exact NPC ID when patching a vanilla or another custom NPC."/>
+                                                        </StackPanel>
+                                                        <ComboBox ItemsSource="{Binding ElementName=RootControl, Path=AvailableNpcs}"
+                                                                  DisplayMemberPath="DisplayName"
+                                                                  SelectedValuePath="Id"
+                                                                  SelectedValue="{Binding TargetNpcId}"
+                                                                  IsEditable="True"
+                                                                  Style="{StaticResource ComboBoxStyle}"
+                                                                  Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Container Name" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Exact dialogue container name on the target NPC. Example: 'CasinoDialogue'. The match must be exact."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding ContainerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="From Node GUID" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="GUID of the existing source node that should receive the new choice. This is not a node label."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding FromNodeGuid, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="To Node GUID" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="GUID of the existing destination node the new choice should link to. That target node must already exist in the container."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding ToNodeGuid, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <TextBlock Text="Tip: container and GUID mismatches are skipped silently by S1API, so double-check these values."
+                                                                   Foreground="{StaticResource DimTextBrush}"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Choice Label" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Internal unique ID for the injected choice callback. Make it mod-specific, for example 'MYMOD_ASK_PAYOUTS'."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding ChoiceLabel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Choice Text" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Player-facing text shown for the injected choice."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding ChoiceText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Message Text (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Optional SMS-style text message to send when the injected choice is confirmed."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Jump To Container Name (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Optional container to jump into after the injected choice is confirmed. Fill both jump fields if you want a dialogue jump."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding JumpToContainerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Jump To Node Label (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Node label inside the target container to jump to after confirmation. This field uses a node label, not a GUID."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding JumpToNodeLabel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <CheckBox Content="Stop Dialogue Override" IsChecked="{Binding StopDialogueOverride}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,6"/>
+                                                            <views:InfoIcon TooltipText="Stops the current override on the target NPC before any generated message or jump runs."/>
+                                                        </StackPanel>
+                                                        <Button Content="Remove Injection" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueInjection_Click" Tag="{Binding}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource PanelStyle}">
+                                <StackPanel Margin="12">
+                                    <DockPanel Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                            <TextBlock Text="Runtime Event Reactions" Style="{StaticResource PanelHeaderStyle}"/>
+                                            <views:InfoIcon TooltipText="Runs simple generated actions when S1API runtime events fire. Customer and dealer events only fire if this NPC has those systems enabled."/>
+                                        </StackPanel>
+                                        <Button Content="+ Add Reaction" Style="{StaticResource IconButtonStyle}" Click="AddEventReaction_Click" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <TextBlock Text="Use reactions for lightweight messages or dialogue jumps when customer, dealer, or relationship events happen. Use hooks if you need custom runtime code."
+                                               Foreground="{StaticResource DimTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Margin="0,0,0,12"/>
+                                    <ItemsControl ItemsSource="{Binding SelectedNpc.EventReactions}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type models:NpcRuntimeEventReactionBlueprint}">
+                                                <Border BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                                                    <StackPanel>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Event Type" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Pick the runtime event that should trigger this generated action. Customer and dealer events require those systems to be enabled on this NPC."/>
+                                                        </StackPanel>
+                                                        <ComboBox ItemsSource="{Binding Source={x:Type models:NpcRuntimeEventType}, Converter={StaticResource EnumToCollectionConverter}}" SelectedItem="{Binding EventType}" Style="{StaticResource ComboBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Message Text (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Optional SMS-style text message sent when the event fires."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Jump To Container Name (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Optional dialogue container to jump into when the event fires. Fill both jump fields if you want a dialogue jump."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding JumpToContainerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Jump To Node Label (Optional)" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon TooltipText="Node label inside the target container to jump to. This field uses a node label, not a GUID."/>
+                                                        </StackPanel>
+                                                        <TextBox Text="{Binding JumpToNodeLabel, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <CheckBox Content="Stop Dialogue Override" IsChecked="{Binding StopDialogueOverride}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,6"/>
+                                                            <views:InfoIcon TooltipText="Stops the current dialogue override before the generated message or jump runs."/>
+                                                        </StackPanel>
+                                                        <Button Content="Remove Reaction" Style="{StaticResource IconButtonStyle}" Click="RemoveEventReaction_Click" Tag="{Binding}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Tab 7: Inventory -->
             <TabItem Header="Inventory">
                 <TabItem.HeaderTemplate>
                     <DataTemplate>
@@ -940,7 +1428,8 @@
                                     <views:InfoIcon TooltipText="Items that will always be in inventory when NPC spawns (e.g., 'banana', 'baseballbat')"/>
                                 </StackPanel>
 
-                                <ListBox ItemsSource="{Binding SelectedNpc.InventoryDefaults.StartupItems}"
+                                <ListBox x:Name="StartupItemsListBox"
+                                         ItemsSource="{Binding SelectedNpc.InventoryDefaults.StartupItems}"
                                          Height="150"
                                          Background="{StaticResource DarkBackgroundBrush}"
                                          Foreground="{StaticResource LightTextBrush}"
@@ -952,10 +1441,13 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="StartupItemTextBox"
-                                             Grid.Column="0"
-                                             Style="{StaticResource TextBoxStyle}"
-                                             Margin="0,0,4,0"/>
+                                    <ComboBox x:Name="StartupItemComboBox"
+                                              Grid.Column="0"
+                                              ItemsSource="{Binding AvailableItemReferences}"
+                                              DisplayMemberPath="DisplayLabel"
+                                              Style="{StaticResource ComboBoxStyle}"
+                                              IsEditable="True"
+                                              Margin="0,0,4,0"/>
                                     <Button Grid.Column="1" Content="Add"
                                             Style="{StaticResource IconButtonStyle}"
                                             Click="AddStartupItem_Click"
@@ -1019,7 +1511,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Tab 7: Preview NPC -->
+            <!-- Tab 8: Preview NPC -->
             <TabItem x:Name="PreviewNpcTab" Header="Preview NPC">
                 <TabItem.HeaderTemplate>
                     <DataTemplate>

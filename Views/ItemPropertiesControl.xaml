@@ -29,12 +29,17 @@
                                           Style="{StaticResource ComboBoxStyle}" />
 
                                 <Label Content="Clone Source Item ID" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
-                                <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Items, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          DisplayMemberPath="ItemId"
+                                <ComboBox ItemsSource="{Binding DataContext.AvailableItemReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          DisplayMemberPath="DisplayLabel"
                                           Text="{Binding CloneSourceItemId, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource ComboBoxStyle}"
                                           IsEditable="True"
                                           IsEnabled="{Binding SupportsCloneSource}" />
+
+                                <TextBlock Text="Use the live catalog tab to browse base-game items and set this with one click."
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0" />
 
                                 <Label Content="Class Name" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
                                 <TextBox Text="{Binding ClassName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
@@ -102,9 +107,58 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Shops &amp; Icon">
+            <TabItem Header="Catalog &amp; Shops">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <WrapPanel Margin="12" DataContext="{Binding SelectedItemBlueprint}">
+
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="340" MaxWidth="520">
+                            <StackPanel Margin="12">
+                                <DockPanel Margin="0,0,0,12">
+                                    <TextBlock Text="Live Runtime Catalog" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left" />
+                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                        <Button Content="Launch with Connector"
+                                                Command="{Binding DataContext.LaunchRuntimeCatalogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                Margin="0,0,8,0" />
+                                        <Button Content="Refresh"
+                                                Command="{Binding DataContext.RefreshLiveGameCatalogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                Style="{StaticResource IconButtonStyle}" />
+                                    </StackPanel>
+                                </DockPanel>
+
+                                <TextBlock Text="{Binding DataContext.LiveGameCatalogStatus, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12" />
+
+                                <Label Content="Search Base-Game Items" Style="{StaticResource LabelStyle}" />
+                                <TextBox Text="{Binding DataContext.ItemBrowserSearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource TextBoxStyle}" />
+
+                                <ListBox x:Name="LiveItemBrowserListBox"
+                                         ItemsSource="{Binding DataContext.FilteredLiveGameItems, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         Height="220"
+                                         Margin="0,8,0,0"
+                                         Background="{StaticResource DarkBackgroundBrush}"
+                                         BorderBrush="{StaticResource DarkBorderBrush}"
+                                         Foreground="{StaticResource LightTextBrush}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="2">
+                                                <TextBlock Text="{Binding DisplayLabel}" Foreground="{StaticResource LightTextBrush}" />
+                                                <TextBlock Text="{Binding Summary}" Foreground="{StaticResource DimTextBrush}" FontSize="11" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <Button Content="Use Selected Item As Clone Source"
+                                        Click="UseLiveItemAsCloneSource_Click"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="0,8,0,0"
+                                        IsEnabled="{Binding SupportsCloneSource}" />
+                            </StackPanel>
+                        </Border>
 
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500">
                             <StackPanel Margin="12">
@@ -134,6 +188,33 @@
                                                TextWrapping="Wrap"
                                                Margin="0,0,0,8" />
 
+                                    <Label Content="Search Live Shops" Style="{StaticResource LabelStyle}" />
+                                    <TextBox Text="{Binding DataContext.ShopBrowserSearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource TextBoxStyle}" />
+
+                                    <ListBox x:Name="LiveShopBrowserListBox"
+                                             ItemsSource="{Binding DataContext.ShopCompatibilityPreviews, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                             Height="160"
+                                             Margin="0,8,0,8"
+                                             Background="{StaticResource DarkBackgroundBrush}"
+                                             Foreground="{StaticResource LightTextBrush}"
+                                             BorderBrush="{StaticResource DarkBorderBrush}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="2">
+                                                    <TextBlock Text="{Binding Name}" Foreground="{StaticResource LightTextBrush}" />
+                                                    <TextBlock Text="{Binding Summary}" Foreground="{StaticResource DimTextBrush}" FontSize="11" />
+                                                    <TextBlock Text="{Binding RoutingLabel}" Foreground="{StaticResource DimTextBrush}" FontSize="11" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+
+                                    <Button Content="Add Selected Live Shop"
+                                            Click="AddLiveShop_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,0,8" />
+
                                     <ListBox x:Name="SpecificShopsListBox"
                                              ItemsSource="{Binding ShopNames}"
                                              Height="120"
@@ -150,7 +231,8 @@
 
                                         <ComboBox x:Name="SpecificShopNameComboBox"
                                                   Grid.Column="0"
-                                                  ItemsSource="{x:Static services:ItemEditorCatalogService.SuggestedShopNames}"
+                                                  ItemsSource="{Binding DataContext.LiveGameShops, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  DisplayMemberPath="Name"
                                                   Style="{StaticResource ComboBoxStyle}"
                                                   IsEditable="True"
                                                   Margin="0,0,4,0" />
@@ -196,6 +278,24 @@
                                 Visibility="{Binding SupportsEquippable, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel Margin="12">
                                 <TextBlock Text="Equippable" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+
+                                <Label Content="Preset Wizard" Style="{StaticResource LabelStyle}" />
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="EquippablePresetComboBox"
+                                              Grid.Column="0"
+                                              ItemsSource="{x:Static services:ItemEquippablePresetService.Presets}"
+                                              DisplayMemberPath="Name"
+                                              Style="{StaticResource ComboBoxStyle}"
+                                              Margin="0,0,4,0" />
+                                    <Button Grid.Column="1"
+                                            Content="Apply"
+                                            Click="ApplyEquippablePreset_Click"
+                                            Style="{StaticResource IconButtonStyle}" />
+                                </Grid>
 
                                 <Label Content="Equippable Type" Style="{StaticResource LabelStyle}" />
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.EquippableTypes}"
@@ -260,6 +360,24 @@
 
                                         <Label Content="Animation Trigger" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
                                         <TextBox Text="{Binding AvatarAnimationTrigger, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                        <CheckBox Content="Register avatar equippable from embedded bundle"
+                                                  IsChecked="{Binding RegisterAvatarEquippableFromEmbeddedBundle, UpdateSourceTrigger=PropertyChanged}"
+                                                  Foreground="{StaticResource LightTextBrush}"
+                                                  Margin="0,12,0,0" />
+
+                                        <StackPanel Margin="0,8,0,0"
+                                                    Visibility="{Binding UsesAvatarBundleRegistration, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <Label Content="Avatar Bundle Resource" Style="{StaticResource LabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Resources, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      DisplayMemberPath="RelativePath"
+                                                      Text="{Binding AvatarBundleResourcePath, UpdateSourceTrigger=PropertyChanged}"
+                                                      Style="{StaticResource ComboBoxStyle}"
+                                                      IsEditable="True" />
+
+                                            <Label Content="Bundle Prefab Name" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                            <TextBox Text="{Binding AvatarBundlePrefabName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                        </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
@@ -297,11 +415,32 @@
                             </StackPanel>
                         </Border>
 
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500">
+                            <StackPanel Margin="12">
+                                <TextBlock Text="Advanced Hooks" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+
+                                <CheckBox Content="Generate partial hook scaffold"
+                                          IsChecked="{Binding GenerateHookScaffold, UpdateSourceTrigger=PropertyChanged}"
+                                          Foreground="{StaticResource LightTextBrush}" />
+
+                                <CheckBox Content="Enable use callback hook"
+                                          IsChecked="{Binding EnableUseCallbackHook, UpdateSourceTrigger=PropertyChanged}"
+                                          Foreground="{StaticResource LightTextBrush}"
+                                          Margin="0,8,0,0"
+                                          IsEnabled="{Binding SupportsUseCallbackHook}" />
+
+                                <TextBlock Text="Hook scaffolds create a companion partial class for custom S1API logic without editing generated registration code."
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,12,0,0" />
+                            </StackPanel>
+                        </Border>
+
                     </WrapPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Type Specific">
+            <TabItem Header="Type Specific &amp; Recipes">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <WrapPanel Margin="12" DataContext="{Binding SelectedItemBlueprint}">
 
@@ -383,6 +522,124 @@
 
                                 <Label Content="Quality Change" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
                                 <TextBox Text="{Binding QualityChange, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                <CheckBox Content="Allow this additive on grow containers"
+                                          IsChecked="{Binding AllowOnGrowContainers, UpdateSourceTrigger=PropertyChanged}"
+                                          Foreground="{StaticResource LightTextBrush}"
+                                          Margin="0,12,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="360" MaxWidth="580">
+                            <StackPanel Margin="12">
+                                <DockPanel Margin="0,0,0,12">
+                                    <TextBlock Text="Chemistry Recipes" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left" />
+                                    <Button Content="Add Recipe"
+                                            Click="AddChemistryRecipe_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            DockPanel.Dock="Right" />
+                                </DockPanel>
+
+                                <ListBox x:Name="ChemistryRecipesListBox"
+                                         ItemsSource="{Binding ChemistryRecipes}"
+                                         DisplayMemberPath="DisplayName"
+                                         Height="120"
+                                         Background="{StaticResource DarkBackgroundBrush}"
+                                         Foreground="{StaticResource LightTextBrush}"
+                                         BorderBrush="{StaticResource DarkBorderBrush}" />
+
+                                <Button Content="Remove Selected Recipe"
+                                        Click="RemoveChemistryRecipe_Click"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="0,8,0,0" />
+
+                                <StackPanel Margin="0,12,0,0"
+                                            DataContext="{Binding SelectedItem, ElementName=ChemistryRecipesListBox}">
+                                    <Label Content="Recipe Title" Style="{StaticResource LabelStyle}" />
+                                    <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Cook Time (Minutes)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding CookTimeMinutes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Product Quantity" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding ProductQuantity, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Final Liquid Color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="RecipeColorTextBox"
+                                                 Grid.Column="0"
+                                                 Text="{Binding FinalLiquidColorHex, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource TextBoxStyle}"
+                                                 Margin="0,0,4,0" />
+                                        <Button Grid.Column="1"
+                                                Content="Pick"
+                                                Click="PickRecipeColor_Click"
+                                                Style="{StaticResource IconButtonStyle}" />
+                                    </Grid>
+
+                                    <DockPanel Margin="0,12,0,8">
+                                        <Label Content="Ingredient Groups" Style="{StaticResource LabelStyle}" DockPanel.Dock="Left" />
+                                        <Button Content="Add Group"
+                                                Click="AddChemistryIngredient_Click"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                DockPanel.Dock="Right" />
+                                    </DockPanel>
+
+                                    <ListBox x:Name="RecipeIngredientsListBox"
+                                             ItemsSource="{Binding Ingredients}"
+                                             DisplayMemberPath="DisplayLabel"
+                                             Height="110"
+                                             Background="{StaticResource DarkBackgroundBrush}"
+                                             Foreground="{StaticResource LightTextBrush}"
+                                             BorderBrush="{StaticResource DarkBorderBrush}" />
+
+                                    <Button Content="Remove Selected Group"
+                                            Click="RemoveChemistryIngredient_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,8,0,0" />
+
+                                    <StackPanel Margin="0,12,0,0"
+                                                DataContext="{Binding SelectedItem, ElementName=RecipeIngredientsListBox}">
+                                        <Label Content="Group Quantity" Style="{StaticResource LabelStyle}" />
+                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                        <Label Content="Allowed Item IDs" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                        <ListBox x:Name="IngredientItemIdsListBox"
+                                                 ItemsSource="{Binding ItemIds}"
+                                                 Height="90"
+                                                 Background="{StaticResource DarkBackgroundBrush}"
+                                                 Foreground="{StaticResource LightTextBrush}"
+                                                 BorderBrush="{StaticResource DarkBorderBrush}" />
+
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox x:Name="RecipeIngredientItemComboBox"
+                                                      Grid.Column="0"
+                                                      ItemsSource="{Binding DataContext.AvailableItemReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      DisplayMemberPath="DisplayLabel"
+                                                      Style="{StaticResource ComboBoxStyle}"
+                                                      IsEditable="True"
+                                                      Margin="0,0,4,0" />
+                                            <Button Grid.Column="1"
+                                                    Content="Add Item"
+                                                    Click="AddIngredientItemOption_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Margin="0,0,4,0" />
+                                            <Button Grid.Column="2"
+                                                    Content="Remove"
+                                                    Click="RemoveIngredientItemOption_Click"
+                                                    Style="{StaticResource IconButtonStyle}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 

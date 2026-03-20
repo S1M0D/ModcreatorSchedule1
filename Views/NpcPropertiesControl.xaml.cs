@@ -47,14 +47,7 @@ namespace Schedule1ModdingTool.Views
 
         private void ValidateCustomerDealerExclusivity()
         {
-            if (CurrentNpc == null)
-                return;
-
-            // If both are checked, prefer Customer over Dealer
-            if (CurrentNpc.EnableCustomer && CurrentNpc.IsDealer)
-            {
-                CurrentNpc.IsDealer = false;
-            }
+            // S1API supports mixing customer and dealer capabilities on the same NPC.
         }
 
         private void PickAppearanceColor_Click(object sender, RoutedEventArgs e)
@@ -191,10 +184,6 @@ namespace Schedule1ModdingTool.Views
 
         private void EnableCustomer_Checked(object sender, RoutedEventArgs e)
         {
-            if (CurrentNpc != null && CurrentNpc.IsDealer)
-            {
-                CurrentNpc.IsDealer = false;
-            }
         }
 
         private void EnableCustomer_Unchecked(object sender, RoutedEventArgs e)
@@ -204,10 +193,6 @@ namespace Schedule1ModdingTool.Views
 
         private void IsDealer_Checked(object sender, RoutedEventArgs e)
         {
-            if (CurrentNpc != null && CurrentNpc.EnableCustomer)
-            {
-                CurrentNpc.EnableCustomer = false;
-            }
         }
 
         private void IsDealer_Unchecked(object sender, RoutedEventArgs e)
@@ -421,6 +406,144 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void AddDialogueDatabaseEntry_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentNpc?.DialogueDatabaseEntries.Add(new NpcDialogueDatabaseEntryBlueprint());
+        }
+
+        private void RemoveDialogueDatabaseEntry_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not NpcDialogueDatabaseEntryBlueprint entry)
+                return;
+
+            CurrentNpc.DialogueDatabaseEntries.Remove(entry);
+        }
+
+        private void AddDialogueContainer_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null)
+                return;
+
+            var container = new NpcDialogueContainerBlueprint
+            {
+                Name = $"Container{CurrentNpc.DialogueContainers.Count + 1}"
+            };
+            container.Nodes.Add(new NpcDialogueNodeBlueprint
+            {
+                NodeLabel = "ENTRY"
+            });
+            CurrentNpc.DialogueContainers.Add(container);
+        }
+
+        private void RemoveDialogueContainer_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not NpcDialogueContainerBlueprint container)
+                return;
+
+            CurrentNpc.DialogueContainers.Remove(container);
+        }
+
+        private void AddDialogueNode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not NpcDialogueContainerBlueprint container)
+                return;
+
+            var nodeIndex = container.Nodes.Count + 1;
+            container.Nodes.Add(new NpcDialogueNodeBlueprint
+            {
+                NodeLabel = container.Nodes.Count == 0 ? "ENTRY" : $"NODE_{nodeIndex}"
+            });
+        }
+
+        private void RemoveDialogueNode_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not NpcDialogueNodeBlueprint node)
+                return;
+
+            foreach (var container in CurrentNpc.DialogueContainers)
+            {
+                if (!container.Nodes.Contains(node))
+                    continue;
+
+                container.Nodes.Remove(node);
+                break;
+            }
+        }
+
+        private void AddDialogueChoice_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not NpcDialogueNodeBlueprint node)
+                return;
+
+            node.Choices.Add(new NpcDialogueChoiceBlueprint
+            {
+                ChoiceLabel = $"CHOICE_{node.Choices.Count + 1}"
+            });
+        }
+
+        private void RemoveDialogueChoice_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not NpcDialogueChoiceBlueprint choice)
+                return;
+
+            foreach (var container in CurrentNpc.DialogueContainers)
+            {
+                foreach (var node in container.Nodes)
+                {
+                    if (!node.Choices.Contains(choice))
+                        continue;
+
+                    node.Choices.Remove(choice);
+                    return;
+                }
+            }
+        }
+
+        private void AddDialogueCallback_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentNpc?.DialogueCallbacks.Add(new NpcDialogueCallbackBlueprint());
+        }
+
+        private void RemoveDialogueCallback_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not NpcDialogueCallbackBlueprint callback)
+                return;
+
+            CurrentNpc.DialogueCallbacks.Remove(callback);
+        }
+
+        private void AddDialogueInjection_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null)
+                return;
+
+            CurrentNpc.DialogueInjections.Add(new NpcDialogueInjectionBlueprint
+            {
+                TargetNpcId = CurrentNpc.NpcId
+            });
+        }
+
+        private void RemoveDialogueInjection_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not NpcDialogueInjectionBlueprint injection)
+                return;
+
+            CurrentNpc.DialogueInjections.Remove(injection);
+        }
+
+        private void AddEventReaction_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentNpc?.EventReactions.Add(new NpcRuntimeEventReactionBlueprint());
+        }
+
+        private void RemoveEventReaction_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not NpcRuntimeEventReactionBlueprint reaction)
+                return;
+
+            CurrentNpc.EventReactions.Remove(reaction);
+        }
+
         // Customer Settings Handlers
         private void AddPreferredProperty_Click(object sender, RoutedEventArgs e)
         {
@@ -453,14 +576,18 @@ namespace Schedule1ModdingTool.Views
         // Inventory Defaults Handlers
         private void AddStartupItem_Click(object sender, RoutedEventArgs e)
         {
-            if (CurrentNpc == null || string.IsNullOrWhiteSpace(StartupItemTextBox.Text))
+            if (CurrentNpc == null)
                 return;
 
-            var itemId = StartupItemTextBox.Text.Trim();
+            var itemId = (StartupItemComboBox.SelectedItem as ItemReferenceInfo)?.Id
+                ?? StartupItemComboBox.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(itemId))
+                return;
+
             if (!CurrentNpc.InventoryDefaults.StartupItems.Contains(itemId))
             {
                 CurrentNpc.InventoryDefaults.StartupItems.Add(itemId);
-                StartupItemTextBox.Clear();
+                StartupItemComboBox.Text = string.Empty;
             }
         }
 
@@ -469,7 +596,7 @@ namespace Schedule1ModdingTool.Views
             if (CurrentNpc == null)
                 return;
 
-            var listBox = FindListBoxInVisualTree("StartupItems");
+            var listBox = StartupItemsListBox;
             if (listBox?.SelectedItem is string selectedItem)
             {
                 CurrentNpc.InventoryDefaults.StartupItems.Remove(selectedItem);

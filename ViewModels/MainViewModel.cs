@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -36,6 +37,7 @@ namespace Schedule1ModdingTool.ViewModels
         private readonly ModProjectGeneratorService _modProjectGenerator;
         private readonly ModBuildService _modBuildService;
         private readonly GameLaunchService _gameLaunchService;
+        private readonly RuntimeGameCatalogService _runtimeGameCatalogService = new RuntimeGameCatalogService();
         private readonly TabManagementService _tabManagementService;
         private readonly ResourceManagementService _resourceManagementService;
         private readonly NavigationService _navigationService;
@@ -48,6 +50,9 @@ namespace Schedule1ModdingTool.ViewModels
         private DispatcherTimer? _debounceSnapshotTimer;
         private bool _wasModifiedBeforeChange = false;
         private string? _currentProjectPath;
+        private string _liveGameCatalogStatus = "Use Tools > Launch Schedule I with Connector, or the launch button below, then refresh the runtime catalog.";
+        private string _itemBrowserSearchText = string.Empty;
+        private string _shopBrowserSearchText = string.Empty;
 
         // ViewModels
         private WorkspaceViewModel _workspaceViewModel;
@@ -56,6 +61,11 @@ namespace Schedule1ModdingTool.ViewModels
         public ObservableCollection<QuestBlueprint> AvailableBlueprints { get; } = new ObservableCollection<QuestBlueprint>();
         public ObservableCollection<NpcBlueprint> AvailableNpcBlueprints { get; } = new ObservableCollection<NpcBlueprint>();
         public ObservableCollection<ItemBlueprint> AvailableItemBlueprints { get; } = new ObservableCollection<ItemBlueprint>();
+        public ObservableCollection<GameItemCatalogEntry> LiveGameItems { get; } = new ObservableCollection<GameItemCatalogEntry>();
+        public ObservableCollection<GameShopCatalogEntry> LiveGameShops { get; } = new ObservableCollection<GameShopCatalogEntry>();
+        public ObservableCollection<ItemReferenceInfo> AvailableItemReferences { get; } = new ObservableCollection<ItemReferenceInfo>();
+        public ObservableCollection<GameItemCatalogEntry> FilteredLiveGameItems { get; } = new ObservableCollection<GameItemCatalogEntry>();
+        public ObservableCollection<ShopCompatibilityPreview> ShopCompatibilityPreviews { get; } = new ObservableCollection<ShopCompatibilityPreview>();
 
         // Delegated collections (managed by services)
         public ObservableCollection<NavigationItem> NavigationItems => _navigationService.NavigationItems;
@@ -88,6 +98,8 @@ namespace Schedule1ModdingTool.ViewModels
                         _navigationService.UpdateElementCounts(_currentProject.Quests.Count, _currentProject.Npcs.Count, _currentProject.Items.Count);
                         _navigationService.UpdateWorkspaceProjectInfo(_currentProject);
                         UpdateProcessState();
+                        RebuildAvailableItemReferences();
+                        RefreshShopCompatibilityPreviews();
                         
                         // Subscribe to property changes on all NPCs and Quests for undo/redo tracking
                         SubscribeToElementPropertyChanges();
@@ -106,6 +118,8 @@ namespace Schedule1ModdingTool.ViewModels
                         ProcessState = "Waiting for project...";
                         _undoRedoService.Clear();
                         UnsubscribeFromElementPropertyChanges();
+                        RebuildAvailableItemReferences();
+                        RefreshShopCompatibilityPreviews();
                     }
                     CommandManager.InvalidateRequerySuggested();
                 }
@@ -212,6 +226,7 @@ namespace Schedule1ModdingTool.ViewModels
                     }
 
                     OnPropertyChanged(nameof(SelectedElementName));
+                    RefreshShopCompatibilityPreviews();
                     CommandManager.InvalidateRequerySuggested();
                 }
             }
@@ -322,6 +337,36 @@ namespace Schedule1ModdingTool.ViewModels
             set => SetProperty(ref _workspaceViewModel, value);
         }
 
+        public string LiveGameCatalogStatus
+        {
+            get => _liveGameCatalogStatus;
+            set => SetProperty(ref _liveGameCatalogStatus, value);
+        }
+
+        public string ItemBrowserSearchText
+        {
+            get => _itemBrowserSearchText;
+            set
+            {
+                if (SetProperty(ref _itemBrowserSearchText, value))
+                {
+                    RefreshFilteredLiveGameItems();
+                }
+            }
+        }
+
+        public string ShopBrowserSearchText
+        {
+            get => _shopBrowserSearchText;
+            set
+            {
+                if (SetProperty(ref _shopBrowserSearchText, value))
+                {
+                    RefreshShopCompatibilityPreviews();
+                }
+            }
+        }
+
         #endregion
 
         #region Commands
@@ -370,6 +415,8 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _newItemCommand;
         private ICommand? _visitWikiCommand;
         private ICommand? _checkForUpdatesCommand;
+        private ICommand? _launchRuntimeCatalogCommand;
+        private ICommand? _refreshLiveGameCatalogCommand;
 
         public ICommand NewProjectCommand => _newProjectCommand!;
         public ICommand OpenProjectCommand => _openProjectCommand!;
@@ -420,6 +467,8 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand NewItemCommand => _newItemCommand!;
         public ICommand VisitWikiCommand => _visitWikiCommand!;
         public ICommand CheckForUpdatesCommand => _checkForUpdatesCommand!;
+        public ICommand LaunchRuntimeCatalogCommand => _launchRuntimeCatalogCommand!;
+        public ICommand RefreshLiveGameCatalogCommand => _refreshLiveGameCatalogCommand!;
 
         #endregion
 
@@ -524,6 +573,8 @@ namespace Schedule1ModdingTool.ViewModels
             InitializeCommands();
             InitializeBlueprints();
             _navigationService.InitializeNavigation();
+            RebuildAvailableItemReferences();
+            RefreshFilteredLiveGameItems();
         }
 
         #region Initialization
@@ -578,6 +629,8 @@ namespace Schedule1ModdingTool.ViewModels
             _newItemCommand = new RelayCommand(NewItem);
             _visitWikiCommand = new RelayCommand(VisitWiki);
             _checkForUpdatesCommand = new RelayCommand(async () => await CheckForUpdates());
+            _launchRuntimeCatalogCommand = new RelayCommand(LaunchRuntimeCatalog, () => !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
+            _refreshLiveGameCatalogCommand = new RelayCommand(RefreshLiveGameCatalog);
             
             // Subscribe to undo/redo state changes
             _undoRedoService.StateChanged += (s, e) => CommandManager.InvalidateRequerySuggested();
@@ -615,6 +668,223 @@ namespace Schedule1ModdingTool.ViewModels
                 ItemName = "Sample Item",
                 ItemDescription = "A sample custom item."
             });
+        }
+
+        public void RefreshLiveGameCatalog()
+        {
+            var response = _runtimeGameCatalogService.RequestRuntimeCatalog();
+
+            LiveGameItems.Clear();
+            LiveGameShops.Clear();
+            if (response.Items != null)
+            {
+                foreach (var item in response.Items
+                    .Where(item => !string.IsNullOrWhiteSpace(item.ItemId))
+                    .OrderBy(item => item.DisplayLabel, StringComparer.OrdinalIgnoreCase))
+                {
+                    LiveGameItems.Add(item);
+                }
+            }
+
+            if (response.Shops != null)
+            {
+                foreach (var shop in response.Shops
+                    .Where(shop => !string.IsNullOrWhiteSpace(shop.Name))
+                    .OrderBy(shop => shop.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    LiveGameShops.Add(shop);
+                }
+            }
+
+            if (response.Success)
+            {
+                var shopCount = response.Shops?.Count ?? 0;
+                LiveGameCatalogStatus = string.IsNullOrWhiteSpace(response.Error)
+                    ? $"Loaded {LiveGameItems.Count} items and {shopCount} shops from the running game."
+                    : $"Loaded {LiveGameItems.Count} items and {shopCount} shops. Note: {response.Error}";
+            }
+            else
+            {
+                LiveGameCatalogStatus = string.IsNullOrWhiteSpace(response.Error)
+                    ? "Could not load the runtime catalog."
+                    : response.Error!;
+            }
+
+            RefreshFilteredLiveGameItems();
+            RebuildAvailableItemReferences();
+            RefreshShopCompatibilityPreviews();
+        }
+
+        private void LaunchRuntimeCatalog()
+        {
+            _ = LaunchRuntimeCatalogAsync();
+        }
+
+        private async Task LaunchRuntimeCatalogAsync()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_modSettings.GameInstallPath))
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                        AppUtils.ShowError("Game install path is not configured. Please set it in Settings."));
+                    return;
+                }
+
+                UpdateProcessStateAsync("Building connector mod and launching Schedule I for the live runtime catalog...");
+
+                const bool useLocalDll = true;
+                var launchResult = await Task.Run(() =>
+                    _gameLaunchService.LaunchGame(_modSettings, useLocalDll, previewEnabled: false));
+
+                Application.Current.Dispatcher.Invoke(UpdateProcessState);
+
+                if (launchResult.Success)
+                {
+                    LiveGameCatalogStatus = "Schedule I launched with ModCreatorConnector. When the game reaches the Main scene, click Refresh to load items and shops.";
+
+                    var message = "Schedule I launched with ModCreatorConnector.\n\nOpen an item, wait until the game reaches the Main scene, then click Refresh in Live Runtime Catalog.";
+                    if (launchResult.DllCopied)
+                    {
+                        message += $"\n\nModCreatorConnector DLL deployed to:\n{launchResult.DeployedDllPath}";
+                    }
+                    if (launchResult.Warnings.Count > 0)
+                    {
+                        message += $"\n\nWarnings:\n{string.Join("\n", launchResult.Warnings)}";
+                    }
+
+                    Application.Current.Dispatcher.Invoke(() => AppUtils.ShowInfo(message));
+                }
+                else
+                {
+                    UpdateProcessStateAsync("Launch failed");
+                    var errorMessage = $"Failed to launch Schedule I with ModCreatorConnector: {launchResult.ErrorMessage}";
+                    if (!string.IsNullOrEmpty(launchResult.BuildOutput))
+                    {
+                        errorMessage += $"\n\nBuild Output:\n{launchResult.BuildOutput}";
+                    }
+
+                    Application.Current.Dispatcher.Invoke(() => AppUtils.ShowError(errorMessage));
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateProcessStateAsync("Launch failed");
+                Application.Current.Dispatcher.Invoke(() =>
+                    AppUtils.ShowError($"Failed to launch Schedule I with ModCreatorConnector: {ex.Message}"));
+            }
+        }
+
+        private void RefreshFilteredLiveGameItems()
+        {
+            FilteredLiveGameItems.Clear();
+
+            var search = ItemBrowserSearchText?.Trim();
+            IEnumerable<GameItemCatalogEntry> items = LiveGameItems;
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                items = items.Where(item =>
+                    item.DisplayLabel.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    item.Category.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    item.ItemType.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+
+            foreach (var item in items.OrderBy(item => item.DisplayLabel, StringComparer.OrdinalIgnoreCase))
+            {
+                FilteredLiveGameItems.Add(item);
+            }
+        }
+
+        private void RebuildAvailableItemReferences()
+        {
+            AvailableItemReferences.Clear();
+
+            var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var item in CurrentProject?.Items ?? Enumerable.Empty<ItemBlueprint>())
+            {
+                if (string.IsNullOrWhiteSpace(item.ItemId) || !seenIds.Add(item.ItemId))
+                {
+                    continue;
+                }
+
+                AvailableItemReferences.Add(new ItemReferenceInfo
+                {
+                    Id = item.ItemId,
+                    DisplayName = item.ItemName,
+                    Category = item.EffectiveCategory.ToString(),
+                    ItemType = item.ItemType.ToString(),
+                    Source = "Project",
+                    IsProjectItem = true
+                });
+            }
+
+            foreach (var item in LiveGameItems)
+            {
+                if (string.IsNullOrWhiteSpace(item.ItemId) || !seenIds.Add(item.ItemId))
+                {
+                    continue;
+                }
+
+                AvailableItemReferences.Add(new ItemReferenceInfo
+                {
+                    Id = item.ItemId,
+                    DisplayName = item.Name,
+                    Category = item.Category,
+                    ItemType = item.ItemType,
+                    Source = "Base Game",
+                    IsProjectItem = false
+                });
+            }
+
+            var ordered = AvailableItemReferences
+                .OrderByDescending(item => item.IsProjectItem)
+                .ThenBy(item => item.DisplayLabel, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            AvailableItemReferences.Clear();
+            foreach (var item in ordered)
+            {
+                AvailableItemReferences.Add(item);
+            }
+        }
+
+        private void RefreshShopCompatibilityPreviews(IEnumerable<GameShopCatalogEntry>? liveShops = null)
+        {
+            ShopCompatibilityPreviews.Clear();
+
+            var selectedItem = SelectedItemBlueprint;
+            var shops = liveShops ?? LiveGameShops;
+            var shopList = shops.ToList();
+            if (shopList.Count == 0)
+            {
+                return;
+            }
+
+            var search = ShopBrowserSearchText?.Trim();
+            var categoryName = selectedItem?.EffectiveCategory.ToString() ?? string.Empty;
+            var itemId = selectedItem?.ItemId ?? string.Empty;
+            var shopNames = selectedItem?.ShopNames ?? new ObservableCollection<string>();
+            var price = selectedItem?.EffectiveShopPrice ?? 0f;
+
+            foreach (var shop in shopList
+                .Where(shop => string.IsNullOrWhiteSpace(search)
+                    || shop.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                    || shop.CategorySummary.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(shop => shop.Name, StringComparer.OrdinalIgnoreCase))
+            {
+                ShopCompatibilityPreviews.Add(new ShopCompatibilityPreview
+                {
+                    Name = shop.Name,
+                    ListingCount = shop.ListingCount,
+                    CategorySummary = shop.CategorySummary,
+                    SellsSelectedCategory = !string.IsNullOrWhiteSpace(categoryName)
+                        && shop.Categories.Any(category => string.Equals(category, categoryName, StringComparison.OrdinalIgnoreCase)),
+                    AlreadyStocksItem = !string.IsNullOrWhiteSpace(itemId)
+                        && shop.ItemIds.Any(existingId => string.Equals(existingId, itemId, StringComparison.OrdinalIgnoreCase)),
+                    IsSelectedForSpecificRouting = shopNames.Any(existingName => string.Equals(existingName, shop.Name, StringComparison.OrdinalIgnoreCase)),
+                    FinalPrice = price
+                });
+            }
         }
 
         #endregion
@@ -2361,6 +2631,12 @@ namespace Schedule1ModdingTool.ViewModels
         /// </summary>
         private void OnElementPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (sender is ItemBlueprint)
+            {
+                RebuildAvailableItemReferences();
+                RefreshShopCompatibilityPreviews();
+            }
+
             // Don't save snapshots during undo/redo operations
             if (_isRestoringFromUndoRedo)
                 return;
@@ -2459,6 +2735,8 @@ namespace Schedule1ModdingTool.ViewModels
                 SubscribeToElementPropertyChanges();
                 _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count, CurrentProject.Items.Count);
                 _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+                RebuildAvailableItemReferences();
+                RefreshShopCompatibilityPreviews();
             }
             else if (e.PropertyName == nameof(QuestProject.Resources))
             {

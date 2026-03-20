@@ -37,6 +37,8 @@ namespace Schedule1ModdingTool.Models
         private NpcDealerDefaults _dealerDefaults = new NpcDealerDefaults();
         private NpcRelationshipDefaults _relationshipDefaults = new NpcRelationshipDefaults();
         private NpcInventoryDefaults _inventoryDefaults = new NpcInventoryDefaults();
+        private NpcRuntimeSettings _runtimeSettings = new NpcRuntimeSettings();
+        private bool _generateHookScaffold;
 
         [Required]
         [JsonProperty("className")]
@@ -219,8 +221,37 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _inventoryDefaults, value ?? new NpcInventoryDefaults());
         }
 
+        [JsonProperty("runtimeSettings")]
+        public NpcRuntimeSettings RuntimeSettings
+        {
+            get => _runtimeSettings;
+            set => SetProperty(ref _runtimeSettings, value ?? new NpcRuntimeSettings());
+        }
+
         [JsonProperty("scheduleActions")]
         public ObservableCollection<NpcScheduleAction> ScheduleActions { get; } = new();
+
+        [JsonProperty("dialogueDatabaseEntries")]
+        public ObservableCollection<NpcDialogueDatabaseEntryBlueprint> DialogueDatabaseEntries { get; } = new();
+
+        [JsonProperty("dialogueContainers")]
+        public ObservableCollection<NpcDialogueContainerBlueprint> DialogueContainers { get; } = new();
+
+        [JsonProperty("dialogueCallbacks")]
+        public ObservableCollection<NpcDialogueCallbackBlueprint> DialogueCallbacks { get; } = new();
+
+        [JsonProperty("dialogueInjections")]
+        public ObservableCollection<NpcDialogueInjectionBlueprint> DialogueInjections { get; } = new();
+
+        [JsonProperty("eventReactions")]
+        public ObservableCollection<NpcRuntimeEventReactionBlueprint> EventReactions { get; } = new();
+
+        [JsonProperty("generateHookScaffold")]
+        public bool GenerateHookScaffold
+        {
+            get => _generateHookScaffold;
+            set => SetProperty(ref _generateHookScaffold, value);
+        }
 
         [JsonIgnore]
         public string DisplayName => string.IsNullOrWhiteSpace(FirstName)
@@ -264,11 +295,43 @@ namespace Schedule1ModdingTool.Models
             DealerDefaults.CopyFrom(source.DealerDefaults);
             RelationshipDefaults.CopyFrom(source.RelationshipDefaults);
             InventoryDefaults.CopyFrom(source.InventoryDefaults);
+            RuntimeSettings.CopyFrom(source.RuntimeSettings);
+            GenerateHookScaffold = source.GenerateHookScaffold;
 
             ScheduleActions.Clear();
             foreach (var action in source.ScheduleActions)
             {
                 ScheduleActions.Add(action.DeepCopy());
+            }
+
+            DialogueDatabaseEntries.Clear();
+            foreach (var entry in source.DialogueDatabaseEntries)
+            {
+                DialogueDatabaseEntries.Add(entry.DeepCopy());
+            }
+
+            DialogueContainers.Clear();
+            foreach (var container in source.DialogueContainers)
+            {
+                DialogueContainers.Add(container.DeepCopy());
+            }
+
+            DialogueCallbacks.Clear();
+            foreach (var callback in source.DialogueCallbacks)
+            {
+                DialogueCallbacks.Add(callback.DeepCopy());
+            }
+
+            DialogueInjections.Clear();
+            foreach (var injection in source.DialogueInjections)
+            {
+                DialogueInjections.Add(injection.DeepCopy());
+            }
+
+            EventReactions.Clear();
+            foreach (var reaction in source.EventReactions)
+            {
+                EventReactions.Add(reaction.DeepCopy());
             }
         }
 

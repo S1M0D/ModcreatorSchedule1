@@ -367,12 +367,47 @@ namespace Schedule1ModdingTool.Models
                 npc.InventoryDefaults.StartupItems.CollectionChanged += OnNpcCollectionChanged;
             }
 
+            if (npc.RuntimeSettings != null)
+            {
+                npc.RuntimeSettings.PropertyChanged += NpcOnPropertyChanged;
+            }
+
             if (npc.Appearance != null)
             {
                 npc.Appearance.PropertyChanged += NpcOnPropertyChanged;
                 npc.Appearance.FaceLayers.CollectionChanged += OnNpcCollectionChanged;
                 npc.Appearance.BodyLayers.CollectionChanged += OnNpcCollectionChanged;
                 npc.Appearance.AccessoryLayers.CollectionChanged += OnNpcCollectionChanged;
+            }
+
+            npc.DialogueDatabaseEntries.CollectionChanged += OnNpcDialogueDatabaseEntriesCollectionChanged;
+            foreach (var entry in npc.DialogueDatabaseEntries)
+            {
+                AttachNpcDialogueDatabaseEntryHandlers(entry);
+            }
+
+            npc.DialogueContainers.CollectionChanged += OnNpcDialogueContainersCollectionChanged;
+            foreach (var container in npc.DialogueContainers)
+            {
+                AttachNpcDialogueContainerHandlers(container);
+            }
+
+            npc.DialogueCallbacks.CollectionChanged += OnNpcDialogueCallbacksCollectionChanged;
+            foreach (var callback in npc.DialogueCallbacks)
+            {
+                AttachNpcDialogueCallbackHandlers(callback);
+            }
+
+            npc.DialogueInjections.CollectionChanged += OnNpcDialogueInjectionsCollectionChanged;
+            foreach (var injection in npc.DialogueInjections)
+            {
+                AttachNpcDialogueInjectionHandlers(injection);
+            }
+
+            npc.EventReactions.CollectionChanged += OnNpcEventReactionsCollectionChanged;
+            foreach (var reaction in npc.EventReactions)
+            {
+                AttachNpcEventReactionHandlers(reaction);
             }
         }
 
@@ -456,12 +491,47 @@ namespace Schedule1ModdingTool.Models
                 npc.InventoryDefaults.StartupItems.CollectionChanged -= OnNpcCollectionChanged;
             }
 
+            if (npc.RuntimeSettings != null)
+            {
+                npc.RuntimeSettings.PropertyChanged -= NpcOnPropertyChanged;
+            }
+
             if (npc.Appearance != null)
             {
                 npc.Appearance.PropertyChanged -= NpcOnPropertyChanged;
                 npc.Appearance.FaceLayers.CollectionChanged -= OnNpcCollectionChanged;
                 npc.Appearance.BodyLayers.CollectionChanged -= OnNpcCollectionChanged;
                 npc.Appearance.AccessoryLayers.CollectionChanged -= OnNpcCollectionChanged;
+            }
+
+            npc.DialogueDatabaseEntries.CollectionChanged -= OnNpcDialogueDatabaseEntriesCollectionChanged;
+            foreach (var entry in npc.DialogueDatabaseEntries)
+            {
+                DetachNpcDialogueDatabaseEntryHandlers(entry);
+            }
+
+            npc.DialogueContainers.CollectionChanged -= OnNpcDialogueContainersCollectionChanged;
+            foreach (var container in npc.DialogueContainers)
+            {
+                DetachNpcDialogueContainerHandlers(container);
+            }
+
+            npc.DialogueCallbacks.CollectionChanged -= OnNpcDialogueCallbacksCollectionChanged;
+            foreach (var callback in npc.DialogueCallbacks)
+            {
+                DetachNpcDialogueCallbackHandlers(callback);
+            }
+
+            npc.DialogueInjections.CollectionChanged -= OnNpcDialogueInjectionsCollectionChanged;
+            foreach (var injection in npc.DialogueInjections)
+            {
+                DetachNpcDialogueInjectionHandlers(injection);
+            }
+
+            npc.EventReactions.CollectionChanged -= OnNpcEventReactionsCollectionChanged;
+            foreach (var reaction in npc.EventReactions)
+            {
+                DetachNpcEventReactionHandlers(reaction);
             }
         }
 
@@ -591,6 +661,17 @@ namespace Schedule1ModdingTool.Models
                         {
                             npc.InventoryDefaults.PropertyChanged += NpcOnPropertyChanged;
                             npc.InventoryDefaults.StartupItems.CollectionChanged += OnNpcCollectionChanged;
+                        }
+                        break;
+
+                    case nameof(NpcBlueprint.RuntimeSettings):
+                        if (npc.RuntimeSettings != null)
+                        {
+                            npc.RuntimeSettings.PropertyChanged -= NpcOnPropertyChanged;
+                        }
+                        if (npc.RuntimeSettings != null)
+                        {
+                            npc.RuntimeSettings.PropertyChanged += NpcOnPropertyChanged;
                         }
                         break;
 
@@ -838,6 +919,327 @@ namespace Schedule1ModdingTool.Models
         private void DetachScheduleActionHandlers(NpcScheduleAction action)
         {
             action.PropertyChanged -= NpcOnPropertyChanged;
+        }
+
+        private void AttachNpcDialogueDatabaseEntryHandlers(NpcDialogueDatabaseEntryBlueprint entry)
+        {
+            entry.PropertyChanged += NpcOnPropertyChanged;
+        }
+
+        private void DetachNpcDialogueDatabaseEntryHandlers(NpcDialogueDatabaseEntryBlueprint entry)
+        {
+            entry.PropertyChanged -= NpcOnPropertyChanged;
+        }
+
+        private void AttachNpcDialogueContainerHandlers(NpcDialogueContainerBlueprint container)
+        {
+            container.PropertyChanged += NpcOnPropertyChanged;
+            container.Nodes.CollectionChanged += OnNpcDialogueNodesCollectionChanged;
+            foreach (var node in container.Nodes)
+            {
+                AttachNpcDialogueNodeHandlers(node);
+            }
+        }
+
+        private void DetachNpcDialogueContainerHandlers(NpcDialogueContainerBlueprint container)
+        {
+            container.PropertyChanged -= NpcOnPropertyChanged;
+            container.Nodes.CollectionChanged -= OnNpcDialogueNodesCollectionChanged;
+            foreach (var node in container.Nodes)
+            {
+                DetachNpcDialogueNodeHandlers(node);
+            }
+        }
+
+        private void AttachNpcDialogueNodeHandlers(NpcDialogueNodeBlueprint node)
+        {
+            node.PropertyChanged += NpcOnPropertyChanged;
+            node.Choices.CollectionChanged += OnNpcDialogueChoicesCollectionChanged;
+            foreach (var choice in node.Choices)
+            {
+                AttachNpcDialogueChoiceHandlers(choice);
+            }
+        }
+
+        private void DetachNpcDialogueNodeHandlers(NpcDialogueNodeBlueprint node)
+        {
+            node.PropertyChanged -= NpcOnPropertyChanged;
+            node.Choices.CollectionChanged -= OnNpcDialogueChoicesCollectionChanged;
+            foreach (var choice in node.Choices)
+            {
+                DetachNpcDialogueChoiceHandlers(choice);
+            }
+        }
+
+        private void AttachNpcDialogueChoiceHandlers(NpcDialogueChoiceBlueprint choice)
+        {
+            choice.PropertyChanged += NpcOnPropertyChanged;
+        }
+
+        private void DetachNpcDialogueChoiceHandlers(NpcDialogueChoiceBlueprint choice)
+        {
+            choice.PropertyChanged -= NpcOnPropertyChanged;
+        }
+
+        private void AttachNpcDialogueCallbackHandlers(NpcDialogueCallbackBlueprint callback)
+        {
+            callback.PropertyChanged += NpcOnPropertyChanged;
+        }
+
+        private void DetachNpcDialogueCallbackHandlers(NpcDialogueCallbackBlueprint callback)
+        {
+            callback.PropertyChanged -= NpcOnPropertyChanged;
+        }
+
+        private void AttachNpcDialogueInjectionHandlers(NpcDialogueInjectionBlueprint injection)
+        {
+            injection.PropertyChanged += NpcOnPropertyChanged;
+        }
+
+        private void DetachNpcDialogueInjectionHandlers(NpcDialogueInjectionBlueprint injection)
+        {
+            injection.PropertyChanged -= NpcOnPropertyChanged;
+        }
+
+        private void AttachNpcEventReactionHandlers(NpcRuntimeEventReactionBlueprint reaction)
+        {
+            reaction.PropertyChanged += NpcOnPropertyChanged;
+        }
+
+        private void DetachNpcEventReactionHandlers(NpcRuntimeEventReactionBlueprint reaction)
+        {
+            reaction.PropertyChanged -= NpcOnPropertyChanged;
+        }
+
+        private void OnNpcDialogueDatabaseEntriesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcDialogueDatabaseEntryBlueprint entry)
+                    {
+                        AttachNpcDialogueDatabaseEntryHandlers(entry);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcDialogueDatabaseEntryBlueprint entry)
+                    {
+                        DetachNpcDialogueDatabaseEntryHandlers(entry);
+                    }
+                }
+            }
+
+            MarkAsModified();
+        }
+
+        private void OnNpcDialogueContainersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcDialogueContainerBlueprint container)
+                    {
+                        AttachNpcDialogueContainerHandlers(container);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcDialogueContainerBlueprint container)
+                    {
+                        DetachNpcDialogueContainerHandlers(container);
+                    }
+                }
+            }
+
+            MarkAsModified();
+        }
+
+        private void OnNpcDialogueNodesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcDialogueNodeBlueprint node)
+                    {
+                        AttachNpcDialogueNodeHandlers(node);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcDialogueNodeBlueprint node)
+                    {
+                        DetachNpcDialogueNodeHandlers(node);
+                    }
+                }
+            }
+
+            MarkAsModified();
+        }
+
+        private void OnNpcDialogueChoicesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcDialogueChoiceBlueprint choice)
+                    {
+                        AttachNpcDialogueChoiceHandlers(choice);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcDialogueChoiceBlueprint choice)
+                    {
+                        DetachNpcDialogueChoiceHandlers(choice);
+                    }
+                }
+            }
+
+            MarkAsModified();
+        }
+
+        private void OnNpcDialogueCallbacksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcDialogueCallbackBlueprint callback)
+                    {
+                        AttachNpcDialogueCallbackHandlers(callback);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcDialogueCallbackBlueprint callback)
+                    {
+                        DetachNpcDialogueCallbackHandlers(callback);
+                    }
+                }
+            }
+
+            MarkAsModified();
+        }
+
+        private void OnNpcDialogueInjectionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcDialogueInjectionBlueprint injection)
+                    {
+                        AttachNpcDialogueInjectionHandlers(injection);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcDialogueInjectionBlueprint injection)
+                    {
+                        DetachNpcDialogueInjectionHandlers(injection);
+                    }
+                }
+            }
+
+            MarkAsModified();
+        }
+
+        private void OnNpcEventReactionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                MarkAsModified();
+                return;
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is NpcRuntimeEventReactionBlueprint reaction)
+                    {
+                        AttachNpcEventReactionHandlers(reaction);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is NpcRuntimeEventReactionBlueprint reaction)
+                    {
+                        DetachNpcEventReactionHandlers(reaction);
+                    }
+                }
+            }
+
+            MarkAsModified();
         }
 
         private void OnObjectiveTriggersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

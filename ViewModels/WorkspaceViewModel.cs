@@ -18,6 +18,7 @@ namespace Schedule1ModdingTool.ViewModels
         private readonly ObservableCollection<ModFolder> _breadcrumb = new ObservableCollection<ModFolder>();
         private readonly HashSet<QuestBlueprint> _observedQuests = new HashSet<QuestBlueprint>();
         private readonly HashSet<NpcBlueprint> _observedNpcs = new HashSet<NpcBlueprint>();
+        private readonly HashSet<ItemBlueprint> _observedItems = new HashSet<ItemBlueprint>();
 
         public WorkspaceViewModel()
         {
@@ -152,9 +153,24 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        public IEnumerable<ItemBlueprint> CurrentItems
+        {
+            get
+            {
+                if (Project == null || SelectedFolder == null)
+                    return Enumerable.Empty<ItemBlueprint>();
+
+                return Project.Items
+                    .Where(i => string.Equals(i.FolderId, SelectedFolder.Id, StringComparison.Ordinal))
+                    .Where(i => MatchesSearch(i.DisplayName))
+                    .OrderBy(i => i.DisplayName, StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
         public IEnumerable<object> CurrentTiles =>
             CurrentFolders.Cast<object>()
                 .Concat(CurrentNpcs)
+                .Concat(CurrentItems)
                 .Concat(CurrentQuests);
 
         public ICommand ToggleViewModeCommand { get; }
@@ -170,6 +186,7 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 Project.Quests.CollectionChanged -= OnProjectQuestsChanged;
                 Project.Npcs.CollectionChanged -= OnProjectNpcsChanged;
+                Project.Items.CollectionChanged -= OnProjectItemsChanged;
                 Project.Folders.CollectionChanged -= OnProjectFoldersChanged;
                 foreach (var quest in _observedQuests.ToArray())
                 {
@@ -179,13 +196,19 @@ namespace Schedule1ModdingTool.ViewModels
                 {
                     npc.PropertyChanged -= BlueprintOnPropertyChanged;
                 }
+                foreach (var item in _observedItems.ToArray())
+                {
+                    item.PropertyChanged -= BlueprintOnPropertyChanged;
+                }
                 _observedQuests.Clear();
                 _observedNpcs.Clear();
+                _observedItems.Clear();
             }
 
             Project = project;
             Project.Quests.CollectionChanged += OnProjectQuestsChanged;
             Project.Npcs.CollectionChanged += OnProjectNpcsChanged;
+            Project.Items.CollectionChanged += OnProjectItemsChanged;
             Project.Folders.CollectionChanged += OnProjectFoldersChanged;
 
             foreach (var quest in Project.Quests)
@@ -196,6 +219,11 @@ namespace Schedule1ModdingTool.ViewModels
             foreach (var npc in Project.Npcs)
             {
                 ObserveBlueprint(npc);
+            }
+
+            foreach (var item in Project.Items)
+            {
+                ObserveBlueprint(item);
             }
 
             SelectedFolder = Project.GetFolderById(SelectedFolder?.Id ?? QuestProject.RootFolderId) ??
@@ -265,6 +293,15 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        public void UpdateItemCount(int count)
+        {
+            var itemCategory = Categories.FirstOrDefault(c => c.Category == ModCategory.Items);
+            if (itemCategory != null)
+            {
+                itemCategory.Count = count;
+            }
+        }
+
         private void InitializeCategories()
         {
             Categories.Add(new ModCategoryInfo
@@ -304,9 +341,9 @@ namespace Schedule1ModdingTool.ViewModels
                 DisplayName = "Items",
                 IconKey = "ItemsIcon",
                 Description = "Create custom items",
-                IsEnabled = false,
+                IsEnabled = true,
                 Count = 0,
-                ComingSoonText = "Coming Soon"
+                ComingSoonText = string.Empty
             });
         }
 
@@ -358,6 +395,30 @@ namespace Schedule1ModdingTool.ViewModels
             RaiseItemsChanged();
         }
 
+        private void OnProjectItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems.OfType<ItemBlueprint>())
+                {
+                    ObserveBlueprint(item);
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems.OfType<ItemBlueprint>())
+                {
+                    if (_observedItems.Remove(item))
+                    {
+                        item.PropertyChanged -= BlueprintOnPropertyChanged;
+                    }
+                }
+            }
+
+            RaiseItemsChanged();
+        }
+
         private void OnProjectFoldersChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (Project == null)
@@ -378,7 +439,9 @@ namespace Schedule1ModdingTool.ViewModels
 
         private void BlueprintOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(QuestBlueprint.FolderId) || e.PropertyName == nameof(NpcBlueprint.FolderId))
+            if (e.PropertyName == nameof(QuestBlueprint.FolderId) ||
+                e.PropertyName == nameof(NpcBlueprint.FolderId) ||
+                e.PropertyName == nameof(ItemBlueprint.FolderId))
             {
                 RaiseItemsChanged();
             }
@@ -397,6 +460,14 @@ namespace Schedule1ModdingTool.ViewModels
             if (_observedNpcs.Add(npc))
             {
                 npc.PropertyChanged += BlueprintOnPropertyChanged;
+            }
+        }
+
+        private void ObserveBlueprint(ItemBlueprint item)
+        {
+            if (_observedItems.Add(item))
+            {
+                item.PropertyChanged += BlueprintOnPropertyChanged;
             }
         }
 
@@ -436,6 +507,7 @@ namespace Schedule1ModdingTool.ViewModels
             OnPropertyChanged(nameof(CurrentFolders));
             OnPropertyChanged(nameof(CurrentQuests));
             OnPropertyChanged(nameof(CurrentNpcs));
+            OnPropertyChanged(nameof(CurrentItems));
             OnPropertyChanged(nameof(CurrentTiles));
         }
 

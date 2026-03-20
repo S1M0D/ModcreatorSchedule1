@@ -343,6 +343,9 @@ namespace Schedule1ModdingTool.Views
             
             // Ctrl+Shift+N - New NPC
             InputBindings.Add(new KeyBinding(vm.NewNpcCommand, Key.N, ModifierKeys.Control | ModifierKeys.Shift));
+
+            // Ctrl+Shift+I - New Item
+            InputBindings.Add(new KeyBinding(vm.NewItemCommand, Key.I, ModifierKeys.Control | ModifierKeys.Shift));
             
             // Ctrl+D - Duplicate Selected
             InputBindings.Add(new KeyBinding(vm.DuplicateSelectedCommand, Key.D, ModifierKeys.Control));
@@ -427,6 +430,14 @@ namespace Schedule1ModdingTool.Views
             if (DataContext is MainViewModel vm && vm.AvailableNpcBlueprints.Count > 0)
             {
                 vm.AddNpcCommand.Execute(vm.AvailableNpcBlueprints[0]);
+            }
+        }
+
+        private void AddItemMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && vm.AvailableItemBlueprints.Count > 0)
+            {
+                vm.AddItemCommand.Execute(vm.AvailableItemBlueprints[0]);
             }
         }
 

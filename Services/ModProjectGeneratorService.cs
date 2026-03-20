@@ -38,37 +38,36 @@ namespace Schedule1ModdingTool.Services
                 Directory.CreateDirectory(modPath);
                 Directory.CreateDirectory(Path.Combine(modPath, "Quests"));
                 Directory.CreateDirectory(Path.Combine(modPath, "NPCs"));
+                Directory.CreateDirectory(Path.Combine(modPath, "Items"));
                 Directory.CreateDirectory(Path.Combine(modPath, "Utils"));
                 Directory.CreateDirectory(Path.Combine(modPath, "Resources"));
 
-                // Get mod metadata from first quest or defaults
+                // Get mod metadata from the first available authored element or defaults
                 var firstQuest = project.Quests.FirstOrDefault();
+                var firstNpc = project.Npcs.FirstOrDefault();
+                var firstItem = project.Items.FirstOrDefault();
                 var hasQuests = project.Quests != null && project.Quests.Any();
+                var discoveredNamespace = firstQuest?.Namespace ?? firstItem?.Namespace ?? firstNpc?.Namespace;
                 
                 // Use project namespace if set, otherwise derive from first quest or project name
                 string rootNamespace;
                 if (!string.IsNullOrWhiteSpace(project.ProjectNamespace))
                 {
                     // Project namespace is stored (e.g., "TestMod" or "TestMod.Quests")
-                    rootNamespace = project.ProjectNamespace.Contains('.') && project.ProjectNamespace.EndsWith(".Quests")
-                        ? project.ProjectNamespace.Substring(0, project.ProjectNamespace.LastIndexOf('.'))
-                        : project.ProjectNamespace;
+                    rootNamespace = TrimElementSuffix(project.ProjectNamespace);
                 }
                 else
                 {
-                    // Backward compatibility: derive from first quest or project name
-                    var modNamespace = firstQuest?.Namespace ?? (hasQuests 
+                    // Backward compatibility: derive from the first element or project name
+                    var modNamespace = discoveredNamespace ?? (hasQuests 
                         ? $"{MakeSafeIdentifier(project.ProjectName, "GeneratedMod")}.Quests"
                         : MakeSafeIdentifier(project.ProjectName, "GeneratedMod"));
-                    // Extract root namespace for Core.cs (remove .Quests suffix if present)
-                    rootNamespace = modNamespace.Contains('.') && modNamespace.EndsWith(".Quests")
-                        ? modNamespace.Substring(0, modNamespace.LastIndexOf('.'))
-                        : modNamespace;
+                    rootNamespace = TrimElementSuffix(modNamespace);
                 }
-                var modAuthor = firstQuest?.ModAuthor ?? settings?.DefaultModAuthor ?? "Quest Creator";
-                var modVersion = firstQuest?.ModVersion ?? settings?.DefaultModVersion ?? "1.0.0";
-                var gameStudio = firstQuest?.GameDeveloper ?? "TVGS";
-                var gameName = firstQuest?.GameName ?? "Schedule I";
+                var modAuthor = firstQuest?.ModAuthor ?? firstItem?.ModAuthor ?? firstNpc?.ModAuthor ?? settings?.DefaultModAuthor ?? "Quest Creator";
+                var modVersion = firstQuest?.ModVersion ?? firstItem?.ModVersion ?? firstNpc?.ModVersion ?? settings?.DefaultModVersion ?? "1.0.0";
+                var gameStudio = firstQuest?.GameDeveloper ?? firstItem?.GameDeveloper ?? firstNpc?.GameDeveloper ?? "TVGS";
+                var gameName = firstQuest?.GameName ?? firstItem?.GameName ?? firstNpc?.GameName ?? "Schedule I";
 
                 // Generate .csproj file
                 GenerateCsprojFile(modPath, modName, project.Resources, result, settings);
@@ -92,6 +91,12 @@ namespace Schedule1ModdingTool.Services
                 foreach (var npc in project.Npcs)
                 {
                     GenerateNpcFile(modPath, npc, result);
+                }
+
+                // Generate Item files
+                foreach (var item in project.Items)
+                {
+                    GenerateItemFile(modPath, item, result);
                 }
 
                 // Clean up old generated files that no longer match current NPCs/Quests
@@ -214,6 +219,7 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("    <Compile Include=\"Utils\\Constants.cs\" />");
             sb.AppendLine("    <Compile Include=\"Quests\\*.cs\" />");
             sb.AppendLine("    <Compile Include=\"NPCs\\*.cs\" />");
+            sb.AppendLine("    <Compile Include=\"Items\\*.cs\" />");
             sb.AppendLine("  </ItemGroup>");
             if (resources != null && resources.Any())
             {
@@ -316,6 +322,7 @@ namespace Schedule1ModdingTool.Services
             var corePath = Path.Combine(modPath, "Core.cs");
             var sb = new StringBuilder();
             var hasQuests = project.Quests != null && project.Quests.Any();
+            var hasItems = project.Items != null && project.Items.Any();
 
             sb.AppendLine("using System;");
             sb.AppendLine("using System.Collections;");
@@ -328,12 +335,20 @@ namespace Schedule1ModdingTool.Services
                 sb.AppendLine("using S1API.Quests;");
                 sb.AppendLine("using S1API.Quests.Constants;");
             }
+            if (hasItems)
+            {
+                sb.AppendLine("using S1API.Items;");
+            }
             sb.AppendLine("using S1API.Entities;");
             sb.AppendLine("using S1API.GameTime;");
             sb.AppendLine($"using {rootNamespace}.Utils;");
             if (hasQuests)
             {
                 sb.AppendLine($"using {rootNamespace}.Quests;");
+            }
+            if (hasItems)
+            {
+                sb.AppendLine($"using {rootNamespace}.Items;");
             }
             sb.AppendLine();
             sb.AppendLine($"[assembly: MelonInfo(typeof({rootNamespace}.Core), Constants.MOD_NAME, Constants.MOD_VERSION, Constants.MOD_AUTHOR)]");
@@ -363,16 +378,48 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("        }");
             sb.AppendLine();
 
-            if (hasQuests)
+            if (hasItems)
+            {
+                sb.AppendLine("        private void RegisterItems()");
+                sb.AppendLine("        {");
+                foreach (var item in project.Items ?? Enumerable.Empty<ItemBlueprint>())
+                {
+                    var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+                    sb.AppendLine("            try");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                {className}.Register();");
+                    sb.AppendLine("            }");
+                    sb.AppendLine("            catch (Exception ex)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                MelonLogger.Error($\"Failed to register item {className}: {{ex.Message}}\");");
+                    sb.AppendLine("            }");
+                    sb.AppendLine();
+                }
+                sb.AppendLine("        }");
+                sb.AppendLine();
+            }
+
+            if (hasItems || hasQuests)
             {
                 sb.AppendLine("        public override void OnSceneWasInitialized(int buildIndex, string sceneName)");
                 sb.AppendLine("        {");
                 sb.AppendLine("            if (string.Equals(sceneName, \"Main\", StringComparison.OrdinalIgnoreCase))");
                 sb.AppendLine("            {");
-                sb.AppendLine("                _questsRegistered = false;");
+                if (hasItems)
+                {
+                    sb.AppendLine("                RegisterItems();");
+                }
+                if (hasQuests)
+                {
+                    sb.AppendLine("                _questsRegistered = false;");
+                }
                 sb.AppendLine("            }");
                 sb.AppendLine("        }");
                 sb.AppendLine();
+            }
+
+            if (hasQuests)
+            {
                 sb.AppendLine("        public override void OnSceneWasUnloaded(int buildIndex, string sceneName)");
                 sb.AppendLine("        {");
                 sb.AppendLine("            if (string.Equals(sceneName, \"Main\", StringComparison.OrdinalIgnoreCase))");
@@ -546,6 +593,16 @@ namespace Schedule1ModdingTool.Services
             result.GeneratedFiles.Add(npcPath);
         }
 
+        private void GenerateItemFile(string modPath, ItemBlueprint item, ModProjectGenerationResult result)
+        {
+            var itemCode = _codeGenService.GenerateItemCode(item);
+            var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+            var itemPath = Path.Combine(modPath, "Items", $"{className}.cs");
+
+            File.WriteAllText(itemPath, itemCode);
+            result.GeneratedFiles.Add(itemPath);
+        }
+
         /// <summary>
         /// Removes old generated C# files that no longer correspond to current NPCs or Quests.
         /// This handles cases where elements were renamed or deleted.
@@ -557,6 +614,7 @@ namespace Schedule1ModdingTool.Services
                 // Collect expected file names from current NPCs and Quests
                 var expectedNpcFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var expectedQuestFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var expectedItemFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var npc in project.Npcs)
                 {
@@ -568,6 +626,12 @@ namespace Schedule1ModdingTool.Services
                 {
                     var className = MakeSafeIdentifier(quest.ClassName, "GeneratedQuest");
                     expectedQuestFiles.Add($"{className}.cs");
+                }
+
+                foreach (var item in project.Items)
+                {
+                    var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+                    expectedItemFiles.Add($"{className}.cs");
                 }
 
                 // Clean up NPC files
@@ -615,6 +679,30 @@ namespace Schedule1ModdingTool.Services
                             {
                                 Debug.WriteLine($"[ModProjectGenerator] Failed to delete old Quest file '{fileName}': {ex.Message}");
                                 result.Warnings.Add($"Could not remove old Quest file '{fileName}': {ex.Message}");
+                            }
+                        }
+                    }
+                }
+
+                var itemsDir = Path.Combine(modPath, "Items");
+                if (Directory.Exists(itemsDir))
+                {
+                    var existingItemFiles = Directory.GetFiles(itemsDir, "*.cs");
+                    foreach (var filePath in existingItemFiles)
+                    {
+                        var fileName = Path.GetFileName(filePath);
+                        if (!expectedItemFiles.Contains(fileName))
+                        {
+                            try
+                            {
+                                File.Delete(filePath);
+                                Debug.WriteLine($"[ModProjectGenerator] Deleted old Item file: {fileName}");
+                                result.Warnings.Add($"Removed old Item file: {fileName}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old Item file '{fileName}': {ex.Message}");
+                                result.Warnings.Add($"Could not remove old Item file '{fileName}': {ex.Message}");
                             }
                         }
                     }
@@ -792,6 +880,25 @@ namespace Schedule1ModdingTool.Services
             }
 
             return false;
+        }
+
+        private static string TrimElementSuffix(string namespaceValue)
+        {
+            if (string.IsNullOrWhiteSpace(namespaceValue))
+            {
+                return "GeneratedMod";
+            }
+
+            var suffixes = new[] { ".Quests", ".NPCs", ".Items" };
+            foreach (var suffix in suffixes)
+            {
+                if (namespaceValue.EndsWith(suffix, StringComparison.Ordinal))
+                {
+                    return namespaceValue.Substring(0, namespaceValue.Length - suffix.Length);
+                }
+            }
+
+            return namespaceValue;
         }
 
         private static string MakeSafeIdentifier(string? candidate, string fallback)

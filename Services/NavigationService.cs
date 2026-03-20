@@ -136,7 +136,7 @@ namespace Schedule1ModdingTool.Services
         public void UpdateWorkspaceProjectInfo(QuestProject project)
         {
             var projectName = string.IsNullOrEmpty(project.ProjectName) ? "Untitled Project" : project.ProjectName;
-            var totalElements = project.Quests.Count;
+            var totalElements = project.Quests.Count + project.Npcs.Count + project.Items.Count;
             _workspaceViewModel.ProjectInfo = $"{projectName}: {totalElements} mod elements";
         }
 
@@ -145,10 +145,12 @@ namespace Schedule1ModdingTool.Services
         /// </summary>
         /// <param name="questCount">Number of quests.</param>
         /// <param name="npcCount">Number of NPCs.</param>
-        public void UpdateElementCounts(int questCount, int npcCount)
+        /// <param name="itemCount">Number of items.</param>
+        public void UpdateElementCounts(int questCount, int npcCount, int itemCount)
         {
             _workspaceViewModel.UpdateQuestCount(questCount);
             _workspaceViewModel.UpdateNpcCount(npcCount);
+            _workspaceViewModel.UpdateItemCount(itemCount);
         }
     }
 }

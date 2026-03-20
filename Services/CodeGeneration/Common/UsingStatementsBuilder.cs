@@ -83,6 +83,25 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         }
 
         /// <summary>
+        /// Adds standard using statements for item code generation.
+        /// Includes S1API.Items, S1API.Shops, icon utilities, and common System namespaces.
+        /// </summary>
+        public UsingStatementsBuilder AddItemUsings()
+        {
+            return Add(
+                "System",
+                "System.IO",
+                "System.Linq",
+                "System.Reflection",
+                "MelonLoader",
+                "S1API.Items",
+                "S1API.Shops",
+                "S1API.Utils",
+                "UnityEngine"
+            );
+        }
+
+        /// <summary>
         /// Adds common System namespaces.
         /// </summary>
         /// <returns>This builder for method chaining.</returns>

@@ -29,6 +29,10 @@
 			<views:NpcPropertiesControl
 				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
 		</DataTemplate>
+		<DataTemplate x:Key="ItemEditorTemplate">
+			<views:ItemPropertiesControl
+				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
+		</DataTemplate>
 		<DataTemplate x:Key="WorkspaceEditorTemplate">
 			<views:WorkspaceControl
 				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
@@ -36,6 +40,7 @@
 		<utils:ElementEditorTemplateSelector x:Key="ElementEditorTemplateSelector"
 		                                     QuestTemplate="{StaticResource QuestEditorTemplate}"
 		                                     NpcTemplate="{StaticResource NpcEditorTemplate}"
+		                                     ItemTemplate="{StaticResource ItemEditorTemplate}"
 		                                     WorkspaceTemplate="{StaticResource WorkspaceEditorTemplate}" />
 	</Window.Resources>
 
@@ -209,6 +214,13 @@
 						<MenuItem Header="NPC" Click="AddNpcMenuItem_Click" InputGestureText="Ctrl+Shift+N" Style="{StaticResource DarkMenuItemStyle}">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource NPCsIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Item" Click="AddItemMenuItem_Click" InputGestureText="Ctrl+Shift+I" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>
@@ -506,6 +518,8 @@
 					<TextBlock Text="{Binding CurrentProject.Quests.Count}" />
 					<TextBlock Text=" | NPCs: " Margin="8,0,0,0" />
 					<TextBlock Text="{Binding CurrentProject.Npcs.Count}" />
+					<TextBlock Text=" | Items: " Margin="8,0,0,0" />
+					<TextBlock Text="{Binding CurrentProject.Items.Count}" />
 					<TextBlock Text=" | Selected: " Margin="8,0,0,0" />
 					<TextBlock Text="{Binding SelectedElementName}" />
 				</StackPanel>

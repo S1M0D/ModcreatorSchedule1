@@ -242,6 +242,85 @@
 			</Border>
 		</DataTemplate>
 
+		<DataTemplate DataType="{x:Type models:ItemBlueprint}">
+			<Border Style="{StaticResource TileBorderStyle}"
+			        MouseLeftButtonDown="ItemTile_MouseLeftButtonDown"
+			        MouseRightButtonDown="ItemTile_MouseRightButtonDown"
+			        MouseMove="ItemTile_MouseMove"
+			        AllowDrop="False">
+				<Border.ContextMenu>
+					<ContextMenu>
+						<MenuItem Header="Open" Click="OpenItem_Click" FontWeight="Bold">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource DocumentIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<Separator />
+						<MenuItem Header="Rename" Click="RenameItem_Click">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="RenameBox"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Duplicate" Click="DuplicateItem_Click">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource CopyIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<Separator />
+						<MenuItem Header="Delete" Click="DeleteItem_Click">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource DeleteIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+					</ContextMenu>
+				</Border.ContextMenu>
+				<Grid>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+						<RowDefinition Height="Auto" />
+					</Grid.RowDefinitions>
+					<materialDesign:PackIcon Grid.Row="0"
+					                         Kind="{StaticResource ItemsIcon}"
+					                         Foreground="{StaticResource MediumTextBrush}"
+					                         Width="40" Height="40"
+					                         HorizontalAlignment="Center"
+					                         Margin="0,0,0,8" />
+					<TextBlock Grid.Row="1"
+					           Text="{Binding DisplayName}"
+					           FontSize="16"
+					           FontWeight="SemiBold"
+					           Foreground="{StaticResource LightTextBrush}"
+					           HorizontalAlignment="Center"
+					           TextAlignment="Center"
+					           TextWrapping="Wrap"
+					           VerticalAlignment="Center"
+					           Margin="8,0" />
+					<Border Grid.Row="2"
+					        Background="{StaticResource DarkBorderBrush}"
+					        CornerRadius="4"
+					        Padding="4"
+					        Margin="8"
+					        HorizontalAlignment="Center">
+						<TextBlock Text="{Binding ItemId}"
+						           FontSize="10"
+						           FontWeight="SemiBold"
+						           Foreground="{StaticResource MediumTextBrush}"
+						           TextTrimming="CharacterEllipsis"
+						           MaxWidth="180" />
+					</Border>
+				</Grid>
+			</Border>
+		</DataTemplate>
+
 		<!-- Context Menu -->
 		<ContextMenu x:Key="WorkspaceContextMenu">
 			<MenuItem Header="New">
@@ -255,6 +334,13 @@
 				<MenuItem Header="NPC" Click="NewNpc_Click">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource NPCsIcon}"
+						                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+						                         Width="16" Height="16" />
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="Item" Click="NewItem_Click">
+					<MenuItem.Icon>
+						<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
 						                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>

@@ -229,7 +229,7 @@
 	    <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed\Newtonsoft.Json.dll</HintPath>
 	  </Reference>
 	  <Reference Include="S1API">
-	    <HintPath>..\..\..\Downloads\mods\S1API.Il2Cpp.MelonLoader.dll</HintPath>
+	    <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Mods\S1API.Mono.MelonLoader.dll</HintPath>
 	  </Reference>
 	  <Reference Include="Unity.TextMeshPro">
 	    <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed\Unity.TextMeshPro.dll</HintPath>

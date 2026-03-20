@@ -120,7 +120,7 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             // Create new tab
-            var tab = new OpenElementTab { Quest = quest, Npc = null };
+            var tab = new OpenElementTab { Quest = quest, Npc = null, Item = null };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }
@@ -142,6 +142,25 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             var tab = new OpenElementTab { Npc = npc };
+            _openTabs.Add(tab);
+            SelectedTab = tab;
+        }
+
+        /// <summary>
+        /// Opens an item in a tab, or activates it if already open.
+        /// </summary>
+        public void OpenItemInTab(ItemBlueprint item)
+        {
+            var existingTab = _openTabs.FirstOrDefault(t => t.Item == item);
+            if (existingTab != null)
+            {
+                SelectedTab = existingTab;
+                return;
+            }
+
+            EnsureWorkspaceTabExists();
+
+            var tab = new OpenElementTab { Item = item };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }

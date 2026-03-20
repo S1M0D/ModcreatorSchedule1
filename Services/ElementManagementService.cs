@@ -8,7 +8,7 @@ using Schedule1ModdingTool.ViewModels;
 namespace Schedule1ModdingTool.Services
 {
     /// <summary>
-    /// Manages CRUD operations for quests, NPCs, items, and folders.
+    /// Manages CRUD operations for quests, NPCs, items, phone apps, and folders.
     /// </summary>
     public class ElementManagementService
     {
@@ -240,6 +240,69 @@ namespace Schedule1ModdingTool.Services
         }
 
         /// <summary>
+        /// Adds a new phone app to the project based on a template.
+        /// </summary>
+        public PhoneAppBlueprint AddPhoneApp(QuestProject project, PhoneAppBlueprint? template)
+        {
+            var settings = ModSettings.Load();
+            var projectNamespace = !string.IsNullOrWhiteSpace(project.ProjectNamespace)
+                ? project.ProjectNamespace
+                : settings.DefaultModNamespace;
+            var phoneApp = template?.DeepCopy() ?? new PhoneAppBlueprint();
+            phoneApp.ClassName = $"PhoneApp{project.PhoneApps.Count + 1}";
+            phoneApp.AppName = $"phone_app_{project.PhoneApps.Count + 1}";
+            phoneApp.AppTitle = $"New Phone App {project.PhoneApps.Count + 1}";
+            phoneApp.Namespace = $"{projectNamespace}.PhoneApps";
+            phoneApp.ModName = string.IsNullOrWhiteSpace(project.ProjectName) ? phoneApp.ModName : project.ProjectName;
+            phoneApp.ModAuthor = settings.DefaultModAuthor;
+            phoneApp.ModVersion = settings.DefaultModVersion;
+            phoneApp.FolderId = _workspaceViewModel.SelectedFolder?.Id ?? QuestProject.RootFolderId;
+
+            project.AddPhoneApp(phoneApp);
+            _workspaceViewModel.UpdatePhoneAppCount(project.PhoneApps.Count);
+            return phoneApp;
+        }
+
+        /// <summary>
+        /// Removes a phone app from the project after confirmation.
+        /// </summary>
+        public bool RemovePhoneApp(QuestProject project, PhoneAppBlueprint phoneApp)
+        {
+            if (phoneApp == null) return false;
+
+            var result = MessageBox.Show($"Are you sure you want to remove '{phoneApp.DisplayName}'?",
+                "Remove Phone App", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                DeleteGeneratedPhoneAppFile(project, phoneApp);
+                project.RemovePhoneApp(phoneApp);
+                _workspaceViewModel.UpdatePhoneAppCount(project.PhoneApps.Count);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Duplicates an existing phone app.
+        /// </summary>
+        public PhoneAppBlueprint? DuplicatePhoneApp(QuestProject project, PhoneAppBlueprint? phoneApp)
+        {
+            if (phoneApp == null) return null;
+
+            var duplicate = phoneApp.DeepCopy();
+            duplicate.ClassName = $"{duplicate.ClassName}Copy";
+            duplicate.AppName = $"{duplicate.AppName}_copy";
+            duplicate.AppTitle = $"{duplicate.AppTitle} (Copy)";
+            duplicate.FolderId = phoneApp.FolderId;
+
+            project.AddPhoneApp(duplicate);
+            _workspaceViewModel.UpdatePhoneAppCount(project.PhoneApps.Count);
+            return duplicate;
+        }
+
+        /// <summary>
         /// Creates a new folder in the project.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown if folder creation fails.</exception>
@@ -294,7 +357,8 @@ namespace Schedule1ModdingTool.Services
             var hasChildren = project.Folders.Any(f => f.ParentId == folder.Id) ||
                              project.Quests.Any(q => q.FolderId == folder.Id) ||
                              project.Npcs.Any(n => n.FolderId == folder.Id) ||
-                             project.Items.Any(i => i.FolderId == folder.Id);
+                             project.Items.Any(i => i.FolderId == folder.Id) ||
+                             project.PhoneApps.Any(app => app.FolderId == folder.Id);
 
             if (hasChildren)
             {
@@ -324,6 +388,10 @@ namespace Schedule1ModdingTool.Services
                 foreach (var item in project.Items.Where(i => i.FolderId == folder.Id))
                 {
                     item.FolderId = parentId;
+                }
+                foreach (var phoneApp in project.PhoneApps.Where(app => app.FolderId == folder.Id))
+                {
+                    phoneApp.FolderId = parentId;
                 }
             }
             else
@@ -431,6 +499,34 @@ namespace Schedule1ModdingTool.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ElementManagementService] Failed to delete item file: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Deletes the generated C# file for a phone app.
+        /// </summary>
+        private void DeleteGeneratedPhoneAppFile(QuestProject project, PhoneAppBlueprint phoneApp)
+        {
+            if (project == null || phoneApp == null) return;
+            if (string.IsNullOrWhiteSpace(project.FilePath)) return;
+
+            try
+            {
+                var projectDir = Path.GetDirectoryName(project.FilePath);
+                if (string.IsNullOrWhiteSpace(projectDir) || !Directory.Exists(projectDir))
+                    return;
+
+                var className = MakeSafeIdentifier(phoneApp.ClassName, "GeneratedPhoneApp");
+                var phoneAppFilePath = Path.Combine(projectDir, "PhoneApps", $"{className}.cs");
+
+                if (File.Exists(phoneAppFilePath))
+                {
+                    File.Delete(phoneAppFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ElementManagementService] Failed to delete phone app file: {ex.Message}");
             }
         }
 

@@ -106,6 +106,11 @@ namespace Schedule1ModdingTool.Utils
                 { "AutoBegin", "If enabled, the quest will start automatically when conditions are met." },
                 { "CustomIcon", "If enabled, allows you to specify a custom icon resource for this quest." },
                 { "QuestRewards", "If enabled, quest completion will grant rewards to the player." },
+                { "GenerateHookScaffold", "Generates a companion .Hooks.cs file with partial methods for advanced quest code, custom quest-entry setup, and quest lifecycle callbacks." },
+                { "TrackOnBegin", "If enabled, S1API marks this quest as tracked when it begins so it appears in the player's tracked quest UI automatically." },
+                { "AutoCompleteOnAllEntriesComplete", "If enabled, S1API completes the quest automatically after every quest entry reaches Completed." },
+                { "FinishType", "The quest lifecycle action to run when this trigger fires: Complete, Fail, Cancel, Expire, or End." },
+                { "ActionType", "The quest-entry action to run when this trigger fires. You can begin the entry, complete it, or move it into an inactive, failed, cancelled, or expired state." },
                 
                 // NPC properties
                 { "NpcId", "Unique identifier used for save/load and game systems. Must be unique and descriptive (e.g., 'shopkeeper_alex')." },
@@ -138,7 +143,8 @@ namespace Schedule1ModdingTool.Utils
                 
                 // Objective properties
                 { "Title", "Display title for this quest objective." },
-                { "RequiredProgress", "The amount of progress required to complete this objective." },
+                { "RequiredProgress", "Current generated quests still create one S1API QuestEntry per objective. This value is documentation-only unless you use hook code or your own custom quest logic to apply it." },
+                { "AutoStart", "If enabled and there are no start triggers, the generated quest entry begins immediately. If you add start triggers, the entry starts inactive until one of them fires." },
             };
 
             if (descriptions.TryGetValue(propertyName, out var description))

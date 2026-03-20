@@ -19,6 +19,7 @@ namespace Schedule1ModdingTool.Models
         private readonly HashSet<QuestTrigger> _trackedTriggers = new HashSet<QuestTrigger>();
         private readonly HashSet<NpcBlueprint> _trackedNpcs = new HashSet<NpcBlueprint>();
         private readonly HashSet<ItemBlueprint> _trackedItems = new HashSet<ItemBlueprint>();
+        private readonly HashSet<PhoneAppBlueprint> _trackedPhoneApps = new HashSet<PhoneAppBlueprint>();
         private readonly HashSet<ResourceAsset> _trackedResources = new HashSet<ResourceAsset>();
         private readonly HashSet<ModFolder> _trackedFolders = new HashSet<ModFolder>();
         private bool _suppressNotifications;
@@ -91,6 +92,9 @@ namespace Schedule1ModdingTool.Models
         [JsonProperty("items")]
         public ObservableCollection<ItemBlueprint> Items { get; } = new ObservableCollection<ItemBlueprint>();
 
+        [JsonProperty("phoneApps")]
+        public ObservableCollection<PhoneAppBlueprint> PhoneApps { get; } = new ObservableCollection<PhoneAppBlueprint>();
+
         [JsonProperty("resources")]
         public ObservableCollection<ResourceAsset> Resources { get; } = new ObservableCollection<ResourceAsset>();
 
@@ -115,6 +119,7 @@ namespace Schedule1ModdingTool.Models
             Quests.CollectionChanged += OnQuestsCollectionChanged;
             Npcs.CollectionChanged += OnNpcsCollectionChanged;
             Items.CollectionChanged += OnItemsCollectionChanged;
+            PhoneApps.CollectionChanged += OnPhoneAppsCollectionChanged;
             Folders.CollectionChanged += OnFoldersCollectionChanged;
             Resources.CollectionChanged += OnResourcesCollectionChanged;
             EnsureRootFolder();
@@ -149,6 +154,16 @@ namespace Schedule1ModdingTool.Models
         public void RemoveItem(ItemBlueprint item)
         {
             Items.Remove(item);
+        }
+
+        public void AddPhoneApp(PhoneAppBlueprint phoneApp)
+        {
+            PhoneApps.Add(phoneApp);
+        }
+
+        public void RemovePhoneApp(PhoneAppBlueprint phoneApp)
+        {
+            PhoneApps.Remove(phoneApp);
         }
 
         public void AddResource(ResourceAsset asset)
@@ -219,7 +234,8 @@ namespace Schedule1ModdingTool.Models
                 {
                     var firstNamespace = project.Quests.FirstOrDefault()?.Namespace
                         ?? project.Items.FirstOrDefault()?.Namespace
-                        ?? project.Npcs.FirstOrDefault()?.Namespace;
+                        ?? project.Npcs.FirstOrDefault()?.Namespace
+                        ?? project.PhoneApps.FirstOrDefault()?.Namespace;
 
                     if (!string.IsNullOrWhiteSpace(firstNamespace))
                     {
@@ -237,6 +253,7 @@ namespace Schedule1ModdingTool.Models
                 project.AttachExistingQuestHandlers();
                 project.AttachExistingNpcHandlers();
                 project.AttachExistingItemHandlers();
+                project.AttachExistingPhoneAppHandlers();
                 project.AttachExistingFolderHandlers();
                 project.AttachExistingResourceHandlers();
                 project.EnsureRootFolder();
@@ -250,7 +267,8 @@ namespace Schedule1ModdingTool.Models
         {
             if (namespaceValue.EndsWith(".Quests", StringComparison.Ordinal) ||
                 namespaceValue.EndsWith(".NPCs", StringComparison.Ordinal) ||
-                namespaceValue.EndsWith(".Items", StringComparison.Ordinal))
+                namespaceValue.EndsWith(".Items", StringComparison.Ordinal) ||
+                namespaceValue.EndsWith(".PhoneApps", StringComparison.Ordinal))
             {
                 var lastDot = namespaceValue.LastIndexOf('.');
                 return lastDot > 0 ? namespaceValue.Substring(0, lastDot) : namespaceValue;
@@ -420,6 +438,15 @@ namespace Schedule1ModdingTool.Models
             item.PropertyChanged += ItemOnPropertyChanged;
         }
 
+        private void AttachPhoneAppHandlers(PhoneAppBlueprint phoneApp)
+        {
+            if (_trackedPhoneApps.Contains(phoneApp))
+                return;
+
+            _trackedPhoneApps.Add(phoneApp);
+            phoneApp.PropertyChanged += PhoneAppOnPropertyChanged;
+        }
+
         private void DetachQuestHandlers(QuestBlueprint quest)
         {
             if (!_trackedQuests.Remove(quest))
@@ -541,6 +568,14 @@ namespace Schedule1ModdingTool.Models
                 return;
 
             item.PropertyChanged -= ItemOnPropertyChanged;
+        }
+
+        private void DetachPhoneAppHandlers(PhoneAppBlueprint phoneApp)
+        {
+            if (!_trackedPhoneApps.Remove(phoneApp))
+                return;
+
+            phoneApp.PropertyChanged -= PhoneAppOnPropertyChanged;
         }
 
         private void QuestOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -701,6 +736,12 @@ namespace Schedule1ModdingTool.Models
         {
             MarkAsModified();
             OnPropertyChanged(nameof(Items));
+        }
+
+        private void PhoneAppOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            MarkAsModified();
+            OnPropertyChanged(nameof(PhoneApps));
         }
 
         private void OnObjectivesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -1299,6 +1340,14 @@ namespace Schedule1ModdingTool.Models
             }
         }
 
+        internal void AttachExistingPhoneAppHandlers()
+        {
+            foreach (var phoneApp in PhoneApps)
+            {
+                AttachPhoneAppHandlers(phoneApp);
+            }
+        }
+
         internal void AttachExistingFolderHandlers()
         {
             foreach (var folder in Folders)
@@ -1351,6 +1400,11 @@ namespace Schedule1ModdingTool.Models
                 item.PropertyChanged -= ItemOnPropertyChanged;
             }
 
+            foreach (var phoneApp in _trackedPhoneApps.ToArray())
+            {
+                phoneApp.PropertyChanged -= PhoneAppOnPropertyChanged;
+            }
+
             foreach (var folder in _trackedFolders.ToArray())
             {
                 folder.PropertyChanged -= FolderOnPropertyChanged;
@@ -1365,12 +1419,14 @@ namespace Schedule1ModdingTool.Models
             _trackedTriggers.Clear();
             _trackedNpcs.Clear();
             _trackedItems.Clear();
+            _trackedPhoneApps.Clear();
             _trackedFolders.Clear();
             _trackedResources.Clear();
             RebuildObjectiveTracking();
             AttachExistingQuestHandlers();
             AttachExistingNpcHandlers();
             AttachExistingItemHandlers();
+            AttachExistingPhoneAppHandlers();
             AttachExistingFolderHandlers();
             AttachExistingResourceHandlers();
         }
@@ -1449,6 +1505,34 @@ namespace Schedule1ModdingTool.Models
             OnPropertyChanged(nameof(Items));
         }
 
+        private void OnPhoneAppsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is PhoneAppBlueprint blueprint)
+                    {
+                        AttachPhoneAppHandlers(blueprint);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is PhoneAppBlueprint blueprint)
+                    {
+                        DetachPhoneAppHandlers(blueprint);
+                    }
+                }
+            }
+
+            MarkAsModified();
+            OnPropertyChanged(nameof(PhoneApps));
+        }
+
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
         {
@@ -1459,6 +1543,8 @@ namespace Schedule1ModdingTool.Models
             Npcs.CollectionChanged += OnNpcsCollectionChanged;
             Items.CollectionChanged -= OnItemsCollectionChanged;
             Items.CollectionChanged += OnItemsCollectionChanged;
+            PhoneApps.CollectionChanged -= OnPhoneAppsCollectionChanged;
+            PhoneApps.CollectionChanged += OnPhoneAppsCollectionChanged;
             Folders.CollectionChanged -= OnFoldersCollectionChanged;
             Folders.CollectionChanged += OnFoldersCollectionChanged;
             Resources.CollectionChanged -= OnResourcesCollectionChanged;
@@ -1471,6 +1557,7 @@ namespace Schedule1ModdingTool.Models
             AttachExistingQuestHandlers();
             AttachExistingNpcHandlers();
             AttachExistingItemHandlers();
+            AttachExistingPhoneAppHandlers();
             AttachExistingFolderHandlers();
             AttachExistingResourceHandlers();
             EnsureRootFolder();
@@ -1594,6 +1681,12 @@ namespace Schedule1ModdingTool.Models
             {
                 if (string.IsNullOrWhiteSpace(item.FolderId))
                     item.FolderId = RootFolderId;
+            }
+
+            foreach (var phoneApp in PhoneApps)
+            {
+                if (string.IsNullOrWhiteSpace(phoneApp.FolderId))
+                    phoneApp.FolderId = RootFolderId;
             }
         }
     }

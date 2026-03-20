@@ -72,7 +72,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 "Customize the body to wire in game-specific logic."
             );
 
-            builder.OpenBlock($"public class {className} : Quest");
+            builder.OpenBlock($"public partial class {className} : Quest");
 
             // Quest identifier constant
             builder.AppendComment("🔧 Generated from: Quest.QuestId (or Quest.ClassName if QuestId is empty)");
@@ -87,6 +87,11 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
 
             // Quest properties
             GenerateQuestProperties(builder, quest);
+
+            if (quest.GenerateHookScaffold)
+            {
+                GenerateHookDeclarations(builder);
+            }
 
             // Quest entry fields
             _entryFieldGenerator.Generate(builder, quest);
@@ -125,6 +130,15 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 builder.AppendComment("🔧 Generated from: Quest.QuestRewards = true");
                 builder.AppendComment("Quest completion event handler for rewards");
                 builder.AppendLine("private System.Action? _onQuestCompletedHandler;");
+                builder.AppendLine();
+            }
+
+            if (quest.GenerateHookScaffold)
+            {
+                builder.AppendComment("ðŸ”§ Generated from: Quest.GenerateHookScaffold = true");
+                builder.AppendComment("Quest lifecycle hook event handlers");
+                builder.AppendLine("private System.Action? _onQuestCompletedGeneratedHandler;");
+                builder.AppendLine("private System.Action? _onQuestFailedGeneratedHandler;");
                 builder.AppendLine();
             }
 
@@ -301,6 +315,22 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 builder.CloseBlock();
                 builder.AppendLine();
             }
+        }
+
+        private void GenerateHookDeclarations(ICodeBuilder builder)
+        {
+            builder.AppendComment("ðŸ”§ Generated from: Quest.GenerateHookScaffold = true");
+            builder.AppendBlockComment(
+                "Optional partial hooks for advanced quest customization.",
+                "These are implemented in the generated .Hooks.cs file."
+            );
+            builder.AppendLine("partial void ConfigureGeneratedObjective(int objectiveIndex, QuestEntry entry);");
+            builder.AppendLine("partial void OnAfterCreatedGenerated();");
+            builder.AppendLine("partial void OnAfterLoadedGenerated();");
+            builder.AppendLine("partial void OnAfterTriggerSubscriptionsGenerated();");
+            builder.AppendLine("partial void OnQuestCompletedGenerated();");
+            builder.AppendLine("partial void OnQuestFailedGenerated();");
+            builder.AppendLine();
         }
 
         /// <summary>

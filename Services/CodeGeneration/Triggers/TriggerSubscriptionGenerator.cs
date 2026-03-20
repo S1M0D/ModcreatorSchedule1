@@ -40,6 +40,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                              (quest.QuestFinishTriggers?.Any() == true) ||
                              (quest.Objectives?.Any(o => o.StartTriggers?.Any() == true || o.FinishTriggers?.Any() == true) == true);
             var hasRewards = quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0;
+            var hasHooks = quest.GenerateHookScaffold;
 
             builder.AppendComment("🔧 Generated from: Quest.QuestTriggers, Quest.QuestFinishTriggers, Quest.Objectives[].StartTriggers, Quest.Objectives[].FinishTriggers");
             builder.AppendBlockComment(
@@ -48,7 +49,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 
             builder.OpenBlock("private void SubscribeToTriggers()");
 
-            if (!hasTriggers && !hasRewards)
+            if (!hasTriggers && !hasRewards && !hasHooks)
             {
                 builder.AppendComment("No triggers configured for this quest");
                 builder.CloseBlock();
@@ -69,6 +70,11 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (hasRewards)
             {
                 GenerateQuestRewardSubscription(builder, quest);
+            }
+
+            if (hasHooks)
+            {
+                GenerateQuestHookSubscriptions(builder);
             }
 
             builder.CloseBlock();
@@ -122,6 +128,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                     QuestFinishType.Fail => "Fail()",
                     QuestFinishType.Cancel => "Cancel()",
                     QuestFinishType.Expire => "Expire()",
+                    QuestFinishType.End => "End()",
                     _ => "Complete()"
                 };
 
@@ -160,10 +167,11 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                     foreach (var trigger in objective.StartTriggers)
                     {
                         var handlerInfo = handlerInfos.FirstOrDefault(h =>
-                            h.ObjectiveIndex == i && h.TriggerCategory == TriggerCategory.ObjectiveStart &&
-                            h.Trigger?.TargetAction == trigger.TargetAction);
+                            h.ObjectiveIndex == i &&
+                            h.TriggerCategory == TriggerCategory.ObjectiveStart &&
+                            h.Trigger == trigger);
 
-                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, "Begin()", rootNamespace);
+                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, GetObjectiveActionMethod(trigger.ActionType), rootNamespace);
                     }
                 }
 
@@ -174,10 +182,11 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                     foreach (var trigger in objective.FinishTriggers)
                     {
                         var handlerInfo = handlerInfos.FirstOrDefault(h =>
-                            h.ObjectiveIndex == i && h.TriggerCategory == TriggerCategory.ObjectiveFinish &&
-                            h.Trigger?.TargetAction == trigger.TargetAction);
+                            h.ObjectiveIndex == i &&
+                            h.TriggerCategory == TriggerCategory.ObjectiveFinish &&
+                            h.Trigger == trigger);
 
-                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, "Complete()", rootNamespace);
+                        AppendObjectiveTriggerSubscription(builder, trigger, objectiveVar, handlerInfo?.FieldName, GetObjectiveActionMethod(trigger.ActionType), rootNamespace);
                     }
                 }
             }
@@ -654,9 +663,54 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             builder.AppendLine("OnComplete += _onQuestCompletedHandler;");
             builder.CloseBlock();
             builder.OpenBlock("catch (Exception ex)");
-            builder.AppendLine("MelonLogger.Warning($\"Failed to subscribe to quest completion event: {{ex.Message}}\");");
+            builder.AppendLine("MelonLogger.Warning($\"Failed to subscribe to quest completion event: {ex.Message}\");");
             builder.CloseBlock();
             builder.AppendLine();
+        }
+
+        private void GenerateQuestHookSubscriptions(ICodeBuilder builder)
+        {
+            builder.AppendComment("ðŸ”§ Generated from: Quest.GenerateHookScaffold = true");
+            builder.AppendBlockComment(
+                "Wire quest lifecycle events into generated partial hooks."
+            );
+
+            builder.OpenBlock("try");
+            builder.AppendLine("_onQuestCompletedGeneratedHandler ??= OnQuestCompletedGenerated;");
+            builder.AppendLine("OnComplete -= _onQuestCompletedGeneratedHandler;");
+            builder.AppendLine("OnComplete += _onQuestCompletedGeneratedHandler;");
+            builder.CloseBlock();
+            builder.OpenBlock("catch (Exception ex)");
+            builder.AppendLine("MelonLogger.Warning($\"Failed to subscribe generated quest completion hook: {ex.Message}\");");
+            builder.CloseBlock();
+            builder.AppendLine();
+
+            builder.OpenBlock("try");
+            builder.AppendLine("_onQuestFailedGeneratedHandler ??= OnQuestFailedGenerated;");
+            builder.AppendLine("OnFail -= _onQuestFailedGeneratedHandler;");
+            builder.AppendLine("OnFail += _onQuestFailedGeneratedHandler;");
+            builder.CloseBlock();
+            builder.OpenBlock("catch (Exception ex)");
+            builder.AppendLine("MelonLogger.Warning($\"Failed to subscribe generated quest fail hook: {ex.Message}\");");
+            builder.CloseBlock();
+            builder.AppendLine();
+
+            builder.AppendLine("OnAfterTriggerSubscriptionsGenerated();");
+            builder.AppendLine();
+        }
+
+        private static string GetObjectiveActionMethod(QuestObjectiveTriggerActionType actionType)
+        {
+            return actionType switch
+            {
+                QuestObjectiveTriggerActionType.Begin => "Begin()",
+                QuestObjectiveTriggerActionType.Complete => "Complete()",
+                QuestObjectiveTriggerActionType.SetInactive => "SetState(QuestState.Inactive)",
+                QuestObjectiveTriggerActionType.Fail => "SetState(QuestState.Failed)",
+                QuestObjectiveTriggerActionType.Cancel => "SetState(QuestState.Cancelled)",
+                QuestObjectiveTriggerActionType.Expire => "SetState(QuestState.Expired)",
+                _ => "Begin()"
+            };
         }
     }
 }

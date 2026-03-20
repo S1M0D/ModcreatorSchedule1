@@ -120,7 +120,7 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             // Create new tab
-            var tab = new OpenElementTab { Quest = quest, Npc = null, Item = null };
+            var tab = new OpenElementTab { Quest = quest, Npc = null, Item = null, PhoneApp = null };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }
@@ -161,6 +161,25 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             var tab = new OpenElementTab { Item = item };
+            _openTabs.Add(tab);
+            SelectedTab = tab;
+        }
+
+        /// <summary>
+        /// Opens a phone app in a tab, or activates it if already open.
+        /// </summary>
+        public void OpenPhoneAppInTab(PhoneAppBlueprint phoneApp)
+        {
+            var existingTab = _openTabs.FirstOrDefault(t => t.PhoneApp == phoneApp);
+            if (existingTab != null)
+            {
+                SelectedTab = existingTab;
+                return;
+            }
+
+            EnsureWorkspaceTabExists();
+
+            var tab = new OpenElementTab { PhoneApp = phoneApp };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }

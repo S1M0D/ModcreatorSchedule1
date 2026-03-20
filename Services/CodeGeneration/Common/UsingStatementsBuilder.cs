@@ -110,6 +110,27 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         }
 
         /// <summary>
+        /// Adds standard using statements for phone app code generation.
+        /// Includes S1API phone UI helpers, Unity UI, and the Schedule I ExitAction type.
+        /// </summary>
+        public UsingStatementsBuilder AddPhoneAppUsings()
+        {
+            return Add(
+                "System",
+                "System.IO",
+                "System.Linq",
+                "System.Reflection",
+                "MelonLoader",
+                "S1API.PhoneApp",
+                "S1API.UI",
+                "S1API.Utils",
+                "ScheduleOne.DevUtilities",
+                "UnityEngine",
+                "UnityEngine.UI"
+            );
+        }
+
+        /// <summary>
         /// Adds common System namespaces.
         /// </summary>
         /// <returns>This builder for method chaining.</returns>

@@ -54,11 +54,18 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 builder.OpenBlock("if (QuestEntries.Count == 0)");
                 GenerateObjectiveInitialization(builder, quest);
                 builder.CloseBlock();
+                builder.OpenBlock("else");
+                GenerateEntryReferenceRestoration(builder, quest);
+                builder.CloseBlock();
             }
 
             builder.AppendLine();
             builder.AppendComment("Subscribe to triggers after entries are set up (only once, in OnCreated)");
             builder.AppendLine("SubscribeToTriggers();");
+            if (quest.GenerateHookScaffold)
+            {
+                builder.AppendLine("OnAfterCreatedGenerated();");
+            }
             builder.CloseBlock();
             builder.AppendLine();
         }
@@ -108,6 +115,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                     builder.AppendComment($"🔧 From: Objectives[{i}].Title");
                     builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\");");
                 }
+
+                AppendObjectiveHookCall(builder, quest, i, objectiveVar);
 
                 // Determine if entry should start active or inactive
                 bool shouldAutoStart = objective.AutoStart && (objective.StartTriggers?.Any() != true);
@@ -160,6 +169,10 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             if (quest.Objectives?.Any() != true)
             {
                 builder.AppendComment("No objectives defined, nothing to create");
+                if (quest.GenerateHookScaffold)
+                {
+                    builder.AppendLine("OnAfterLoadedGenerated();");
+                }
             }
             else
             {
@@ -173,6 +186,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                     builder.AppendComment("Wait for NPCs to spawn before creating entries (NPCs may not be available immediately on load)");
                     builder.OpenBlock("if (QuestEntries.Count == 0)");
                     builder.AppendLine("MelonCoroutines.Start(WaitForNPCsAndCreateEntries());");
+                    builder.AppendLine("return;");
                     builder.CloseBlock();
                 }
                 else
@@ -182,6 +196,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                     builder.OpenBlock("if (QuestEntries.Count == 0)");
                     GenerateObjectiveCreationWithoutState(builder, quest);
                     builder.CloseBlock();
+                }
+
+                builder.AppendLine();
+                builder.AppendComment("Restore field references so generated triggers and hooks can reach the quest entries");
+                GenerateEntryReferenceRestoration(builder, quest);
+                if (quest.GenerateHookScaffold)
+                {
+                    builder.AppendLine("OnAfterLoadedGenerated();");
                 }
             }
 
@@ -314,9 +336,16 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                     builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\");");
                 }
 
+                AppendObjectiveHookCall(builder, quest, i, objectiveVar);
+
                 // DO NOT set state here - let the save system restore it
                 builder.AppendComment("State will be restored from save data by S1API");
                 builder.AppendLine();
+            }
+
+            if (quest.GenerateHookScaffold)
+            {
+                builder.AppendLine("OnAfterLoadedGenerated();");
             }
         }
 
@@ -390,7 +419,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             {
                 var objectiveVar = objectiveNames[i];
                 builder.AppendComment($"🔧 Restore reference for objective {i + 1}: {objectiveVar}");
+                builder.OpenBlock($"if (QuestEntries.Count > {i})");
                 builder.AppendLine($"{objectiveVar} = QuestEntries[{i}];");
+                AppendObjectiveHookCall(builder, quest, i, objectiveVar);
+                builder.CloseBlock();
+                builder.OpenBlock("else");
+                builder.AppendLine($"{objectiveVar} = null;");
+                builder.AppendLine($"MelonLogger.Warning($\"[Quest] Expected entry index {i} for objective field '{objectiveVar}', but only {{QuestEntries.Count}} entries exist.\");");
+                builder.CloseBlock();
             }
         }
 
@@ -529,6 +565,18 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
 
             builder.CloseBlock();
             builder.AppendLine();
+        }
+
+        private void AppendObjectiveHookCall(ICodeBuilder builder, QuestBlueprint quest, int objectiveIndex, string objectiveVar)
+        {
+            if (!quest.GenerateHookScaffold)
+            {
+                return;
+            }
+
+            builder.OpenBlock($"if ({objectiveVar} != null)");
+            builder.AppendLine($"ConfigureGeneratedObjective({objectiveIndex}, {objectiveVar});");
+            builder.CloseBlock();
         }
     }
 }

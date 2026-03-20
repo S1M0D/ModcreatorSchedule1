@@ -39,6 +39,8 @@ namespace Schedule1ModdingTool.Models
                 TriggerType = TriggerType,
                 TargetAction = TargetAction,
                 TargetNpcId = TargetNpcId,
+                TargetQuestId = TargetQuestId,
+                TargetQuestEntryIndex = TargetQuestEntryIndex,
                 TriggerTarget = TriggerTarget,
                 ObjectiveIndex = ObjectiveIndex,
                 FinishType = FinishType
@@ -69,7 +71,12 @@ namespace Schedule1ModdingTool.Models
         /// <summary>
         /// Expire the quest
         /// </summary>
-        Expire
+        Expire,
+
+        /// <summary>
+        /// End the quest immediately using Quest.End()
+        /// </summary>
+        End
     }
 }
 

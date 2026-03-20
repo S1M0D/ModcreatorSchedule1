@@ -19,6 +19,7 @@ namespace Schedule1ModdingTool.Models
         private string _iconFileName = string.Empty;
         private bool _questRewards = true;
         private bool _generateDataClass = false;
+        private bool _generateHookScaffold;
         private QuestBlueprintType _blueprintType = QuestBlueprintType.Standard;
         private string _namespace = "Schedule1Mods.Quests";
         private string _modName = "Schedule 1 Quest Pack";
@@ -195,6 +196,13 @@ namespace Schedule1ModdingTool.Models
         {
             get => _generateDataClass;
             set => SetProperty(ref _generateDataClass, value);
+        }
+
+        [JsonProperty("generateHookScaffold")]
+        public bool GenerateHookScaffold
+        {
+            get => _generateHookScaffold;
+            set => SetProperty(ref _generateHookScaffold, value);
         }
 
         [JsonProperty("blueprintType")]
@@ -404,6 +412,7 @@ namespace Schedule1ModdingTool.Models
             IconFileName = source.IconFileName;
             QuestRewards = source.QuestRewards;
             GenerateDataClass = source.GenerateDataClass;
+            GenerateHookScaffold = source.GenerateHookScaffold;
             BlueprintType = source.BlueprintType;
             TrackOnBegin = source.TrackOnBegin;
             AutoCompleteOnAllEntriesComplete = source.AutoCompleteOnAllEntriesComplete;

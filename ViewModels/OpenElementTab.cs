@@ -12,11 +12,12 @@ namespace Schedule1ModdingTool.ViewModels
         public QuestBlueprint? Quest { get; set; }
         public NpcBlueprint? Npc { get; set; }
         public ItemBlueprint? Item { get; set; }
+        public PhoneAppBlueprint? PhoneApp { get; set; }
         public bool IsWorkspace { get; set; }
 
         public string Title => IsWorkspace 
             ? "Workspace" 
-            : Quest?.DisplayName ?? Npc?.DisplayName ?? Item?.DisplayName ?? "Untitled";
+            : Quest?.DisplayName ?? Npc?.DisplayName ?? Item?.DisplayName ?? PhoneApp?.DisplayName ?? "Untitled";
         
         public string TabId => IsWorkspace 
             ? "Workspace" 
@@ -24,7 +25,9 @@ namespace Schedule1ModdingTool.ViewModels
                 ? $"Quest_{Quest.QuestId ?? "Unknown"}"
                 : Npc != null
                     ? $"Npc_{Npc.NpcId ?? "Unknown"}"
-                    : $"Item_{Item?.ItemId ?? "Unknown"}";
+                    : Item != null
+                        ? $"Item_{Item.ItemId ?? "Unknown"}"
+                        : $"PhoneApp_{PhoneApp?.AppName ?? "Unknown"}";
 
         public bool IsSelected
         {

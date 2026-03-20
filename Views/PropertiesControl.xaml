@@ -43,7 +43,10 @@
                                 MaxWidth="500"
                                 VerticalAlignment="Top">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Quest Details" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Quest Details" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="Core metadata for the quest. These fields control the generated quest class, the player-facing title/description, and the identifier other systems use to reference this quest." Margin="8,0,0,0"/>
+                                </StackPanel>
 
                                 <StackPanel Orientation="Horizontal">
                                     <Label Content="Class Name" Style="{StaticResource LabelStyle}" />
@@ -86,7 +89,10 @@
                                 MaxWidth="500"
                                 VerticalAlignment="Top">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Quest Settings" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Quest Settings" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="These toggles map to the generated S1API quest behavior. Use them to control how the quest starts, how it is tracked, whether S1API auto-completes it, and whether advanced hook code is generated." Margin="8,0,0,0"/>
+                                </StackPanel>
 
                                 <StackPanel Orientation="Horizontal">
                                     <CheckBox Content="Auto Begin"
@@ -300,17 +306,30 @@
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,2">
+                                    <CheckBox Content="Generate Hook Scaffold"
+                                              IsChecked="{Binding SelectedQuest.GenerateHookScaffold}"
+                                              Foreground="{StaticResource LightTextBrush}"/>
+                                    <views:InfoIcon PropertyName="GenerateHookScaffold" />
+                                </StackPanel>
+                                <TextBlock Text="Creates a companion quest hook file with partial methods for custom entry setup and quest lifecycle code."
+                                           Foreground="{StaticResource MediumTextBrush}"
+                                           FontSize="10"
+                                           Margin="24,0,0,8"
+                                           TextWrapping="Wrap"
+                                           Visibility="{Binding SelectedQuest.GenerateHookScaffold, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,2">
                                     <CheckBox Content="Track on Begin"
                                               IsChecked="{Binding SelectedQuest.TrackOnBegin}"
                                               Foreground="{StaticResource LightTextBrush}"/>
-                                    <views:InfoIcon TooltipText="If enabled, quest will be automatically tracked in UI when it begins"/>
+                                    <views:InfoIcon PropertyName="TrackOnBegin"/>
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,2">
                                     <CheckBox Content="Auto Complete on All Entries Complete"
                                               IsChecked="{Binding SelectedQuest.AutoCompleteOnAllEntriesComplete}"
                                               Foreground="{StaticResource LightTextBrush}"/>
-                                    <views:InfoIcon TooltipText="If enabled, quest automatically completes when all objectives/entries are finished"/>
+                                    <views:InfoIcon PropertyName="AutoCompleteOnAllEntriesComplete"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -323,7 +342,10 @@
                                 VerticalAlignment="Top">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="800">
                                 <StackPanel Margin="12">
-                                    <TextBlock Text="Quest Triggers" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                        <TextBlock Text="Quest Triggers" Style="{StaticResource PanelHeaderStyle}" />
+                                        <views:InfoIcon TooltipText="Quest-level triggers start or end the quest itself. Use objective triggers in the Objectives tab when you want to move individual quest entries through their lifecycle instead." Margin="8,0,0,0"/>
+                                    </StackPanel>
 
                                     <!-- Quest Start Triggers -->
                                     <DockPanel Margin="0,0,0,12">
@@ -660,11 +682,19 @@
                                                             </ComboBox.ItemTemplate>
                                                         </ComboBox>
 
-                                                        <Label Content="Finish Type" Style="{StaticResource LabelStyle}"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Label Content="Quest Finish Action" Style="{StaticResource LabelStyle}"/>
+                                                            <views:InfoIcon PropertyName="FinishType"/>
+                                                        </StackPanel>
                                                         <ComboBox SelectedItem="{Binding FinishType}"
                                                                   Style="{StaticResource ComboBoxStyle}"
                                                                   IsEditable="False"
                                                                   Loaded="FinishTypeComboBox_Loaded" />
+                                                        <TextBlock Text="Complete fires quest rewards and OnComplete. Fail fires OnFail. Cancel and Expire change quest state. End closes the quest immediately with S1API's End() method."
+                                                                   Foreground="{StaticResource MediumTextBrush}"
+                                                                   FontSize="10"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="4,4,0,0" />
                                                     </StackPanel>
                                                 </Border>
                                             </DataTemplate>
@@ -698,7 +728,10 @@
                     </Grid.RowDefinitions>
 
                     <DockPanel Grid.Row="0" Margin="0,0,0,12">
-                        <TextBlock Text="Quest Objectives" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left"/>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                            <TextBlock Text="Quest Objectives" Style="{StaticResource PanelHeaderStyle}"/>
+                            <views:InfoIcon TooltipText="Each objective becomes one S1API QuestEntry. Configure its title, POI behavior, and the events that should begin, complete, or otherwise change that entry's state." Margin="8,0,0,0"/>
+                        </StackPanel>
                         <Button Content="+ Add Objective"
                                 Click="AddObjective_Click"
                                 Style="{StaticResource IconButtonStyle}"
@@ -781,10 +814,15 @@
                                                 <StackPanel Grid.Row="3" Margin="0,0,0,12">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Label Content="Required Progress" Style="{StaticResource LabelStyle}"/>
-                                                        <views:InfoIcon TooltipText="Amount of progress required to complete this objective. Typically 1.0 for single-step objectives"/>
+                                                        <views:InfoIcon PropertyName="RequiredProgress"/>
                                                     </StackPanel>
                                                     <TextBox Text="{Binding RequiredProgress, UpdateSourceTrigger=PropertyChanged}"
                                                              Style="{StaticResource TextBoxStyle}"/>
+                                                    <TextBlock Text="Generated S1API quests still create one QuestEntry per objective. This number is documentation-only unless you use hook code or custom quest logic to apply it."
+                                                               Foreground="{StaticResource MediumTextBrush}"
+                                                               FontSize="10"
+                                                               Margin="4,4,0,0"
+                                                               TextWrapping="Wrap"/>
                                                 </StackPanel>
 
                                                 <!-- Location Settings -->
@@ -820,7 +858,10 @@
                                                 <!-- Objective Start Triggers -->
                                                 <StackPanel Grid.Row="5" Margin="0,0,0,12">
                                                     <DockPanel Margin="0,0,0,8">
-                                                        <TextBlock Text="Start Triggers" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                            <TextBlock Text="Start Triggers" FontWeight="SemiBold" />
+                                                            <views:InfoIcon TooltipText="Objective start triggers watch for an event and then run the selected action on this quest entry. Use them when the entry should wait for something instead of auto-starting." Margin="8,0,0,0"/>
+                                                        </StackPanel>
                                                         <Button Content="+ Add"
                                                                 Click="AddObjectiveStartTrigger_Click"
                                                                 Tag="{Binding}"
@@ -870,6 +911,25 @@
                                                                                 </DataTemplate>
                                                                             </ComboBox.ItemTemplate>
                                                                         </ComboBox>
+                                                                        <TextBlock Text="{Binding SelectedTriggerMetadata.Description}"
+                                                                                   Foreground="{StaticResource MediumTextBrush}"
+                                                                                   FontSize="10"
+                                                                                   TextWrapping="Wrap"
+                                                                                   Margin="4,4,0,8"
+                                                                                   Visibility="{Binding SelectedTriggerMetadata, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <Label Content="Action When Trigger Fires" Style="{StaticResource LabelStyle}"/>
+                                                                            <views:InfoIcon PropertyName="ActionType"/>
+                                                                        </StackPanel>
+                                                                        <ComboBox SelectedItem="{Binding ActionType}"
+                                                                                  Style="{StaticResource ComboBoxStyle}"
+                                                                                  IsEditable="False"
+                                                                                  Loaded="QuestObjectiveTriggerActionTypeComboBox_Loaded" />
+                                                                        <TextBlock Text="Common pattern: start triggers usually use Begin. You can also move the entry into another state if this event should deactivate or fail it instead."
+                                                                                   Foreground="{StaticResource MediumTextBrush}"
+                                                                                   FontSize="10"
+                                                                                   TextWrapping="Wrap"
+                                                                                   Margin="4,4,0,8" />
                                                                         <Label Content="NPC ID (if NPC trigger)"
                                                                                Style="{StaticResource LabelStyle}"
                                                                                Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=NPCEventTrigger}"/>
@@ -966,7 +1026,10 @@
                                                 <!-- Objective Finish Triggers -->
                                                 <StackPanel Grid.Row="6">
                                                     <DockPanel Margin="0,0,0,8">
-                                                        <TextBlock Text="Finish Triggers" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                            <TextBlock Text="Finish Triggers" FontWeight="SemiBold" />
+                                                            <views:InfoIcon TooltipText="Objective finish triggers also watch for an event, but they can do more than complete the entry. Use the action field to complete, fail, cancel, expire, or deactivate this quest entry when the event fires." Margin="8,0,0,0"/>
+                                                        </StackPanel>
                                                         <Button Content="+ Add"
                                                                 Click="AddObjectiveFinishTrigger_Click"
                                                                 Tag="{Binding}"
@@ -1016,6 +1079,25 @@
                                                                                 </DataTemplate>
                                                                             </ComboBox.ItemTemplate>
                                                                         </ComboBox>
+                                                                        <TextBlock Text="{Binding SelectedTriggerMetadata.Description}"
+                                                                                   Foreground="{StaticResource MediumTextBrush}"
+                                                                                   FontSize="10"
+                                                                                   TextWrapping="Wrap"
+                                                                                   Margin="4,4,0,8"
+                                                                                   Visibility="{Binding SelectedTriggerMetadata, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <Label Content="Action When Trigger Fires" Style="{StaticResource LabelStyle}"/>
+                                                                            <views:InfoIcon PropertyName="ActionType"/>
+                                                                        </StackPanel>
+                                                                        <ComboBox SelectedItem="{Binding ActionType}"
+                                                                                  Style="{StaticResource ComboBoxStyle}"
+                                                                                  IsEditable="False"
+                                                                                  Loaded="QuestObjectiveTriggerActionTypeComboBox_Loaded" />
+                                                                        <TextBlock Text="Common pattern: finish triggers usually use Complete. Use Fail, Cancel, Expire, or Set Inactive when the event should change the entry state without marking it completed."
+                                                                                   Foreground="{StaticResource MediumTextBrush}"
+                                                                                   FontSize="10"
+                                                                                   TextWrapping="Wrap"
+                                                                                   Margin="4,4,0,8" />
                                                                         <Label Content="NPC ID (if NPC trigger)"
                                                                                Style="{StaticResource LabelStyle}"
                                                                                Visibility="{Binding TriggerType, Converter={StaticResource EnumToVisibilityConverter}, ConverterParameter=NPCEventTrigger}"/>

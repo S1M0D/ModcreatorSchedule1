@@ -87,6 +87,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                         QuestFinishType.Fail => "Fail()",
                         QuestFinishType.Cancel => "Cancel()",
                         QuestFinishType.Expire => "Expire()",
+                        QuestFinishType.End => "End()",
                         _ => "Complete()"
                     };
 
@@ -131,7 +132,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                             {
                                 Trigger = trigger,
                                 FieldName = handlerName,
-                                ActionMethod = "Begin()",
+                                ActionMethod = GetObjectiveActionMethod(trigger.ActionType),
                                 ObjectiveIndex = i,
                                 TriggerCategory = TriggerCategory.ObjectiveStart
                             });
@@ -152,7 +153,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                             {
                                 Trigger = trigger,
                                 FieldName = handlerName,
-                                ActionMethod = "Complete()",
+                                ActionMethod = GetObjectiveActionMethod(trigger.ActionType),
                                 ObjectiveIndex = i,
                                 TriggerCategory = TriggerCategory.ObjectiveFinish
                             });
@@ -175,6 +176,20 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             var eventName = actionParts.Length >= 2 ? actionParts[1] : trigger.TargetAction;
             var baseName = $"_{IdentifierSanitizer.MakeSafeIdentifier(eventName, "trigger")}Handler";
             return IdentifierSanitizer.EnsureUniqueIdentifier(baseName, usedNames, ++handlerIndex);
+        }
+
+        private static string GetObjectiveActionMethod(QuestObjectiveTriggerActionType actionType)
+        {
+            return actionType switch
+            {
+                QuestObjectiveTriggerActionType.Begin => "Begin()",
+                QuestObjectiveTriggerActionType.Complete => "Complete()",
+                QuestObjectiveTriggerActionType.SetInactive => "SetState(QuestState.Inactive)",
+                QuestObjectiveTriggerActionType.Fail => "SetState(QuestState.Failed)",
+                QuestObjectiveTriggerActionType.Cancel => "SetState(QuestState.Cancelled)",
+                QuestObjectiveTriggerActionType.Expire => "SetState(QuestState.Expired)",
+                _ => "Begin()"
+            };
         }
     }
 }

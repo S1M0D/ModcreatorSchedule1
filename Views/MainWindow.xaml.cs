@@ -441,6 +441,14 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void AddPhoneAppMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && vm.AvailablePhoneAppBlueprints.Count > 0)
+            {
+                vm.AddPhoneAppCommand.Execute(vm.AvailablePhoneAppBlueprints[0]);
+            }
+        }
+
         private void AddFolderMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is MainViewModel vm)

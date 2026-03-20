@@ -970,6 +970,14 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void QuestObjectiveTriggerActionTypeComboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is ComboBox comboBox)
+            {
+                comboBox.ItemsSource = Enum.GetValues(typeof(QuestObjectiveTriggerActionType));
+            }
+        }
+
         private void AddObjectiveStartTrigger_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is QuestObjective objective)
@@ -980,6 +988,7 @@ namespace Schedule1ModdingTool.Views
                     TriggerType = QuestTriggerType.ActionTrigger,
                     TriggerTarget = QuestTriggerTarget.ObjectiveStart,
                     TargetAction = defaultTrigger?.TargetAction ?? "TimeManager.OnDayPass",
+                    ActionType = QuestObjectiveTriggerActionType.Begin,
                     ObjectiveName = objective.Name,
                     SelectedTriggerMetadata = defaultTrigger
                 };
@@ -1017,6 +1026,7 @@ namespace Schedule1ModdingTool.Views
                     TriggerType = QuestTriggerType.ActionTrigger,
                     TriggerTarget = QuestTriggerTarget.ObjectiveFinish,
                     TargetAction = defaultTrigger?.TargetAction ?? "TimeManager.OnDayPass",
+                    ActionType = QuestObjectiveTriggerActionType.Complete,
                     ObjectiveName = objective.Name,
                     SelectedTriggerMetadata = defaultTrigger
                 };

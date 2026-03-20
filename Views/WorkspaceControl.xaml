@@ -310,7 +310,7 @@
 					        Padding="4"
 					        Margin="8"
 					        HorizontalAlignment="Center">
-						<TextBlock Text="{Binding ItemId}"
+						<TextBlock Text="{Binding WorkspaceSubtitle}"
 						           FontSize="10"
 						           FontWeight="SemiBold"
 						           Foreground="{StaticResource MediumTextBrush}"
@@ -424,9 +424,9 @@
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>
 				</MenuItem>
-				<MenuItem Header="Phone App" Click="NewPhoneApp_Click">
+				<MenuItem Header="Custom Clothing" Click="NewCustomClothing_Click">
 					<MenuItem.Icon>
-						<materialDesign:PackIcon Kind="{StaticResource PhoneAppsIcon}"
+						<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
 						                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>

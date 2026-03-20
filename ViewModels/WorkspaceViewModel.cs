@@ -162,6 +162,22 @@ namespace Schedule1ModdingTool.ViewModels
                     return Enumerable.Empty<ItemBlueprint>();
 
                 return Project.Items
+                    .Where(i => i.ItemType != ItemKindOption.Clothing)
+                    .Where(i => string.Equals(i.FolderId, SelectedFolder.Id, StringComparison.Ordinal))
+                    .Where(i => MatchesSearch(i.DisplayName))
+                    .OrderBy(i => i.DisplayName, StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        public IEnumerable<ItemBlueprint> CurrentCustomClothing
+        {
+            get
+            {
+                if (Project == null || SelectedFolder == null)
+                    return Enumerable.Empty<ItemBlueprint>();
+
+                return Project.Items
+                    .Where(i => i.ItemType == ItemKindOption.Clothing)
                     .Where(i => string.Equals(i.FolderId, SelectedFolder.Id, StringComparison.Ordinal))
                     .Where(i => MatchesSearch(i.DisplayName))
                     .OrderBy(i => i.DisplayName, StringComparer.OrdinalIgnoreCase);
@@ -185,8 +201,8 @@ namespace Schedule1ModdingTool.ViewModels
         public IEnumerable<object> CurrentTiles =>
             CurrentFolders.Cast<object>()
                 .Concat(CurrentNpcs)
+                .Concat(CurrentCustomClothing)
                 .Concat(CurrentItems)
-                .Concat(CurrentPhoneApps)
                 .Concat(CurrentQuests);
 
         public ICommand ToggleViewModeCommand { get; }
@@ -330,6 +346,15 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        public void UpdateCustomClothingCount(int count)
+        {
+            var clothingCategory = Categories.FirstOrDefault(c => c.Category == ModCategory.CustomClothing);
+            if (clothingCategory != null)
+            {
+                clothingCategory.Count = count;
+            }
+        }
+
         public void UpdatePhoneAppCount(int count)
         {
             var phoneAppCategory = Categories.FirstOrDefault(c => c.Category == ModCategory.PhoneApps);
@@ -363,10 +388,10 @@ namespace Schedule1ModdingTool.ViewModels
 
             Categories.Add(new ModCategoryInfo
             {
-                Category = ModCategory.PhoneApps,
-                DisplayName = "Phone Apps",
-                IconKey = "PhoneAppsIcon",
-                Description = "Create custom phone applications",
+                Category = ModCategory.CustomClothing,
+                DisplayName = "Custom Clothing",
+                IconKey = "ItemsIcon",
+                Description = "Create custom S1API clothing items",
                 IsEnabled = true,
                 Count = 0,
                 ComingSoonText = string.Empty
@@ -503,6 +528,7 @@ namespace Schedule1ModdingTool.ViewModels
             if (e.PropertyName == nameof(QuestBlueprint.FolderId) ||
                 e.PropertyName == nameof(NpcBlueprint.FolderId) ||
                 e.PropertyName == nameof(ItemBlueprint.FolderId) ||
+                e.PropertyName == nameof(ItemBlueprint.ItemType) ||
                 e.PropertyName == nameof(PhoneAppBlueprint.FolderId))
             {
                 RaiseItemsChanged();
@@ -577,6 +603,7 @@ namespace Schedule1ModdingTool.ViewModels
             OnPropertyChanged(nameof(CurrentFolders));
             OnPropertyChanged(nameof(CurrentQuests));
             OnPropertyChanged(nameof(CurrentNpcs));
+            OnPropertyChanged(nameof(CurrentCustomClothing));
             OnPropertyChanged(nameof(CurrentItems));
             OnPropertyChanged(nameof(CurrentTiles));
         }

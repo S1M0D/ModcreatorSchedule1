@@ -111,6 +111,25 @@ namespace Schedule1ModdingTool.Utils
                 { "AutoCompleteOnAllEntriesComplete", "If enabled, S1API completes the quest automatically after every quest entry reaches Completed." },
                 { "FinishType", "The quest lifecycle action to run when this trigger fires: Complete, Fail, Cancel, Expire, or End." },
                 { "ActionType", "The quest-entry action to run when this trigger fires. You can begin the entry, complete it, or move it into an inactive, failed, cancelled, or expired state." },
+
+                // Item and clothing properties
+                { "ItemType", "The S1API item builder mode used for this entry. Custom clothing is locked to the Clothing type so the generated code always uses the clothing builder instead of a generic item builder." },
+                { "CloneSourceItemId", "Optional base-game item ID to clone from before applying your custom clothing settings. Leave this empty when you want the clothing definition to come entirely from your own asset path and settings." },
+                { "Category", "High-level item category used for shop compatibility. Custom clothing stays locked to the Clothing category." },
+                { "StackLimit", "Maximum number of copies the player can hold in one inventory stack. Clothing defaults to 1, but you can increase it if your mod design wants stackable clothing items." },
+                { "LegalStatus", "Whether the item should be treated as legal or illegal by game systems and S1API shop/law interactions." },
+                { "ShopIntegrationMode", "Controls how S1API adds the item to shops: None skips shops, Compatible adds it to category-matching shops, and Specific only uses the shop names you list below." },
+                { "IconFileName", "Embedded resource path for the clothing icon used in inventory and shops. Pick a project resource or type the relative resource path manually." },
+                { "ClothingSlot", "The avatar slot this clothing item occupies. Pick the body area the item should attach to, such as Head, Top, Bottom, Waist, Hands, or Feet." },
+                { "ClothingApplicationType", "Controls which S1API clothing asset system this item uses. BodyLayer and FaceLayer target avatar layer textures, while Accessory targets an accessory prefab path." },
+                { "ClothingAssetPath", "Resources path to the clothing asset used by S1API. You can clone an existing clothing item instead, but for fully custom clothing this should point at your body-layer, face-layer, or accessory asset." },
+                { "ClothingTextureSourceAssetPath", "Base-game clothing asset path used as the source when you import an existing texture from the running game. For accessories this should be the original accessory prefab path, such as Avatar/Accessories/Head/Cap/Cap." },
+                { "ClothingTextureResourcePath", "Project PNG resource used for the final clothing texture override. Body and face layers register this texture directly at your clothing asset path. Accessories use it as the replacement texture when cloning a source accessory prefab at runtime." },
+                { "AccessoryTextureShaderPropertyName", "Shader texture property replaced on an accessory material when S1API clones the source accessory. _MainTex is the default for most clothing textures." },
+                { "SuggestedClothingAssetPath", "Suggested S1API resource path scaffold for the current clothing item. This is an authoring helper only: it gives you a clean path naming pattern, but you still create the actual texture or prefab in your art pipeline." },
+                { "ClothingColorable", "If enabled, the clothing supports S1API clothing colors and can use the default color below instead of staying fixed to the source asset colors." },
+                { "DefaultClothingColor", "Default S1API clothing color applied when the item is first registered or equipped." },
+                { "BlockedClothingSlots", "Additional avatar slots this clothing item blocks while equipped. Use this to stop hats, glasses, outerwear, or similar layers from clipping through each other." },
                 
                 // NPC properties
                 { "NpcId", "Unique identifier used for save/load and game systems. Must be unique and descriptive (e.g., 'shopkeeper_alex')." },

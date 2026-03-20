@@ -1,3 +1,6 @@
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using Newtonsoft.Json;
 
 namespace Schedule1ModdingTool.Models
@@ -28,6 +31,7 @@ namespace Schedule1ModdingTool.Models
         private string _secondaryButtonLabel = "Cancel";
         private string _secondaryButtonResultText = "Secondary action pressed.";
         private bool _secondaryButtonClosesApp = true;
+        private bool _useCustomUiBuilder;
         private bool _generateHookScaffold = true;
         private string _folderId = QuestProject.RootFolderId;
         private string _modName = "Schedule 1 Phone Apps";
@@ -35,6 +39,11 @@ namespace Schedule1ModdingTool.Models
         private string _modVersion = "1.0.0";
         private string _gameDeveloper = "TVGS";
         private string _gameName = "Schedule I";
+
+        public PhoneAppBlueprint()
+        {
+            UiNodes.CollectionChanged += UiNodesOnCollectionChanged;
+        }
 
         [JsonProperty("className")]
         public string ClassName
@@ -209,6 +218,21 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _generateHookScaffold, value);
         }
 
+        [JsonProperty("useCustomUiBuilder")]
+        public bool UseCustomUiBuilder
+        {
+            get => _useCustomUiBuilder;
+            set
+            {
+                if (SetProperty(ref _useCustomUiBuilder, value))
+                {
+                    OnPropertyChanged(nameof(UsesGeneratedLayout));
+                    OnPropertyChanged(nameof(IsBlankCanvas));
+                    OnPropertyChanged(nameof(UsesLiveBuilder));
+                }
+            }
+        }
+
         [JsonProperty("folderId")]
         public string FolderId
         {
@@ -251,14 +275,20 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _gameName, value);
         }
 
+        [JsonProperty("uiNodes")]
+        public ObservableCollection<PhoneAppUiNodeBlueprint> UiNodes { get; } = new();
+
         [JsonIgnore]
         public string DisplayName => string.IsNullOrWhiteSpace(AppTitle) ? AppName : AppTitle;
 
         [JsonIgnore]
-        public bool UsesGeneratedLayout => LayoutPreset != PhoneAppLayoutPresetOption.BlankCanvas;
+        public bool UsesGeneratedLayout => !UseCustomUiBuilder && LayoutPreset != PhoneAppLayoutPresetOption.BlankCanvas;
 
         [JsonIgnore]
-        public bool IsBlankCanvas => LayoutPreset == PhoneAppLayoutPresetOption.BlankCanvas;
+        public bool IsBlankCanvas => !UseCustomUiBuilder && LayoutPreset == PhoneAppLayoutPresetOption.BlankCanvas;
+
+        [JsonIgnore]
+        public bool UsesLiveBuilder => UseCustomUiBuilder;
 
         public void CopyFrom(PhoneAppBlueprint source)
         {
@@ -286,6 +316,7 @@ namespace Schedule1ModdingTool.Models
             SecondaryButtonLabel = source.SecondaryButtonLabel;
             SecondaryButtonResultText = source.SecondaryButtonResultText;
             SecondaryButtonClosesApp = source.SecondaryButtonClosesApp;
+            UseCustomUiBuilder = source.UseCustomUiBuilder;
             GenerateHookScaffold = source.GenerateHookScaffold;
             FolderId = source.FolderId;
             ModName = source.ModName;
@@ -293,6 +324,12 @@ namespace Schedule1ModdingTool.Models
             ModVersion = source.ModVersion;
             GameDeveloper = source.GameDeveloper;
             GameName = source.GameName;
+
+            UiNodes.Clear();
+            foreach (var node in source.UiNodes)
+            {
+                UiNodes.Add(node.DeepCopy());
+            }
         }
 
         public PhoneAppBlueprint DeepCopy()
@@ -300,6 +337,32 @@ namespace Schedule1ModdingTool.Models
             var copy = new PhoneAppBlueprint();
             copy.CopyFrom(this);
             return copy;
+        }
+
+        private void UiNodesOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+            {
+                foreach (var removedNode in e.OldItems.OfType<PhoneAppUiNodeBlueprint>())
+                {
+                    removedNode.PropertyChanged -= UiNodeOnPropertyChanged;
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var addedNode in e.NewItems.OfType<PhoneAppUiNodeBlueprint>())
+                {
+                    addedNode.PropertyChanged += UiNodeOnPropertyChanged;
+                }
+            }
+
+            OnPropertyChanged(nameof(UiNodes));
+        }
+
+        private void UiNodeOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(UiNodes));
         }
     }
 

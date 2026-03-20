@@ -63,12 +63,12 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
-        private void NewPhoneApp_Click(object sender, RoutedEventArgs e)
+        private void NewCustomClothing_Click(object sender, RoutedEventArgs e)
         {
             var vm = GetMainViewModel();
-            if (vm != null && vm.AvailablePhoneAppBlueprints.Count > 0)
+            if (vm != null)
             {
-                vm.AddPhoneAppCommand.Execute(vm.AvailablePhoneAppBlueprints[0]);
+                vm.NewCustomClothingCommand.Execute(null);
             }
         }
 

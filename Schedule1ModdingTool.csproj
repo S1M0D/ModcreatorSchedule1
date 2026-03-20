@@ -14,6 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AssetsTools.NET" Version="3.0.0" />
+    <PackageReference Include="AssetsTools.NET.Texture" Version="3.0.2" />
     <PackageReference Include="AutoUpdater.NET.Official" Version="1.9.2" />
     <PackageReference Include="MaterialDesignThemes" Version="5.3.1-ci1167" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
@@ -47,6 +49,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove=".codex_tmp_assetprobe\**" />
+    <None Remove=".codex_tmp_assetprobe\**" />
+    <Content Remove=".codex_tmp_assetprobe\**" />
+    <EmbeddedResource Remove=".codex_tmp_assetprobe\**" />
+    <Compile Remove="codex_tpk_uncompressed\**" />
+    <None Remove="codex_tpk_uncompressed\**" />
+    <Content Remove="codex_tpk_uncompressed\**" />
+    <EmbeddedResource Remove="codex_tpk_uncompressed\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Tools\AssetMetadata\unity_type_trees.tpk">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Remove="Resources\Contributors\IfBars.png" />
     <Resource Include="Resources\Contributors\IfBars.png" />
     <None Remove="Resources\Contributors\Estonia.png" />

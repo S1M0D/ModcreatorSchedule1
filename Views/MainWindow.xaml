@@ -238,9 +238,9 @@
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>
 						</MenuItem>
-						<MenuItem Header="Phone App" Click="AddPhoneAppMenuItem_Click" InputGestureText="Ctrl+Shift+P" Style="{StaticResource DarkMenuItemStyle}">
+						<MenuItem Header="Custom Clothing" Click="AddCustomClothingMenuItem_Click" InputGestureText="Ctrl+Shift+C" Style="{StaticResource DarkMenuItemStyle}">
 							<MenuItem.Icon>
-								<materialDesign:PackIcon Kind="{StaticResource PhoneAppsIcon}"
+								<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>

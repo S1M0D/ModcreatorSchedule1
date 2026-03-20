@@ -1,4 +1,5 @@
 <UserControl x:Class="Schedule1ModdingTool.Views.PhoneAppPropertiesControl"
+             x:Name="Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -10,6 +11,9 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <HierarchicalDataTemplate DataType="{x:Type models:PhoneAppUiNodeBlueprint}" ItemsSource="{Binding Children}">
+            <TextBlock Text="{Binding DisplayName}" Foreground="{StaticResource LightTextBrush}" TextWrapping="Wrap" />
+        </HierarchicalDataTemplate>
     </UserControl.Resources>
 
     <Grid Margin="8" VerticalAlignment="Stretch">
@@ -116,6 +120,11 @@
                                 <TextBlock Margin="0,12,0,0"
                                            TextWrapping="Wrap"
                                            Foreground="{StaticResource DimTextBrush}"
+                                           Text="Live Builder adds a hierarchy-driven authoring mode for layout containers, text, buttons, and spacers. It is still code-generated at export time, so hook files remain the right place for advanced runtime logic." />
+
+                                <TextBlock Margin="0,12,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="{StaticResource DimTextBrush}"
                                            Text="The generated build adds Assembly-CSharp only when phone apps are present because S1API's Exit hook uses Schedule I's ExitAction type." />
                             </StackPanel>
                         </Border>
@@ -124,13 +133,255 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Generated UI">
+            <TabItem Header="Live Builder">
+                <Grid Margin="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="360" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource PanelStyle}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="12">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Hierarchy" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,8,0" />
+                                    <views:InfoIcon TooltipText="This is a layout-driven phone UI builder. Root nodes render top-to-bottom inside the app. Only Panel nodes render children, so use Panels like Unity hierarchy containers." />
+                                </StackPanel>
+
+                                <CheckBox Content="Use Live Builder hierarchy instead of preset layout"
+                                          IsChecked="{Binding DataContext.SelectedPhoneApp.UseCustomUiBuilder, ElementName=Root, UpdateSourceTrigger=PropertyChanged}"
+                                          Foreground="{StaticResource LightTextBrush}"
+                                          Margin="0,10,0,0" />
+
+                                <TextBlock Margin="0,10,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           Text="Build the phone app like a simple UI hierarchy: add containers, text, buttons, and spacers. When Live Builder is enabled, the preset layout tab becomes optional fallback content instead of the generated main UI." />
+
+                                <Label Content="Add Root Nodes" Style="{StaticResource LabelStyle}" Margin="0,16,0,6" />
+                                <WrapPanel>
+                                    <Button Content="+ Panel" Click="AddRootPanel_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="+ Text" Click="AddRootText_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="+ Button" Click="AddRootButton_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="+ Spacer" Click="AddRootSpacer_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                </WrapPanel>
+
+                                <Label Content="Add Child To Selected Panel" Style="{StaticResource LabelStyle}" Margin="0,10,0,6" />
+                                <WrapPanel>
+                                    <Button Content="Child Panel" Click="AddChildPanel_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="Child Text" Click="AddChildText_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="Child Button" Click="AddChildButton_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="Child Spacer" Click="AddChildSpacer_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                </WrapPanel>
+
+                                <Label Content="Selection Tools" Style="{StaticResource LabelStyle}" Margin="0,10,0,6" />
+                                <WrapPanel>
+                                    <Button Content="Duplicate" Click="DuplicateNode_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="Remove" Click="RemoveNode_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="Move Up" Click="MoveNodeUp_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                    <Button Content="Move Down" Click="MoveNodeDown_Click" Style="{StaticResource IconButtonStyle}" Margin="0,0,6,6" />
+                                </WrapPanel>
+
+                                <Label Margin="0,10,0,6"
+                                       Content="UI Hierarchy"
+                                       Style="{StaticResource LabelStyle}" />
+
+                                <Border Background="#22151A21" BorderBrush="#44363F4A" BorderThickness="1" CornerRadius="8" Padding="8">
+                                    <TreeView x:Name="UiHierarchyTreeView"
+                                              ItemsSource="{Binding DataContext.SelectedPhoneApp.UiNodes, ElementName=Root}"
+                                              SelectedItemChanged="UiHierarchyTreeView_SelectedItemChanged"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              Foreground="{StaticResource LightTextBrush}"
+                                              MinHeight="340" />
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource PanelStyle}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel Margin="12" DataContext="{Binding SelectedUiNode, ElementName=Root}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Selected Node" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,8,0" />
+                                    <views:InfoIcon TooltipText="Panels work like layout containers. Text and Button nodes render content. Spacer nodes create flexible gaps. Preferred Width and Preferred Height use Unity layout sizing, so 0 means auto." />
+                                </StackPanel>
+
+                                <TextBlock Margin="0,10,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           Text="Select a node to edit it. Panel children only render when the selected node type stays as Panel." />
+
+                                <Grid Margin="0,16,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Column="0" Content="Name" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon Grid.Column="1" TooltipText="Editor-only label used in the hierarchy tree and generated GameObject name." />
+                                </Grid>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                <Grid Margin="0,8,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Column="0" Content="Node Type" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon Grid.Column="1" TooltipText="Panel nodes can contain children. Text and Button nodes render content. Spacer creates empty layout space. Changing away from Panel does not delete existing children, but only Panels render them." />
+                                </Grid>
+                                <ComboBox ItemsSource="{x:Static models:PhoneAppUiNodeOptions.NodeTypes}"
+                                          SelectedItem="{Binding NodeType, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource ComboBoxStyle}" />
+
+                                <StackPanel Visibility="{Binding SupportsLayout, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid Margin="0,12,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Label Grid.Column="0" Content="Layout Direction" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon Grid.Column="1" TooltipText="Vertical stacks children top-to-bottom. Horizontal places them left-to-right. This is the main equivalent to choosing a layout group in Unity." />
+                                    </Grid>
+                                    <ComboBox ItemsSource="{x:Static models:PhoneAppUiNodeOptions.LayoutDirections}"
+                                              SelectedItem="{Binding LayoutDirection, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource ComboBoxStyle}" />
+
+                                    <Label Content="Spacing" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding Spacing, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Padding" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding Padding, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding SupportsText, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid Margin="0,12,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Label Grid.Column="0" Content="Text / Label" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon Grid.Column="1" TooltipText="For Text nodes this is the displayed paragraph. For Button nodes this is the button label." />
+                                    </Grid>
+                                    <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource TextBoxStyle}"
+                                             MinHeight="90"
+                                             AcceptsReturn="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto" />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding SupportsTextAlignment, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid Margin="0,12,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Label Grid.Column="0" Content="Text Alignment" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon Grid.Column="1" TooltipText="Maps to UnityEngine.TextAnchor in generated code." />
+                                    </Grid>
+                                    <ComboBox ItemsSource="{x:Static models:PhoneAppUiNodeOptions.TextAlignments}"
+                                              SelectedItem="{Binding TextAlignment, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource ComboBoxStyle}" />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding SupportsFontSize, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Label Content="Font Size" Style="{StaticResource LabelStyle}" Margin="0,12,0,0" />
+                                    <TextBox Text="{Binding FontSize, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <CheckBox Content="Bold"
+                                              IsChecked="{Binding Bold, UpdateSourceTrigger=PropertyChanged}"
+                                              Foreground="{StaticResource LightTextBrush}"
+                                              Margin="0,8,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding SupportsBackgroundColor, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Label Content="Background Color" Style="{StaticResource LabelStyle}" Margin="0,12,0,0" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding BackgroundColorHex, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                        <Button Grid.Column="1" Content="Pick" Click="PickBackgroundColor_Click" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding SupportsTextColor, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Label Content="Text Color" Style="{StaticResource LabelStyle}" Margin="0,12,0,0" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding TextColorHex, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                        <Button Grid.Column="1" Content="Pick" Click="PickTextColor_Click" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding SupportsButtonAction, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Grid Margin="0,12,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Label Grid.Column="0" Content="Status Message" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon Grid.Column="1" TooltipText="Optional message sent to the app's generated status bar when this button is pressed. Use this for lightweight feedback without custom hook code." />
+                                    </Grid>
+                                    <TextBox Text="{Binding StatusMessage, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <CheckBox Content="Close the app when pressed"
+                                              IsChecked="{Binding CloseAppOnClick, UpdateSourceTrigger=PropertyChanged}"
+                                              Foreground="{StaticResource LightTextBrush}"
+                                              Margin="0,8,0,0" />
+                                </StackPanel>
+
+                                <StackPanel Margin="0,12,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Label Grid.Column="0" Content="Sizing" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon Grid.Column="1" TooltipText="Preferred Width and Preferred Height are Unity layout hints. Set 0 to let the layout decide. Expand Width and Expand Height let the node stretch to fill available room inside its parent container." />
+                                    </Grid>
+
+                                    <Label Content="Preferred Width" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding PreferredWidth, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Preferred Height" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding PreferredHeight, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <CheckBox Content="Expand width"
+                                              IsChecked="{Binding ExpandWidth, UpdateSourceTrigger=PropertyChanged}"
+                                              Foreground="{StaticResource LightTextBrush}"
+                                              Margin="0,8,0,0" />
+
+                                    <CheckBox Content="Expand height"
+                                              IsChecked="{Binding ExpandHeight, UpdateSourceTrigger=PropertyChanged}"
+                                              Foreground="{StaticResource LightTextBrush}"
+                                              Margin="0,4,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Preset UI">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <WrapPanel Margin="12" DataContext="{Binding SelectedPhoneApp}">
 
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="340" MaxWidth="520">
                             <StackPanel Margin="12">
                                 <TextBlock Text="Preset Layout" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+
+                                <TextBlock TextWrapping="Wrap"
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           Margin="0,0,0,12"
+                                           Visibility="{Binding UseCustomUiBuilder, Converter={StaticResource BoolToVisibilityConverter}}"
+                                           Text="Live Builder is enabled, so this preset layout is currently fallback content only. Disable Live Builder if you want this tab to generate the app's main UI instead." />
 
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
@@ -270,7 +521,7 @@
                                 <TextBlock Margin="0,12,0,0"
                                            TextWrapping="Wrap"
                                            Foreground="{StaticResource DimTextBrush}"
-                                           Text="When enabled, export generates PhoneApps/&lt;ClassName&gt;.Hooks.cs with partial methods for OnCreated, OnCreatedUI augmentation, OnPhoneClosed, Exit, and both generated button callbacks." />
+                                           Text="When enabled, export generates PhoneApps/&lt;ClassName&gt;.Hooks.cs with partial methods for OnCreated, OnCreatedUI augmentation, OnPhoneClosed, Exit, preset button callbacks, and Live Builder button callbacks." />
 
                                 <TextBlock Margin="0,12,0,0"
                                            TextWrapping="Wrap"
@@ -301,6 +552,9 @@
 
                                 <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource LightTextBrush}" Text="OnPrimaryButtonPressedGenerated() / OnSecondaryButtonPressedGenerated()" />
                                 <TextBlock TextWrapping="Wrap" Foreground="{StaticResource DimTextBrush}" Text="Extend the generated button callbacks without editing the generated main class." />
+
+                                <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource LightTextBrush}" Text="OnCustomButtonPressedGenerated(string nodeId)" />
+                                <TextBlock TextWrapping="Wrap" Foreground="{StaticResource DimTextBrush}" Text="Runs when a Live Builder button node is pressed. The nodeId lets you branch logic for multiple generated buttons inside one partial hook." />
 
                                 <TextBlock Margin="0,12,0,0"
                                            TextWrapping="Wrap"

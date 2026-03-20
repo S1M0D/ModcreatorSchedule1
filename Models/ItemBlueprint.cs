@@ -50,6 +50,9 @@ namespace Schedule1ModdingTool.Models
         private ClothingSlotOption _clothingSlot = ClothingSlotOption.Head;
         private ClothingApplicationTypeOption _clothingApplicationType = ClothingApplicationTypeOption.Accessory;
         private string _clothingAssetPath = string.Empty;
+        private string _clothingTextureSourceAssetPath = string.Empty;
+        private string _clothingTextureResourcePath = string.Empty;
+        private string _accessoryTextureShaderPropertyName = "_MainTex";
         private bool _clothingColorable = true;
         private ClothingColorOption _defaultClothingColor = ClothingColorOption.White;
         private string _displayMaterialResourcePath = string.Empty;
@@ -104,7 +107,14 @@ namespace Schedule1ModdingTool.Models
         public string ItemId
         {
             get => _itemId;
-            set => SetProperty(ref _itemId, value);
+            set
+            {
+                if (SetProperty(ref _itemId, value))
+                {
+                    OnPropertyChanged(nameof(WorkspaceSubtitle));
+                    OnPropertyChanged(nameof(SuggestedClothingAssetPath));
+                }
+            }
         }
 
         [JsonProperty("itemName")]
@@ -141,6 +151,7 @@ namespace Schedule1ModdingTool.Models
                     }
 
                     OnPropertyChanged(nameof(EffectiveCategory));
+                    OnPropertyChanged(nameof(WorkspaceSubtitle));
                     RaiseItemTypeCapabilityProperties();
                 }
             }
@@ -159,7 +170,11 @@ namespace Schedule1ModdingTool.Models
             get => _category;
             set
             {
-                if (SetProperty(ref _category, value))
+                var normalizedValue = ItemType == ItemKindOption.Clothing
+                    ? ItemCategoryOption.Clothing
+                    : value;
+
+                if (SetProperty(ref _category, normalizedValue))
                 {
                     OnPropertyChanged(nameof(EffectiveCategory));
                 }
@@ -439,14 +454,64 @@ namespace Schedule1ModdingTool.Models
         public ClothingApplicationTypeOption ClothingApplicationType
         {
             get => _clothingApplicationType;
-            set => SetProperty(ref _clothingApplicationType, value);
+            set
+            {
+                if (SetProperty(ref _clothingApplicationType, value))
+                {
+                    OnPropertyChanged(nameof(SuggestedClothingAssetPath));
+                    OnPropertyChanged(nameof(UsesAccessoryTextureRuntimeOverride));
+                    OnPropertyChanged(nameof(UsesLayerTextureRuntimeOverride));
+                }
+            }
         }
 
         [JsonProperty("clothingAssetPath")]
         public string ClothingAssetPath
         {
             get => _clothingAssetPath;
-            set => SetProperty(ref _clothingAssetPath, value ?? string.Empty);
+            set
+            {
+                if (SetProperty(ref _clothingAssetPath, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(UsesAccessoryTextureRuntimeOverride));
+                    OnPropertyChanged(nameof(UsesLayerTextureRuntimeOverride));
+                }
+            }
+        }
+
+        [JsonProperty("clothingTextureSourceAssetPath")]
+        public string ClothingTextureSourceAssetPath
+        {
+            get => _clothingTextureSourceAssetPath;
+            set
+            {
+                if (SetProperty(ref _clothingTextureSourceAssetPath, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(UsesAccessoryTextureRuntimeOverride));
+                }
+            }
+        }
+
+        [JsonProperty("clothingTextureResourcePath")]
+        public string ClothingTextureResourcePath
+        {
+            get => _clothingTextureResourcePath;
+            set
+            {
+                if (SetProperty(ref _clothingTextureResourcePath, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(HasClothingTextureResource));
+                    OnPropertyChanged(nameof(UsesAccessoryTextureRuntimeOverride));
+                    OnPropertyChanged(nameof(UsesLayerTextureRuntimeOverride));
+                }
+            }
+        }
+
+        [JsonProperty("accessoryTextureShaderPropertyName")]
+        public string AccessoryTextureShaderPropertyName
+        {
+            get => _accessoryTextureShaderPropertyName;
+            set => SetProperty(ref _accessoryTextureShaderPropertyName, string.IsNullOrWhiteSpace(value) ? "_MainTex" : value.Trim());
         }
 
         [JsonProperty("clothingColorable")]
@@ -597,6 +662,11 @@ namespace Schedule1ModdingTool.Models
         public string DisplayName => string.IsNullOrWhiteSpace(ItemName) ? ClassName : ItemName;
 
         [JsonIgnore]
+        public string WorkspaceSubtitle => ItemType == ItemKindOption.Clothing
+            ? $"Clothing · {ItemId}"
+            : ItemId;
+
+        [JsonIgnore]
         public ItemCategoryOption EffectiveCategory => ItemType == ItemKindOption.Clothing ? ItemCategoryOption.Clothing : Category;
 
         [JsonIgnore]
@@ -606,10 +676,10 @@ namespace Schedule1ModdingTool.Models
         public bool SupportsCategory => ItemType != ItemKindOption.Clothing;
 
         [JsonIgnore]
-        public bool SupportsStackLimit => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Buildable || ItemType == ItemKindOption.Additive;
+        public bool SupportsStackLimit => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Buildable || ItemType == ItemKindOption.Additive || ItemType == ItemKindOption.Clothing;
 
         [JsonIgnore]
-        public bool SupportsLegalStatus => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Buildable || ItemType == ItemKindOption.Additive;
+        public bool SupportsLegalStatus => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Buildable || ItemType == ItemKindOption.Additive || ItemType == ItemKindOption.Clothing;
 
         [JsonIgnore]
         public bool SupportsDemoAvailability => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Additive;
@@ -645,10 +715,43 @@ namespace Schedule1ModdingTool.Models
         public bool SupportsGrowContainerIntegration => ItemType == ItemKindOption.Additive;
 
         [JsonIgnore]
-        public bool SupportsChemistryRecipes => true;
+        public bool SupportsChemistryRecipes => ItemType != ItemKindOption.Clothing;
+
+        [JsonIgnore]
+        public bool SupportsRuntimeEditor => ItemType != ItemKindOption.Clothing;
+
+        [JsonIgnore]
+        public bool SupportsLiveCatalogEditor => ItemType != ItemKindOption.Clothing;
+
+        [JsonIgnore]
+        public bool CanEditItemType => ItemType != ItemKindOption.Clothing;
+
+        [JsonIgnore]
+        public string SuggestedClothingAssetPath => ClothingApplicationType switch
+        {
+            ClothingApplicationTypeOption.BodyLayer => $"avatar/bodylayers/{BuildClothingAssetKey(ItemId)}",
+            ClothingApplicationTypeOption.FaceLayer => $"avatar/facelayers/{BuildClothingAssetKey(ItemId)}",
+            _ => $"avatar/accessories/{BuildClothingAssetKey(ItemId)}"
+        };
 
         [JsonIgnore]
         public bool SupportsUseCallbackHook => UsesViewmodelEquippable;
+
+        [JsonIgnore]
+        public bool HasClothingTextureResource => !string.IsNullOrWhiteSpace(ClothingTextureResourcePath);
+
+        [JsonIgnore]
+        public bool UsesAccessoryTextureRuntimeOverride => ItemType == ItemKindOption.Clothing
+            && ClothingApplicationType == ClothingApplicationTypeOption.Accessory
+            && !string.IsNullOrWhiteSpace(ClothingTextureResourcePath)
+            && !string.IsNullOrWhiteSpace(ClothingTextureSourceAssetPath)
+            && !string.IsNullOrWhiteSpace(ClothingAssetPath);
+
+        [JsonIgnore]
+        public bool UsesLayerTextureRuntimeOverride => ItemType == ItemKindOption.Clothing
+            && ClothingApplicationType != ClothingApplicationTypeOption.Accessory
+            && !string.IsNullOrWhiteSpace(ClothingTextureResourcePath)
+            && !string.IsNullOrWhiteSpace(ClothingAssetPath);
 
         [JsonIgnore]
         public bool UsesAvatarBundleRegistration => UsesViewmodelEquippable
@@ -727,6 +830,9 @@ namespace Schedule1ModdingTool.Models
             ClothingSlot = source.ClothingSlot;
             ClothingApplicationType = source.ClothingApplicationType;
             ClothingAssetPath = source.ClothingAssetPath;
+            ClothingTextureSourceAssetPath = source.ClothingTextureSourceAssetPath;
+            ClothingTextureResourcePath = source.ClothingTextureResourcePath;
+            AccessoryTextureShaderPropertyName = source.AccessoryTextureShaderPropertyName;
             ClothingColorable = source.ClothingColorable;
             DefaultClothingColor = source.DefaultClothingColor;
 
@@ -786,8 +892,15 @@ namespace Schedule1ModdingTool.Models
             OnPropertyChanged(nameof(SupportsDisplayMaterial));
             OnPropertyChanged(nameof(SupportsGrowContainerIntegration));
             OnPropertyChanged(nameof(SupportsChemistryRecipes));
+            OnPropertyChanged(nameof(SupportsRuntimeEditor));
+            OnPropertyChanged(nameof(SupportsLiveCatalogEditor));
+            OnPropertyChanged(nameof(CanEditItemType));
+            OnPropertyChanged(nameof(SuggestedClothingAssetPath));
             OnPropertyChanged(nameof(SupportsUseCallbackHook));
             OnPropertyChanged(nameof(UsesAvatarBundleRegistration));
+            OnPropertyChanged(nameof(HasClothingTextureResource));
+            OnPropertyChanged(nameof(UsesAccessoryTextureRuntimeOverride));
+            OnPropertyChanged(nameof(UsesLayerTextureRuntimeOverride));
         }
 
         private void RaiseShopModeProperties()
@@ -820,6 +933,23 @@ namespace Schedule1ModdingTool.Models
         private void ChemistryRecipeOnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             OnPropertyChanged(nameof(ChemistryRecipes));
+        }
+
+        private static string BuildClothingAssetKey(string source)
+        {
+            if (string.IsNullOrWhiteSpace(source))
+                return "custom_clothing";
+
+            var filteredCharacters = source
+                .Trim()
+                .ToLowerInvariant()
+                .Select(character => char.IsLetterOrDigit(character) || character == '_' || character == '-'
+                    ? character
+                    : '_')
+                .ToArray();
+
+            var normalized = new string(filteredCharacters).Trim('_');
+            return string.IsNullOrWhiteSpace(normalized) ? "custom_clothing" : normalized;
         }
     }
 

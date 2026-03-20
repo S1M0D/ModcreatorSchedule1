@@ -346,6 +346,9 @@ namespace Schedule1ModdingTool.Views
 
             // Ctrl+Shift+I - New Item
             InputBindings.Add(new KeyBinding(vm.NewItemCommand, Key.I, ModifierKeys.Control | ModifierKeys.Shift));
+
+            // Ctrl+Shift+C - New Custom Clothing
+            InputBindings.Add(new KeyBinding(vm.NewCustomClothingCommand, Key.C, ModifierKeys.Control | ModifierKeys.Shift));
             
             // Ctrl+D - Duplicate Selected
             InputBindings.Add(new KeyBinding(vm.DuplicateSelectedCommand, Key.D, ModifierKeys.Control));
@@ -441,11 +444,11 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
-        private void AddPhoneAppMenuItem_Click(object sender, RoutedEventArgs e)
+        private void AddCustomClothingMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is MainViewModel vm && vm.AvailablePhoneAppBlueprints.Count > 0)
+            if (DataContext is MainViewModel vm)
             {
-                vm.AddPhoneAppCommand.Execute(vm.AvailablePhoneAppBlueprints[0]);
+                vm.NewCustomClothingCommand.Execute(null);
             }
         }
 

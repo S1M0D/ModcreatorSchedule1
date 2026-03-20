@@ -186,9 +186,24 @@ namespace Schedule1ModdingTool.Services
                 ? project.ProjectNamespace
                 : settings.DefaultModNamespace;
             var item = template?.DeepCopy() ?? new ItemBlueprint();
-            item.ClassName = $"Item{project.Items.Count + 1}";
-            item.ItemId = $"item_{project.Items.Count + 1}";
-            item.ItemName = $"New Item {project.Items.Count + 1}";
+
+            if (item.ItemType == ItemKindOption.Clothing)
+            {
+                var clothingIndex = project.Items.Count(existing => existing.ItemType == ItemKindOption.Clothing) + 1;
+                item.ClassName = $"Clothing{clothingIndex}";
+                item.ItemId = $"custom_clothing_{clothingIndex}";
+                item.ItemName = $"Custom Clothing {clothingIndex}";
+                item.ItemDescription = "A custom clothing item created with S1API.";
+                item.Category = ItemCategoryOption.Clothing;
+                item.StackLimit = 1;
+            }
+            else
+            {
+                item.ClassName = $"Item{project.Items.Count + 1}";
+                item.ItemId = $"item_{project.Items.Count + 1}";
+                item.ItemName = $"New Item {project.Items.Count + 1}";
+            }
+
             item.Namespace = $"{projectNamespace}.Items";
             item.ModName = string.IsNullOrWhiteSpace(project.ProjectName) ? item.ModName : project.ProjectName;
             item.ModAuthor = settings.DefaultModAuthor;
@@ -196,7 +211,7 @@ namespace Schedule1ModdingTool.Services
             item.FolderId = _workspaceViewModel.SelectedFolder?.Id ?? QuestProject.RootFolderId;
 
             project.AddItem(item);
-            _workspaceViewModel.UpdateItemCount(project.Items.Count);
+            UpdateItemCategoryCounts(project);
             return item;
         }
 
@@ -214,7 +229,7 @@ namespace Schedule1ModdingTool.Services
             {
                 DeleteGeneratedItemFile(project, item);
                 project.RemoveItem(item);
-                _workspaceViewModel.UpdateItemCount(project.Items.Count);
+                UpdateItemCategoryCounts(project);
                 return true;
             }
 
@@ -235,7 +250,7 @@ namespace Schedule1ModdingTool.Services
             duplicate.FolderId = item.FolderId;
 
             project.AddItem(duplicate);
-            _workspaceViewModel.UpdateItemCount(project.Items.Count);
+            UpdateItemCategoryCounts(project);
             return duplicate;
         }
 
@@ -568,6 +583,12 @@ namespace Schedule1ModdingTool.Services
             }
 
             return builder.Length > 0 ? builder.ToString() : fallback;
+        }
+
+        private void UpdateItemCategoryCounts(QuestProject project)
+        {
+            _workspaceViewModel.UpdateItemCount(project.Items.Count(item => item.ItemType != ItemKindOption.Clothing));
+            _workspaceViewModel.UpdateCustomClothingCount(project.Items.Count(item => item.ItemType == ItemKindOption.Clothing));
         }
     }
 }

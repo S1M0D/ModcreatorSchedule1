@@ -1,14 +1,15 @@
 namespace Schedule1ModdingTool.Models
 {
     /// <summary>
-    /// Represents a mod element category (Quests, NPCs, Phone Apps, etc.)
+    /// Represents a mod element category (Quests, NPCs, Custom Clothing, etc.)
     /// </summary>
     public enum ModCategory
     {
         Quests,
         NPCs,
-        PhoneApps,
-        Items
+        CustomClothing,
+        Items,
+        PhoneApps
     }
     
     /// <summary>

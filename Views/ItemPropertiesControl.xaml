@@ -4,7 +4,9 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:models="clr-namespace:Schedule1ModdingTool.Models"
+             xmlns:data="clr-namespace:Schedule1ModdingTool.Data"
              xmlns:services="clr-namespace:Schedule1ModdingTool.Services"
+             xmlns:views="clr-namespace:Schedule1ModdingTool.Views"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="1000">
 
@@ -21,14 +23,24 @@
 
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Identity" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Identity" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="Core clothing item identity. Custom clothing stays locked to the Clothing item type so the editor keeps the generated S1API builder consistent." />
+                                </StackPanel>
 
-                                <Label Content="Item Type" Style="{StaticResource LabelStyle}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Item Type" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="ItemType" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ItemTypes}"
                                           SelectedItem="{Binding ItemType, UpdateSourceTrigger=PropertyChanged}"
-                                          Style="{StaticResource ComboBoxStyle}" />
+                                          Style="{StaticResource ComboBoxStyle}"
+                                          IsEnabled="{Binding CanEditItemType}" />
 
-                                <Label Content="Clone Source Item ID" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Label Content="Clone Source Item ID" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="CloneSourceItemId" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{Binding DataContext.AvailableItemReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                           DisplayMemberPath="DisplayLabel"
                                           Text="{Binding CloneSourceItemId, UpdateSourceTrigger=PropertyChanged}"
@@ -36,7 +48,7 @@
                                           IsEditable="True"
                                           IsEnabled="{Binding SupportsCloneSource}" />
 
-                                <TextBlock Text="Use the live catalog tab to browse base-game items and set this with one click."
+                                <TextBlock Text="Clone from a known base-game item ID, or leave this empty and define the clothing asset path in the Clothing section."
                                            Foreground="{StaticResource DimTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,6,0,0" />
@@ -65,15 +77,24 @@
 
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Economy &amp; Rules" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Economy &amp; Rules" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="Pricing, stack size, legality, and shop-facing rules. Clothing items always stay in the Clothing category, but you can still control stack limit, price, and legal status here." />
+                                </StackPanel>
 
-                                <Label Content="Category" Style="{StaticResource LabelStyle}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Category" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="Category" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.Categories}"
                                           SelectedItem="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource ComboBoxStyle}"
                                           IsEnabled="{Binding SupportsCategory}" />
 
-                                <Label Content="Stack Limit" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Label Content="Stack Limit" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="StackLimit" />
+                                </StackPanel>
                                 <TextBox Text="{Binding StackLimit, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource TextBoxStyle}"
                                          IsEnabled="{Binding SupportsStackLimit}" />
@@ -84,7 +105,10 @@
                                 <Label Content="Resell Multiplier" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
                                 <TextBox Text="{Binding ResellMultiplier, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
 
-                                <Label Content="Legal Status" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Label Content="Legal Status" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="LegalStatus" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.LegalStatuses}"
                                           SelectedItem="{Binding LegalStatus, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource ComboBoxStyle}"
@@ -96,7 +120,7 @@
                                           Margin="0,12,0,0"
                                           IsEnabled="{Binding SupportsDemoAvailability}" />
 
-                                <TextBlock Text="The enabled fields change with the selected S1API item type."
+                                <TextBlock Text="Custom clothing stays locked to the Clothing category so it exports through the S1API clothing builder."
                                            Foreground="{StaticResource DimTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,12,0,0" />
@@ -107,11 +131,12 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Catalog &amp; Shops">
+            <TabItem Header="Shops &amp; Icon">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <WrapPanel Margin="12" DataContext="{Binding SelectedItemBlueprint}">
 
-                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="340" MaxWidth="520">
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="340" MaxWidth="520"
+                                Visibility="{Binding SupportsLiveCatalogEditor, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel Margin="12">
                                 <DockPanel Margin="0,0,0,12">
                                     <TextBlock Text="Live Runtime Catalog" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left" />
@@ -162,9 +187,15 @@
 
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Shop Routing" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Shop Routing" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="Choose whether S1API should add this clothing item to compatible shops automatically, keep it out of shops, or send it to a curated list of shop names. The clothing workflow now uses offline shop suggestions, so you do not need the live runtime catalog just to pick shops." />
+                                </StackPanel>
 
-                                <Label Content="Integration Mode" Style="{StaticResource LabelStyle}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Integration Mode" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="ShopIntegrationMode" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ShopIntegrationModes}"
                                           SelectedItem="{Binding ShopIntegrationMode, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource ComboBoxStyle}" />
@@ -182,38 +213,14 @@
 
                                 <StackPanel Margin="0,12,0,0"
                                             Visibility="{Binding UsesSpecificShops, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <Label Content="Specific Shops" Style="{StaticResource LabelStyle}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Specific Shops" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon TooltipText="Pick from the built-in offline shop suggestions or type the exact in-game shop display name used by S1API. This list works without the connector or live runtime catalog." />
+                                    </StackPanel>
                                     <TextBlock Text="Pick a suggested shop name or type the exact in-game shop display name used by S1API."
                                                Foreground="{StaticResource DimTextBrush}"
                                                TextWrapping="Wrap"
                                                Margin="0,0,0,8" />
-
-                                    <Label Content="Search Live Shops" Style="{StaticResource LabelStyle}" />
-                                    <TextBox Text="{Binding DataContext.ShopBrowserSearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource TextBoxStyle}" />
-
-                                    <ListBox x:Name="LiveShopBrowserListBox"
-                                             ItemsSource="{Binding DataContext.ShopCompatibilityPreviews, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                             Height="160"
-                                             Margin="0,8,0,8"
-                                             Background="{StaticResource DarkBackgroundBrush}"
-                                             Foreground="{StaticResource LightTextBrush}"
-                                             BorderBrush="{StaticResource DarkBorderBrush}">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Margin="2">
-                                                    <TextBlock Text="{Binding Name}" Foreground="{StaticResource LightTextBrush}" />
-                                                    <TextBlock Text="{Binding Summary}" Foreground="{StaticResource DimTextBrush}" FontSize="11" />
-                                                    <TextBlock Text="{Binding RoutingLabel}" Foreground="{StaticResource DimTextBrush}" FontSize="11" />
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-
-                                    <Button Content="Add Selected Live Shop"
-                                            Click="AddLiveShop_Click"
-                                            Style="{StaticResource IconButtonStyle}"
-                                            Margin="0,0,0,8" />
 
                                     <ListBox x:Name="SpecificShopsListBox"
                                              ItemsSource="{Binding ShopNames}"
@@ -231,8 +238,7 @@
 
                                         <ComboBox x:Name="SpecificShopNameComboBox"
                                                   Grid.Column="0"
-                                                  ItemsSource="{Binding DataContext.LiveGameShops, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  DisplayMemberPath="Name"
+                                                  ItemsSource="{x:Static services:ItemEditorCatalogService.SuggestedShopNames}"
                                                   Style="{StaticResource ComboBoxStyle}"
                                                   IsEditable="True"
                                                   Margin="0,0,4,0" />
@@ -245,9 +251,15 @@
 
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Icon &amp; Registration" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Icon &amp; Registration" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="Icon resource selection for the generated clothing definition. The icon is embedded into the exported mod assembly and refreshed in shops after S1API registers the item." />
+                                </StackPanel>
 
-                                <Label Content="Icon Resource" Style="{StaticResource LabelStyle}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Icon Resource" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="IconFileName" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Resources, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                           DisplayMemberPath="RelativePath"
                                           Text="{Binding IconFileName, UpdateSourceTrigger=PropertyChanged}"
@@ -270,7 +282,8 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Runtime">
+            <TabItem Header="Runtime"
+                     Visibility="{Binding SelectedItemBlueprint.SupportsRuntimeEditor, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <WrapPanel Margin="12" DataContext="{Binding SelectedItemBlueprint}">
 
@@ -440,7 +453,7 @@
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Type Specific &amp; Recipes">
+            <TabItem Header="Type Specific">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <WrapPanel Margin="12" DataContext="{Binding SelectedItemBlueprint}">
 
@@ -458,32 +471,197 @@
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500"
                                 Visibility="{Binding SupportsClothingOptions, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel Margin="12">
-                                <TextBlock Text="Clothing" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Clothing" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="This panel maps directly to the S1API clothing builder. Custom clothing can clone an existing clothing item or point at your own body-layer, face-layer, or accessory resource path. Runtime-only item panels are hidden for clothing so this editor stays focused on the parts S1API actually uses for clothing registration." />
+                                </StackPanel>
 
-                                <Label Content="Slot" Style="{StaticResource LabelStyle}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="Slot" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="ClothingSlot" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ClothingSlots}"
                                           SelectedItem="{Binding ClothingSlot, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource ComboBoxStyle}" />
 
-                                <Label Content="Application Type" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Label Content="Application Type" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="ClothingApplicationType" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ClothingApplicationTypes}"
                                           SelectedItem="{Binding ClothingApplicationType, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource ComboBoxStyle}" />
 
-                                <Label Content="Clothing Asset Path" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
-                                <TextBox Text="{Binding ClothingAssetPath, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Label Content="Clothing Asset Path" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="ClothingAssetPath" />
+                                </StackPanel>
+                                <ComboBox ItemsSource="{x:Static data:AppearancePresets.BodyLayers}"
+                                          Text="{Binding ClothingAssetPath, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.BodyLayer}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                                <ComboBox ItemsSource="{x:Static data:AppearancePresets.FaceLayers}"
+                                          Text="{Binding ClothingAssetPath, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.FaceLayer}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                                <ComboBox ItemsSource="{x:Static data:AppearancePresets.AccessoryLayers}"
+                                          Text="{Binding ClothingAssetPath, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.Accessory}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                                <TextBlock Text="Pick a preset path or type your own Resources path. BodyLayer uses avatar body layers, FaceLayer uses avatar face layers, and Accessory uses avatar accessory prefabs."
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0" />
 
-                                <CheckBox Content="Colorable"
-                                          IsChecked="{Binding ClothingColorable, UpdateSourceTrigger=PropertyChanged}"
-                                          Foreground="{StaticResource LightTextBrush}"
-                                          Margin="0,12,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Label Content="Source Game Asset Path" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="ClothingTextureSourceAssetPath" />
+                                </StackPanel>
+                                <ComboBox ItemsSource="{x:Static data:AppearancePresets.BodyLayers}"
+                                          Text="{Binding ClothingTextureSourceAssetPath, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.BodyLayer}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                                <ComboBox ItemsSource="{x:Static data:AppearancePresets.FaceLayers}"
+                                          Text="{Binding ClothingTextureSourceAssetPath, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.FaceLayer}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                                <ComboBox ItemsSource="{x:Static data:AppearancePresets.AccessoryLayers}"
+                                          Text="{Binding ClothingTextureSourceAssetPath, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource ComboBoxStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.Accessory}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
+                                <TextBlock Text="Use this when you want to pull a built-in clothing texture from the running game into the editor. For accessories this should be the original accessory prefab path, not your final custom target path."
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0" />
 
-                                <Label Content="Default Color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Label Content="Edited Texture Resource" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="ClothingTextureResourcePath" />
+                                </StackPanel>
+                                <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Resources, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          DisplayMemberPath="RelativePath"
+                                          Text="{Binding ClothingTextureResourcePath, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource ComboBoxStyle}"
+                                          IsEditable="True" />
+
+                                <StackPanel Margin="0,8,0,0">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.Accessory}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Accessory Shader Property" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon PropertyName="AccessoryTextureShaderPropertyName" />
+                                    </StackPanel>
+                                    <TextBox Text="{Binding AccessoryTextureShaderPropertyName, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource TextBoxStyle}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <TextBlock Text="Authoring Helper" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,8" />
+                                    <views:InfoIcon PropertyName="SuggestedClothingAssetPath" />
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding SuggestedClothingAssetPath}"
+                                           Foreground="{StaticResource LightTextBrush}"
+                                           TextWrapping="Wrap" />
+
+                                <Button Content="Use Suggested Path"
+                                        Click="UseSuggestedClothingAssetPath_Click"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="0,8,0,0" />
+
+                                <TextBlock Text="This gives you a stable S1API-ready target path for the finished clothing asset. Source Game Asset Path is where imports come from; Clothing Asset Path is where your final custom layer or cloned accessory will be registered."
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,8,0,0" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <CheckBox Content="Colorable"
+                                              IsChecked="{Binding ClothingColorable, UpdateSourceTrigger=PropertyChanged}"
+                                              Foreground="{StaticResource LightTextBrush}" />
+                                    <views:InfoIcon PropertyName="ClothingColorable" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Label Content="Default Color" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="DefaultClothingColor" />
+                                </StackPanel>
                                 <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ClothingColors}"
                                           SelectedItem="{Binding DefaultClothingColor, UpdateSourceTrigger=PropertyChanged}"
                                           Style="{StaticResource ComboBoxStyle}" />
 
-                                <Label Content="Blocked Clothing Slots" Style="{StaticResource LabelStyle}" Margin="0,12,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Label Content="Blocked Clothing Slots" Style="{StaticResource LabelStyle}" />
+                                    <views:InfoIcon PropertyName="BlockedClothingSlots" />
+                                </StackPanel>
                                 <ListBox x:Name="BlockedSlotsListBox"
                                          ItemsSource="{Binding BlockedClothingSlots}"
                                          Height="120"
@@ -509,6 +687,281 @@
                             </StackPanel>
                         </Border>
 
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="420" MaxWidth="860"
+                                Visibility="{Binding SupportsClothingOptions, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Margin="12">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <TextBlock Text="Clothing Studio" Style="{StaticResource PanelHeaderStyle}" />
+                                    <views:InfoIcon TooltipText="Clothing Studio is the in-editor texture workflow for clothing. It can generate starter PNGs, extract built-in clothing textures directly from Schedule I_Data, import textures from the running game connector, let you draw or erase over those textures, and save the result back into project resources for S1API runtime registration." />
+                                </StackPanel>
+
+                                <WrapPanel Margin="0,0,0,12">
+                                    <Button Content="Generate Template"
+                                            Click="GenerateClothingTemplate_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,8,8" />
+                                    <Button Content="Generate Icon"
+                                            Click="GenerateClothingIconTemplate_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,8,8" />
+                                    <Button Content="Import PNG"
+                                            Click="ImportClothingStudioPng_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,8,8" />
+                                    <Button Content="Import From Running Game"
+                                            Click="ImportClothingTextureFromRunningGame_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,8,8" />
+                                    <Button Content="Scan Data Files"
+                                            Click="ScanGameDataTextures_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,8,8" />
+                                    <Button Content="Open Resources Folder"
+                                            Click="OpenClothingResourcesFolder_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,8,8" />
+                                    <Button Content="Create Accessory Starter"
+                                            Click="CreateAccessoryStarterPack_Click"
+                                            Margin="0,0,8,8">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ClothingApplicationType}" Value="{x:Static models:ClothingApplicationTypeOption.Accessory}">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </WrapPanel>
+
+                                <TextBlock Text="Use Generate Template for a blank starting canvas, Scan Data Files to browse built-in textures straight from Schedule I_Data, or Import From Running Game when you want the connector to resolve the live in-game texture. Body and face layers are registered directly from the saved PNG. Accessories use the saved PNG as the replacement texture when S1API clones the source accessory path at runtime."
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,12" />
+
+                                <Border BorderBrush="{StaticResource DarkBorderBrush}"
+                                        BorderThickness="1"
+                                        Background="{StaticResource DarkBackgroundBrush}"
+                                        CornerRadius="8"
+                                        Padding="10"
+                                        Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,8">
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                <TextBlock Text="Game Data Extractor" Style="{StaticResource PanelHeaderStyle}" />
+                                                <views:InfoIcon TooltipText="Scans the installed Schedule I_Data asset files directly, without launching the connector. This is for pulling built-in clothing textures into your project so you can paint over them in Texture Lab and reuse them for custom clothing." />
+                                            </StackPanel>
+                                            <Button Content="Rescan"
+                                                    Click="ScanGameDataTextures_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    DockPanel.Dock="Right" />
+                                        </DockPanel>
+
+                                        <TextBlock x:Name="GameDataTextureStatusTextBlock"
+                                                   Text="Scan Schedule I_Data to browse built-in clothing textures without the connector."
+                                                   Foreground="{StaticResource DimTextBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,8" />
+
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBox x:Name="GameDataTextureSearchTextBox"
+                                                     Grid.Column="0"
+                                                     Style="{StaticResource TextBoxStyle}"
+                                                     Margin="0,0,8,0"
+                                                     VerticalAlignment="Center"
+                                                     TextChanged="GameDataTextureSearchTextBox_TextChanged" />
+                                            <CheckBox x:Name="GameDataShowAllTexturesCheckBox"
+                                                      Grid.Column="1"
+                                                      Content="Show all textures"
+                                                      IsChecked="False"
+                                                      Checked="GameDataTextureFilterMode_Changed"
+                                                      Unchecked="GameDataTextureFilterMode_Changed"
+                                                      Foreground="{StaticResource LightTextBrush}"
+                                                      VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <ListBox x:Name="GameDataTexturesListBox"
+                                                 Height="180"
+                                                 Background="{StaticResource DarkBackgroundBrush}"
+                                                 Foreground="{StaticResource LightTextBrush}"
+                                                 BorderBrush="{StaticResource DarkBorderBrush}">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="2">
+                                                        <TextBlock Text="{Binding DisplayLabel}" Foreground="{StaticResource LightTextBrush}" />
+                                                        <TextBlock Text="{Binding Summary}" Foreground="{StaticResource DimTextBrush}" FontSize="11" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+
+                                        <DockPanel Margin="0,8,0,0">
+                                            <TextBlock x:Name="GameDataTextureResultCountTextBlock"
+                                                       DockPanel.Dock="Left"
+                                                       Text="No game textures scanned yet."
+                                                       Foreground="{StaticResource DimTextBrush}"
+                                                       VerticalAlignment="Center" />
+                                            <Button Content="Import Selected From Data Files"
+                                                    Click="ImportClothingTextureFromGameData_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    DockPanel.Dock="Right" />
+                                        </DockPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border BorderBrush="{StaticResource DarkBorderBrush}"
+                                        BorderThickness="1"
+                                        Background="{StaticResource DarkBackgroundBrush}"
+                                        CornerRadius="8"
+                                        Padding="10"
+                                        Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,8">
+                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                <TextBlock Text="Texture Lab" Style="{StaticResource PanelHeaderStyle}" />
+                                                <views:InfoIcon TooltipText="Load a PNG into the editor, paint or erase over it, then save it back into project resources. You can feed Texture Lab from project PNGs, from the live connector, or from direct Schedule I_Data extraction." />
+                                            </StackPanel>
+                                            <TextBlock x:Name="TextureEditorStatusTextBlock"
+                                                       DockPanel.Dock="Right"
+                                                       Foreground="{StaticResource DimTextBrush}"
+                                                       VerticalAlignment="Center"
+                                                       Text="No texture loaded." />
+                                        </DockPanel>
+
+                                        <WrapPanel Margin="0,0,0,8">
+                                            <Button Content="Load Selected Into Editor"
+                                                    Click="LoadStudioResourceIntoEditor_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Margin="0,0,8,8" />
+                                            <Button Content="Save Over Resource"
+                                                    Click="SaveTextureOverCurrentResource_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Margin="0,0,8,8" />
+                                            <Button Content="Save As New Resource"
+                                                    Click="SaveTextureAsNewResource_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Margin="0,0,8,8" />
+                                            <Button Content="Undo Stroke"
+                                                    Click="UndoTextureStroke_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Margin="0,0,8,8" />
+                                            <Button Content="Clear Strokes"
+                                                    Click="ClearTextureEditor_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Margin="0,0,8,8" />
+                                        </WrapPanel>
+
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="120" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="140" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Label Grid.Column="0" Content="Brush Color" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" />
+                                            <TextBox x:Name="TextureBrushColorTextBox"
+                                                     Grid.Column="1"
+                                                     Text="#FFFFFFFF"
+                                                     LostFocus="TextureBrushColorTextBox_LostFocus"
+                                                     Style="{StaticResource TextBoxStyle}"
+                                                     Margin="0,0,10,0" />
+
+                                            <Label Grid.Column="2" Content="Brush Size" Style="{StaticResource LabelStyle}" VerticalAlignment="Center" />
+                                            <Slider x:Name="TextureBrushSizeSlider"
+                                                    Grid.Column="3"
+                                                    Minimum="1"
+                                                    Maximum="64"
+                                                    Value="12"
+                                                    TickFrequency="1"
+                                                    IsSnapToTickEnabled="False"
+                                                    ValueChanged="TextureBrushSizeSlider_ValueChanged"
+                                                    Margin="0,0,10,0"
+                                                    VerticalAlignment="Center" />
+
+                                            <RadioButton x:Name="TextureDrawModeRadioButton"
+                                                         Grid.Column="4"
+                                                         Content="Draw"
+                                                         IsChecked="True"
+                                                         Checked="TextureDrawMode_Checked"
+                                                         Foreground="{StaticResource LightTextBrush}"
+                                                         VerticalAlignment="Center"
+                                                         Margin="0,0,10,0" />
+                                            <RadioButton x:Name="TextureEraseModeRadioButton"
+                                                         Grid.Column="5"
+                                                         Content="Erase"
+                                                         Checked="TextureEraseMode_Checked"
+                                                         Foreground="{StaticResource LightTextBrush}"
+                                                         VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                                      VerticalScrollBarVisibility="Auto"
+                                                      Background="{StaticResource DarkBackgroundBrush}"
+                                                      Width="760"
+                                                      Height="420"
+                                                      MaxWidth="760"
+                                                      MaxHeight="420"
+                                                      HorizontalAlignment="Left">
+                                            <Grid x:Name="TextureEditorSurfaceGrid"
+                                                  Width="720"
+                                                  Height="384"
+                                                  Background="#10141A">
+                                                <Image x:Name="TextureEditorBackgroundImage"
+                                                       Stretch="Fill" />
+                                                <InkCanvas x:Name="TextureEditorInkCanvas"
+                                                           Background="Transparent"
+                                                           Width="720"
+                                                           Height="384" />
+                                                <TextBlock x:Name="TextureEditorPlaceholderText"
+                                                           Text="Import or load a PNG to start editing."
+                                                           Foreground="{StaticResource DimTextBrush}"
+                                                           FontSize="16"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </ScrollViewer>
+                                    </StackPanel>
+                                </Border>
+
+                                <ListBox x:Name="ClothingStudioResourcesListBox"
+                                         ItemsSource="{Binding DataContext.CurrentProject.Resources, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         Height="180"
+                                         Background="{StaticResource DarkBackgroundBrush}"
+                                         Foreground="{StaticResource LightTextBrush}"
+                                         BorderBrush="{StaticResource DarkBorderBrush}">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="2">
+                                                <TextBlock Text="{Binding DisplayName}" Foreground="{StaticResource LightTextBrush}" />
+                                                <TextBlock Text="{Binding RelativePath}" Foreground="{StaticResource DimTextBrush}" FontSize="11" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <WrapPanel Margin="0,8,0,0">
+                                    <Button Content="Use Selected For Texture"
+                                            Click="UseStudioResourceForTexture_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,0,8,0" />
+                                    <Button Content="Use Selected For Icon"
+                                            Click="UseStudioResourceForIcon_Click"
+                                            Style="{StaticResource IconButtonStyle}" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
                         <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="500"
                                 Visibility="{Binding SupportsAdditiveOptions, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel Margin="12">
@@ -530,7 +983,8 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="360" MaxWidth="580">
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="360" MaxWidth="580"
+                                Visibility="{Binding SupportsChemistryRecipes, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel Margin="12">
                                 <DockPanel Margin="0,0,0,12">
                                     <TextBlock Text="Chemistry Recipes" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left" />

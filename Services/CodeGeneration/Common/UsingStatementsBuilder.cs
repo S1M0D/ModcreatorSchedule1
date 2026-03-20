@@ -96,12 +96,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         {
             return Add(
                 "System",
+                "System.Collections.Generic",
                 "System.IO",
                 "System.Linq",
                 "System.Reflection",
                 "MelonLoader",
                 "S1API.Growing",
                 "S1API.Items",
+                "S1API.Rendering",
                 "S1API.Shops",
                 "S1API.Stations",
                 "S1API.Utils",

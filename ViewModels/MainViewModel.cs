@@ -97,7 +97,7 @@ namespace Schedule1ModdingTool.ViewModels
                     {
                         _currentProject.PropertyChanged += CurrentProjectOnPropertyChanged;
                         WorkspaceViewModel.BindProject(_currentProject);
-                        _navigationService.UpdateElementCounts(_currentProject.Quests.Count, _currentProject.Npcs.Count, _currentProject.Items.Count, _currentProject.PhoneApps.Count);
+                        UpdateNavigationElementCounts(_currentProject);
                         _navigationService.UpdateWorkspaceProjectInfo(_currentProject);
                         UpdateProcessState();
                         RebuildAvailableItemReferences();
@@ -459,6 +459,7 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _newQuestCommand;
         private ICommand? _newNpcCommand;
         private ICommand? _newItemCommand;
+        private ICommand? _newCustomClothingCommand;
         private ICommand? _newPhoneAppCommand;
         private ICommand? _visitWikiCommand;
         private ICommand? _checkForUpdatesCommand;
@@ -516,6 +517,7 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand NewQuestCommand => _newQuestCommand!;
         public ICommand NewNpcCommand => _newNpcCommand!;
         public ICommand NewItemCommand => _newItemCommand!;
+        public ICommand NewCustomClothingCommand => _newCustomClothingCommand!;
         public ICommand NewPhoneAppCommand => _newPhoneAppCommand!;
         public ICommand VisitWikiCommand => _visitWikiCommand!;
         public ICommand CheckForUpdatesCommand => _checkForUpdatesCommand!;
@@ -692,6 +694,7 @@ namespace Schedule1ModdingTool.ViewModels
             _newQuestCommand = new RelayCommand(NewQuest);
             _newNpcCommand = new RelayCommand(NewNpc);
             _newItemCommand = new RelayCommand(NewItem);
+            _newCustomClothingCommand = new RelayCommand(NewCustomClothing);
             _newPhoneAppCommand = new RelayCommand(NewPhoneApp);
             _visitWikiCommand = new RelayCommand(VisitWiki);
             _checkForUpdatesCommand = new RelayCommand(async () => await CheckForUpdates());
@@ -1499,10 +1502,6 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 SelectedItemBlueprint = CurrentProject.Items.First();
             }
-            else if (CurrentProject.PhoneApps.Any())
-            {
-                SelectedPhoneApp = CurrentProject.PhoneApps.First();
-            }
             else
             {
                 ClearElementSelection();
@@ -1623,6 +1622,11 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 AddItem(AvailableItemBlueprints[0]);
             }
+        }
+
+        private void NewCustomClothing()
+        {
+            AddItem(CreateCustomClothingTemplate());
         }
 
         private void NewPhoneApp()
@@ -2373,11 +2377,39 @@ namespace Schedule1ModdingTool.ViewModels
 
         #region Helper Methods
 
+        private void UpdateNavigationElementCounts(QuestProject project)
+        {
+            _navigationService.UpdateElementCounts(
+                project.Quests.Count,
+                project.Npcs.Count,
+                GetVisibleItemCount(project),
+                GetCustomClothingCount(project));
+        }
+
+        private static int GetVisibleItemCount(QuestProject project) =>
+            project.Items.Count(item => item.ItemType != ItemKindOption.Clothing);
+
+        private static int GetCustomClothingCount(QuestProject project) =>
+            project.Items.Count(item => item.ItemType == ItemKindOption.Clothing);
+
+        private static ItemBlueprint CreateCustomClothingTemplate() => new ItemBlueprint
+        {
+            ItemType = ItemKindOption.Clothing,
+            ItemName = "Custom Clothing",
+            ItemDescription = "A custom clothing item created with S1API.",
+            ClothingSlot = ClothingSlotOption.Head,
+            ClothingApplicationType = ClothingApplicationTypeOption.Accessory,
+            ClothingColorable = true,
+            DefaultClothingColor = ClothingColorOption.White,
+            ShopIntegrationMode = ShopIntegrationModeOption.Compatible,
+            BasePurchasePrice = 45f,
+            ResellMultiplier = 0.5f
+        };
+
         private bool HasAnyElements() =>
             CurrentProject.Quests.Count > 0 ||
             CurrentProject.Npcs.Count > 0 ||
             CurrentProject.Items.Count > 0 ||
-            CurrentProject.PhoneApps.Count > 0 ||
             CurrentProject.Resources.Count > 0;
 
         private bool TryGetProjectDirectory(out string projectDir)
@@ -2434,6 +2466,11 @@ namespace Schedule1ModdingTool.ViewModels
 
             AppUtils.ShowError("Unable to determine project location after saving. Please try again.", "Resource Upload Failed");
             return false;
+        }
+
+        public bool EnsureProjectDirectoryForEditor(out string projectDir)
+        {
+            return EnsureProjectDirectory(out projectDir);
         }
 
         private void UpdateProcessState()
@@ -2506,7 +2543,7 @@ namespace Schedule1ModdingTool.ViewModels
                     
                     // Update UI
                     WorkspaceViewModel.BindProject(CurrentProject);
-                    _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count, CurrentProject.Items.Count, CurrentProject.PhoneApps.Count);
+                    UpdateNavigationElementCounts(CurrentProject);
                     _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
                     UpdateProcessState();
                     
@@ -2565,7 +2602,7 @@ namespace Schedule1ModdingTool.ViewModels
                     
                     // Update UI
                     WorkspaceViewModel.BindProject(CurrentProject);
-                    _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count, CurrentProject.Items.Count, CurrentProject.PhoneApps.Count);
+                    UpdateNavigationElementCounts(CurrentProject);
                     _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
                     UpdateProcessState();
                     
@@ -2934,20 +2971,20 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 // Resubscribe to quest property changes when collection changes
                 SubscribeToElementPropertyChanges();
-                _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count, CurrentProject.Items.Count, CurrentProject.PhoneApps.Count);
+                UpdateNavigationElementCounts(CurrentProject);
                 _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
             }
             else if (e.PropertyName == nameof(QuestProject.Npcs))
             {
                 // Resubscribe to NPC property changes when collection changes
                 SubscribeToElementPropertyChanges();
-                _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count, CurrentProject.Items.Count, CurrentProject.PhoneApps.Count);
+                UpdateNavigationElementCounts(CurrentProject);
                 _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
             }
             else if (e.PropertyName == nameof(QuestProject.Items))
             {
                 SubscribeToElementPropertyChanges();
-                _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count, CurrentProject.Items.Count, CurrentProject.PhoneApps.Count);
+                UpdateNavigationElementCounts(CurrentProject);
                 _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
                 RebuildAvailableItemReferences();
                 RefreshShopCompatibilityPreviews();
@@ -2955,7 +2992,7 @@ namespace Schedule1ModdingTool.ViewModels
             else if (e.PropertyName == nameof(QuestProject.PhoneApps))
             {
                 SubscribeToElementPropertyChanges();
-                _navigationService.UpdateElementCounts(CurrentProject.Quests.Count, CurrentProject.Npcs.Count, CurrentProject.Items.Count, CurrentProject.PhoneApps.Count);
+                UpdateNavigationElementCounts(CurrentProject);
                 _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
             }
             else if (e.PropertyName == nameof(QuestProject.Resources))

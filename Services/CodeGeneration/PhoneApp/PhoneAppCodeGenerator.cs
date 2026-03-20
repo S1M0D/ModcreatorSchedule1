@@ -8,7 +8,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneApp
     /// <summary>
     /// Generates S1API phone app classes from editor-authored blueprints.
     /// </summary>
-    public class PhoneAppCodeGenerator : ICodeGenerator<PhoneAppBlueprint>
+    public partial class PhoneAppCodeGenerator : ICodeGenerator<PhoneAppBlueprint>
     {
         public string GenerateCode(PhoneAppBlueprint phoneApp)
         {
@@ -46,14 +46,21 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneApp
                 result.Errors.Add("App Title is required.");
             if (string.IsNullOrWhiteSpace(blueprint.IconLabel))
                 result.Errors.Add("Icon Label is required.");
-            if (blueprint.ShowPrimaryButton && string.IsNullOrWhiteSpace(blueprint.PrimaryButtonLabel))
-                result.Errors.Add("Primary button label is required when the primary button is enabled.");
-            if (blueprint.ShowSecondaryButton && string.IsNullOrWhiteSpace(blueprint.SecondaryButtonLabel))
-                result.Errors.Add("Secondary button label is required when the secondary button is enabled.");
-            if (blueprint.LayoutPreset == PhoneAppLayoutPresetOption.BlankCanvas &&
-                !blueprint.GenerateHookScaffold)
+            if (!blueprint.UseCustomUiBuilder)
             {
-                result.Warnings.Add("Blank canvas apps are only useful if you plan to add custom UI in the generated hook file.");
+                if (blueprint.ShowPrimaryButton && string.IsNullOrWhiteSpace(blueprint.PrimaryButtonLabel))
+                    result.Errors.Add("Primary button label is required when the primary button is enabled.");
+                if (blueprint.ShowSecondaryButton && string.IsNullOrWhiteSpace(blueprint.SecondaryButtonLabel))
+                    result.Errors.Add("Secondary button label is required when the secondary button is enabled.");
+                if (blueprint.LayoutPreset == PhoneAppLayoutPresetOption.BlankCanvas &&
+                    !blueprint.GenerateHookScaffold)
+                {
+                    result.Warnings.Add("Blank canvas apps are only useful if you plan to add custom UI in the generated hook file.");
+                }
+            }
+            else if (blueprint.UiNodes.Count == 0)
+            {
+                result.Warnings.Add("Live Builder is enabled but the hierarchy is empty. The generated app will only show a placeholder message until you add UI nodes.");
             }
 
             result.IsValid = result.Errors.Count == 0;
@@ -62,6 +69,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneApp
 
         private void GeneratePhoneAppClass(ICodeBuilder builder, PhoneAppBlueprint phoneApp, string className)
         {
+            var customButtonHandlers = CollectCustomButtonHandlers(phoneApp.UiNodes);
+
             builder.AppendBlockComment(
                 $"Registers the phone app \"{CodeFormatter.EscapeString(phoneApp.DisplayName)}\".",
                 "S1API auto-discovers public PhoneApp subclasses when the in-game Home Screen initializes."
@@ -95,11 +104,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneApp
             builder.AppendLine("OnBuildGeneratedUi(container);");
             builder.CloseBlock();
             builder.AppendLine();
-            GenerateUiMethod(builder, phoneApp);
+            GenerateUiMethod(builder, phoneApp, customButtonHandlers);
             builder.AppendLine();
             GenerateLayoutHelpers(builder);
             builder.AppendLine();
             GenerateButtonHandlers(builder, phoneApp);
+            builder.AppendLine();
+            GenerateCustomButtonHandlers(builder, customButtonHandlers);
             builder.AppendLine();
             GenerateEmbeddedIconMethod(builder, phoneApp);
             builder.AppendLine();
@@ -109,15 +120,25 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneApp
             builder.CloseBlock();
         }
 
-        private void GenerateUiMethod(ICodeBuilder builder, PhoneAppBlueprint phoneApp)
+        private void GenerateUiMethod(
+            ICodeBuilder builder,
+            PhoneAppBlueprint phoneApp,
+            IReadOnlyDictionary<string, CustomButtonHandlerDefinition> customButtonHandlers)
         {
-            builder.AppendComment("Creates the generated phone app UI shell and optional preset content.");
+            builder.AppendComment("Creates the generated phone app UI shell and optional preset or hierarchy-authored content.");
             builder.OpenBlock("private void BuildGeneratedUi(GameObject container)");
             builder.AppendLine($"var rootPanel = UIFactory.Panel(\"{CodeFormatter.EscapeString(phoneApp.AppName)}Root\", container.transform, {CodeFormatter.FormatColor(0.08f, 0.10f, 0.13f, 0.97f)}, fullAnchor: true);");
             builder.AppendLine("var rootRect = (RectTransform)rootPanel.transform;");
             builder.AppendLine("rootRect.offsetMin = new Vector2(18f, 18f);");
             builder.AppendLine("rootRect.offsetMax = new Vector2(-18f, -18f);");
             builder.AppendLine();
+
+            if (phoneApp.UseCustomUiBuilder)
+            {
+                GenerateCustomBuilderUi(builder, phoneApp, customButtonHandlers);
+                builder.CloseBlock();
+                return;
+            }
 
             if (phoneApp.LayoutPreset == PhoneAppLayoutPresetOption.BlankCanvas)
             {
@@ -252,6 +273,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneApp
             builder.AppendLine("layout.flexibleWidth = 1f;");
             builder.CloseBlock();
             builder.AppendLine();
+            GenerateCustomLayoutHelpers(builder);
+            builder.AppendLine();
             builder.OpenBlock("private static void ConfigureRect(RectTransform rectTransform, Vector2 anchorMin, Vector2 anchorMax)");
             builder.AppendLine("rectTransform.anchorMin = anchorMin;");
             builder.AppendLine("rectTransform.anchorMax = anchorMax;");
@@ -362,6 +385,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneApp
             builder.AppendLine("partial void OnExitGenerated(ExitAction exit);");
             builder.AppendLine("partial void OnPrimaryButtonPressedGenerated();");
             builder.AppendLine("partial void OnSecondaryButtonPressedGenerated();");
+            builder.AppendLine("partial void OnCustomButtonPressedGenerated(string nodeId);");
         }
     }
 }

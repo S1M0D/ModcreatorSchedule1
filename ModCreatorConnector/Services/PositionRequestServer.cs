@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using S1API.Entities;
 using S1API.Items;
 using S1API.Shops;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace ModCreatorConnector.Services
@@ -25,6 +26,12 @@ namespace ModCreatorConnector.Services
         {
             [JsonProperty("request")]
             public string? Request { get; set; }
+
+            [JsonProperty("assetPath")]
+            public string? AssetPath { get; set; }
+
+            [JsonProperty("applicationType")]
+            public string? ApplicationType { get; set; }
         }
 
         private NamedPipeServerStream? _pipeServer;
@@ -188,6 +195,10 @@ namespace ModCreatorConnector.Services
                 {
                     HandleRuntimeCatalogRequest();
                 }
+                else if (request?.Request == "getClothingTexture")
+                {
+                    HandleClothingTextureRequest(request);
+                }
                 else
                 {
                     SendErrorResponse("Unknown request type");
@@ -330,6 +341,76 @@ namespace ModCreatorConnector.Services
             }
         }
 
+        private void HandleClothingTextureRequest(PositionRequest request)
+        {
+            if (_pipeServer == null || !_pipeServer.IsConnected)
+                return;
+
+            try
+            {
+                var sourceAssetPath = request.AssetPath?.Trim();
+                if (string.IsNullOrWhiteSpace(sourceAssetPath))
+                {
+                    SendErrorResponse("A source clothing asset path is required.");
+                    return;
+                }
+
+                Texture? sourceTexture;
+                var resolvedTextureName = string.Empty;
+                var resolvedShaderProperty = "_MainTex";
+
+                if (string.Equals(request.ApplicationType, "Accessory", StringComparison.OrdinalIgnoreCase))
+                {
+                    var accessoryPrefab = Resources.Load<GameObject>(sourceAssetPath);
+                    if (accessoryPrefab == null)
+                    {
+                        SendErrorResponse($"Could not load accessory prefab '{sourceAssetPath}'.");
+                        return;
+                    }
+
+                    if (!TryFindAccessoryTexture(accessoryPrefab, out sourceTexture, out resolvedTextureName, out resolvedShaderProperty) || sourceTexture == null)
+                    {
+                        SendErrorResponse($"Could not find a readable texture on accessory '{sourceAssetPath}'.");
+                        return;
+                    }
+                }
+                else
+                {
+                    sourceTexture = Resources.Load<Texture2D>(sourceAssetPath) ?? Resources.Load(sourceAssetPath) as Texture2D;
+                    if (sourceTexture == null)
+                    {
+                        SendErrorResponse($"Could not load texture '{sourceAssetPath}'.");
+                        return;
+                    }
+
+                    resolvedTextureName = sourceTexture.name ?? string.Empty;
+                }
+
+                if (!TryExtractTextureBytes(sourceTexture, out var textureBytes, out var width, out var height, out var error))
+                {
+                    SendErrorResponse(error ?? $"Failed to export '{sourceAssetPath}' as PNG.");
+                    return;
+                }
+
+                SendResponse(new
+                {
+                    success = true,
+                    sourceAssetPath,
+                    resolvedTextureName,
+                    resolvedShaderProperty,
+                    width,
+                    height,
+                    pixelFormat = "bgra32",
+                    textureBytesBase64 = Convert.ToBase64String(textureBytes)
+                });
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"PositionRequestServer: Error importing clothing texture: {ex.Message}");
+                SendErrorResponse($"Error importing clothing texture: {ex.Message}");
+            }
+        }
+
         private static string GetItemType(ItemDefinition definition)
         {
             var typeName = definition.GetType().Name;
@@ -349,6 +430,125 @@ namespace ModCreatorConnector.Services
             }
 
             return "Generic";
+        }
+
+        private static bool TryFindAccessoryTexture(GameObject accessoryPrefab, out Texture? texture, out string textureName, out string shaderProperty)
+        {
+            texture = null;
+            textureName = string.Empty;
+            shaderProperty = "_MainTex";
+
+            var preferredProperties = new[] { "_MainTex", "_BaseMap", "_BaseColorMap", "_BaseTex", "_MaskTex" };
+            var renderers = accessoryPrefab.GetComponentsInChildren<Renderer>(true) ?? Array.Empty<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                var materials = renderer.sharedMaterials ?? Array.Empty<Material>();
+                foreach (var material in materials.Where(material => material != null))
+                {
+                    foreach (var propertyName in preferredProperties)
+                    {
+                        if (!material.HasProperty(propertyName))
+                            continue;
+
+                        var candidate = material.GetTexture(propertyName);
+                        if (candidate == null)
+                            continue;
+
+                        texture = candidate;
+                        textureName = candidate.name ?? string.Empty;
+                        shaderProperty = propertyName;
+                        return true;
+                    }
+
+                    if (material.mainTexture != null)
+                    {
+                        texture = material.mainTexture;
+                        textureName = material.mainTexture.name ?? string.Empty;
+                        shaderProperty = "_MainTex";
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryExtractTextureBytes(Texture sourceTexture, out byte[] textureBytes, out int width, out int height, out string? error)
+        {
+            textureBytes = Array.Empty<byte>();
+            width = 0;
+            height = 0;
+            error = null;
+
+            Texture2D? readableTexture = null;
+            try
+            {
+                readableTexture = CreateReadableTexture(sourceTexture);
+                if (readableTexture == null)
+                {
+                    error = "Could not create a readable texture copy.";
+                    return false;
+                }
+
+                width = readableTexture.width;
+                height = readableTexture.height;
+                textureBytes = ConvertToBgraBytes(readableTexture);
+                if (textureBytes.Length == 0)
+                {
+                    error = "Texture byte extraction returned no data.";
+                    return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (readableTexture != null)
+                {
+                    UnityEngine.Object.Destroy(readableTexture);
+                }
+            }
+        }
+
+        private static byte[] ConvertToBgraBytes(Texture2D readableTexture)
+        {
+            var pixels = readableTexture.GetPixels32();
+            var bytes = new byte[pixels.Length * 4];
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                var pixel = pixels[i];
+                var offset = i * 4;
+                bytes[offset] = pixel.b;
+                bytes[offset + 1] = pixel.g;
+                bytes[offset + 2] = pixel.r;
+                bytes[offset + 3] = pixel.a;
+            }
+
+            return bytes;
+        }
+
+        private static Texture2D? CreateReadableTexture(Texture sourceTexture)
+        {
+            var width = Math.Max(1, sourceTexture.width);
+            var height = Math.Max(1, sourceTexture.height);
+            var previousRenderTarget = RenderTexture.active;
+            var tempRenderTarget = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+
+            try
+            {
+                Graphics.Blit(sourceTexture, tempRenderTarget);
+                RenderTexture.active = tempRenderTarget;
+
+                var readableTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                readableTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                readableTexture.Apply();
+                return readableTexture;
+            }
+            finally
+            {
+                RenderTexture.active = previousRenderTarget;
+                RenderTexture.ReleaseTemporary(tempRenderTarget);
+            }
         }
 
         private void SendResponse(object response)

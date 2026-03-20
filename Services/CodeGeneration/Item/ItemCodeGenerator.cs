@@ -57,6 +57,21 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
                 result.Errors.Add("Clothing items need either a clone source item ID or a clothing asset path.");
             }
 
+            if (blueprint.ItemType == ItemKindOption.Clothing &&
+                !string.IsNullOrWhiteSpace(blueprint.ClothingTextureResourcePath) &&
+                string.IsNullOrWhiteSpace(blueprint.ClothingAssetPath))
+            {
+                result.Errors.Add("Clothing texture overrides need a clothing asset path to register against.");
+            }
+
+            if (blueprint.ItemType == ItemKindOption.Clothing &&
+                blueprint.ClothingApplicationType == ClothingApplicationTypeOption.Accessory &&
+                !string.IsNullOrWhiteSpace(blueprint.ClothingTextureResourcePath) &&
+                string.IsNullOrWhiteSpace(blueprint.ClothingTextureSourceAssetPath))
+            {
+                result.Errors.Add("Accessory texture overrides need a source accessory asset path.");
+            }
+
             if (!blueprint.SupportsEquippable && blueprint.EquippableType != EquippableTypeOption.None)
                 result.Warnings.Add("Equippable settings are ignored for this item type.");
             if (blueprint.ClearStationItem && !blueprint.SupportsStationItemPrefab)
@@ -80,22 +95,25 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
                     result.Errors.Add("Avatar equippable asset path is required when embedded avatar equippable registration is enabled.");
             }
 
-            foreach (var recipe in blueprint.ChemistryRecipes)
+            if (blueprint.SupportsChemistryRecipes)
             {
-                if (string.IsNullOrWhiteSpace(recipe.Title))
-                    result.Errors.Add("Chemistry recipe titles cannot be empty.");
-                if (recipe.CookTimeMinutes < 1)
-                    result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' must cook for at least 1 minute.");
-                if (recipe.ProductQuantity < 1)
-                    result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' must produce at least 1 item.");
-                if (recipe.Ingredients.Count == 0)
-                    result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' needs at least one ingredient group.");
-                foreach (var ingredient in recipe.Ingredients)
+                foreach (var recipe in blueprint.ChemistryRecipes)
                 {
-                    if (ingredient.Quantity < 1)
-                        result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' has an ingredient group with an invalid quantity.");
-                    if (ingredient.ItemIds.Count == 0 || ingredient.ItemIds.All(string.IsNullOrWhiteSpace))
-                        result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' has an ingredient group without any item IDs.");
+                    if (string.IsNullOrWhiteSpace(recipe.Title))
+                        result.Errors.Add("Chemistry recipe titles cannot be empty.");
+                    if (recipe.CookTimeMinutes < 1)
+                        result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' must cook for at least 1 minute.");
+                    if (recipe.ProductQuantity < 1)
+                        result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' must produce at least 1 item.");
+                    if (recipe.Ingredients.Count == 0)
+                        result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' needs at least one ingredient group.");
+                    foreach (var ingredient in recipe.Ingredients)
+                    {
+                        if (ingredient.Quantity < 1)
+                            result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' has an ingredient group with an invalid quantity.");
+                        if (ingredient.ItemIds.Count == 0 || ingredient.ItemIds.All(string.IsNullOrWhiteSpace))
+                            result.Errors.Add($"Chemistry recipe '{recipe.DisplayName}' has an ingredient group without any item IDs.");
+                    }
                 }
             }
 
@@ -114,6 +132,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
             builder.AppendLine("private static bool _growContainerRegistered;");
             builder.AppendLine("private static bool _recipesRegistered;");
             builder.AppendLine("private static bool _avatarEquippableRegistered;");
+            builder.AppendLine("private static bool _clothingRuntimeAssetsRegistered;");
             builder.AppendLine();
             GenerateRegisterMethod(builder, item);
             builder.AppendLine();
@@ -128,6 +147,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
             GenerateEquippableMethod(builder, item);
             builder.AppendLine();
             GenerateAvatarEquippableMethod(builder, item);
+            builder.AppendLine();
+            GenerateClothingRuntimeRegistrationMethod(builder, item);
             builder.AppendLine();
             GenerateResourceLoadingHelpers(builder);
             builder.AppendLine();
@@ -163,6 +184,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
             builder.OpenBlock("private static StorableItemDefinition? BuildDefinition()");
             builder.AppendLine("var icon = LoadCustomIcon();");
             builder.AppendLine("EnsureAvatarEquippableRegistered();");
+            builder.AppendLine("EnsureClothingRuntimeAssetsRegistered();");
             if (item.SupportsEquippable)
                 builder.AppendLine("var equippable = BuildEquippable();");
             builder.AppendLine();
@@ -249,7 +271,11 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
                 builder.AppendLine($"itemBuilder.WithBlockedSlots({string.Join(", ", item.BlockedClothingSlots.Select(slot => $"ClothingSlot.{slot}"))});");
             builder.AppendLine();
             GenerateCommonItemEnhancements(builder, item);
-            FinalizeDefinitionBuild(builder);
+            builder.AppendLine("var definition = itemBuilder.Build();");
+            builder.AppendLine($"definition.StackLimit = {item.StackLimit};");
+            builder.AppendLine($"definition.LegalStatus = LegalStatus.{item.LegalStatus};");
+            builder.AppendLine("ConfigureDefinition(definition);");
+            builder.AppendLine("return definition;");
         }
 
         private void GenerateAdditiveDefinition(ICodeBuilder builder, ItemBlueprint item)
@@ -363,7 +389,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
         {
             builder.AppendComment("Registers Chemistry Station recipes that produce this item.");
             builder.OpenBlock("private static void RegisterChemistryRecipes()");
-            if (item.ChemistryRecipes.Count == 0)
+            if (!item.SupportsChemistryRecipes || item.ChemistryRecipes.Count == 0)
             {
                 builder.AppendLine("return;");
                 builder.CloseBlock();
@@ -495,6 +521,59 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
             builder.CloseBlock();
         }
 
+        private void GenerateClothingRuntimeRegistrationMethod(ICodeBuilder builder, ItemBlueprint item)
+        {
+            builder.AppendComment("Registers runtime clothing assets generated from embedded texture resources.");
+            builder.OpenBlock("private static void EnsureClothingRuntimeAssetsRegistered()");
+            if (item.ItemType != ItemKindOption.Clothing ||
+                string.IsNullOrWhiteSpace(item.ClothingTextureResourcePath) ||
+                string.IsNullOrWhiteSpace(item.ClothingAssetPath))
+            {
+                builder.AppendLine("return;");
+                builder.CloseBlock();
+                return;
+            }
+
+            builder.OpenBlock("if (_clothingRuntimeAssetsRegistered)");
+            builder.AppendLine("return;");
+            builder.CloseBlock();
+            builder.AppendLine();
+            builder.AppendLine($"var texture = LoadEmbeddedTexture(\"{CodeFormatter.EscapeString(item.ClothingTextureResourcePath)}\", \"clothing texture\");");
+            builder.OpenBlock("if (texture == null)");
+            builder.AppendLine("return;");
+            builder.CloseBlock();
+            builder.AppendLine();
+
+            if (item.ClothingApplicationType == ClothingApplicationTypeOption.Accessory)
+            {
+                if (string.IsNullOrWhiteSpace(item.ClothingTextureSourceAssetPath))
+                {
+                    builder.AppendLine($"MelonLogger.Warning(\"Accessory texture override for '{CodeFormatter.EscapeString(item.DisplayName)}' is missing a source accessory asset path.\");");
+                    builder.AppendLine("return;");
+                    builder.CloseBlock();
+                    return;
+                }
+
+                builder.AppendLine("var textureReplacements = new Dictionary<string, Texture2D>");
+                builder.AppendLine("{");
+                builder.AppendLine($"    [\"{CodeFormatter.EscapeString(item.AccessoryTextureShaderPropertyName)}\"] = texture");
+                builder.AppendLine("};");
+                builder.AppendLine($"var accessoryRegistered = AccessoryFactory.CreateAndRegisterAccessory(\"{CodeFormatter.EscapeString(item.ClothingTextureSourceAssetPath)}\", \"{CodeFormatter.EscapeString(item.ClothingAssetPath)}\", \"{CodeFormatter.EscapeString(item.DisplayName)}\", textureReplacements, null);");
+                builder.OpenBlock("if (!accessoryRegistered)");
+                builder.AppendLine($"MelonLogger.Warning(\"Failed to create runtime accessory override '{CodeFormatter.EscapeString(item.ClothingAssetPath)}'.\");");
+                builder.AppendLine("return;");
+                builder.CloseBlock();
+            }
+            else
+            {
+                builder.AppendLine($"RuntimeResourceRegistry.RegisterAsset(\"{CodeFormatter.EscapeString(item.ClothingAssetPath)}\", texture);");
+                builder.AppendLine($"RuntimeResourceRegistry.RegisterAssetForType(\"{CodeFormatter.EscapeString(item.ClothingAssetPath)}\", texture, typeof(Texture2D));");
+            }
+
+            builder.AppendLine("_clothingRuntimeAssetsRegistered = true;");
+            builder.CloseBlock();
+        }
+
         private void GenerateResourceLoadingHelpers(ICodeBuilder builder)
         {
             builder.AppendComment("Loads optional prefab and material resources from Unity's runtime Resources registry.");
@@ -523,6 +602,27 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
             builder.CloseBlock();
             builder.AppendLine();
             builder.AppendLine("return material;");
+            builder.CloseBlock();
+            builder.AppendLine();
+
+            builder.OpenBlock("private static Texture2D? LoadEmbeddedTexture(string relativePath, string label)");
+            builder.OpenBlock("if (string.IsNullOrWhiteSpace(relativePath))");
+            builder.AppendLine("return null;");
+            builder.CloseBlock();
+            builder.AppendLine();
+            builder.OpenBlock("try");
+            builder.AppendLine("var resourceName = ResolveEmbeddedResourceName(relativePath);");
+            builder.OpenBlock("if (resourceName == null)");
+            builder.AppendLine("MelonLogger.Warning($\"Could not find embedded {label} '{relativePath}'.\");");
+            builder.AppendLine("return null;");
+            builder.CloseBlock();
+            builder.AppendLine();
+            builder.AppendLine("var assembly = Assembly.GetExecutingAssembly();");
+            builder.AppendLine("return TextureUtils.LoadTextureFromResource(assembly, resourceName, FilterMode.Bilinear, TextureWrapMode.Clamp);");
+            builder.CloseBlock();
+            builder.OpenBlock("catch (Exception ex)");
+            builder.AppendLine("MelonLogger.Warning($\"Failed to load embedded {label} '{relativePath}': {ex.Message}\");");
+            builder.AppendLine("return null;");
             builder.CloseBlock();
             builder.AppendLine();
 

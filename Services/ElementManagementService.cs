@@ -263,10 +263,20 @@ namespace Schedule1ModdingTool.Services
             var projectNamespace = !string.IsNullOrWhiteSpace(project.ProjectNamespace)
                 ? project.ProjectNamespace
                 : settings.DefaultModNamespace;
-            var phoneApp = template?.DeepCopy() ?? new PhoneAppBlueprint();
-            phoneApp.ClassName = $"PhoneApp{project.PhoneApps.Count + 1}";
-            phoneApp.AppName = $"phone_app_{project.PhoneApps.Count + 1}";
-            phoneApp.AppTitle = $"New Phone App {project.PhoneApps.Count + 1}";
+            var phoneApp = template?.DeepCopy(preserveNodeIdentities: true) ?? new PhoneAppBlueprint();
+            var defaultIndex = project.PhoneApps.Count + 1;
+            var baseClassName = string.IsNullOrWhiteSpace(phoneApp.ClassName)
+                ? $"PhoneApp{defaultIndex}"
+                : phoneApp.ClassName;
+            var baseAppName = string.IsNullOrWhiteSpace(phoneApp.AppName)
+                ? $"phone_app_{defaultIndex}"
+                : phoneApp.AppName;
+
+            phoneApp.ClassName = MakeUniquePhoneAppClassName(project, baseClassName);
+            phoneApp.AppName = MakeUniquePhoneAppName(project, baseAppName);
+            phoneApp.AppTitle = string.IsNullOrWhiteSpace(phoneApp.AppTitle)
+                ? $"New Phone App {defaultIndex}"
+                : phoneApp.AppTitle;
             phoneApp.Namespace = $"{projectNamespace}.PhoneApps";
             phoneApp.ModName = string.IsNullOrWhiteSpace(project.ProjectName) ? phoneApp.ModName : project.ProjectName;
             phoneApp.ModAuthor = settings.DefaultModAuthor;
@@ -306,15 +316,49 @@ namespace Schedule1ModdingTool.Services
         {
             if (phoneApp == null) return null;
 
-            var duplicate = phoneApp.DeepCopy();
-            duplicate.ClassName = $"{duplicate.ClassName}Copy";
-            duplicate.AppName = $"{duplicate.AppName}_copy";
+            var duplicate = phoneApp.DeepCopy(preserveNodeIdentities: true);
+            duplicate.ClassName = MakeUniquePhoneAppClassName(project, $"{duplicate.ClassName}Copy");
+            duplicate.AppName = MakeUniquePhoneAppName(project, $"{duplicate.AppName}_copy");
             duplicate.AppTitle = $"{duplicate.AppTitle} (Copy)";
             duplicate.FolderId = phoneApp.FolderId;
 
             project.AddPhoneApp(duplicate);
             _workspaceViewModel.UpdatePhoneAppCount(project.PhoneApps.Count);
             return duplicate;
+        }
+
+        private static string MakeUniquePhoneAppClassName(QuestProject project, string baseClassName)
+        {
+            return MakeUniqueValue(
+                project.PhoneApps.Select(app => app.ClassName),
+                baseClassName,
+                suffixFormatter: index => $"{baseClassName}{index}");
+        }
+
+        private static string MakeUniquePhoneAppName(QuestProject project, string baseAppName)
+        {
+            return MakeUniqueValue(
+                project.PhoneApps.Select(app => app.AppName),
+                baseAppName,
+                suffixFormatter: index => $"{baseAppName}_{index}");
+        }
+
+        private static string MakeUniqueValue(IEnumerable<string> existingValues, string baseValue, Func<int, string> suffixFormatter)
+        {
+            var candidate = string.IsNullOrWhiteSpace(baseValue) ? "generated_phone_app" : baseValue.Trim();
+            var usedValues = new HashSet<string>(existingValues.Where(value => !string.IsNullOrWhiteSpace(value)), StringComparer.OrdinalIgnoreCase);
+            if (!usedValues.Contains(candidate))
+            {
+                return candidate;
+            }
+
+            var index = 2;
+            while (usedValues.Contains(suffixFormatter(index)))
+            {
+                index++;
+            }
+
+            return suffixFormatter(index);
         }
 
         /// <summary>

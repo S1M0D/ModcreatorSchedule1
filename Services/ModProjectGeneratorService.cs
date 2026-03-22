@@ -46,8 +46,15 @@ namespace Schedule1ModdingTool.Services
                 var firstQuest = project.Quests.FirstOrDefault();
                 var firstNpc = project.Npcs.FirstOrDefault();
                 var firstItem = project.Items.FirstOrDefault();
+                var firstPhoneApp = project.PhoneApps.FirstOrDefault();
                 var hasQuests = project.Quests != null && project.Quests.Any();
-                var discoveredNamespace = firstQuest?.Namespace ?? firstItem?.Namespace ?? firstNpc?.Namespace;
+                var hasPhoneApps = project.PhoneApps != null && project.PhoneApps.Any();
+                if (hasPhoneApps)
+                {
+                    Directory.CreateDirectory(Path.Combine(modPath, "PhoneApps"));
+                }
+
+                var discoveredNamespace = firstQuest?.Namespace ?? firstItem?.Namespace ?? firstNpc?.Namespace ?? firstPhoneApp?.Namespace;
                 
                 // Use project namespace if set, otherwise derive from first quest or project name
                 string rootNamespace;
@@ -64,13 +71,13 @@ namespace Schedule1ModdingTool.Services
                         : MakeSafeIdentifier(project.ProjectName, "GeneratedMod"));
                     rootNamespace = TrimElementSuffix(modNamespace);
                 }
-                var modAuthor = firstQuest?.ModAuthor ?? firstItem?.ModAuthor ?? firstNpc?.ModAuthor ?? settings?.DefaultModAuthor ?? "Quest Creator";
-                var modVersion = firstQuest?.ModVersion ?? firstItem?.ModVersion ?? firstNpc?.ModVersion ?? settings?.DefaultModVersion ?? "1.0.0";
-                var gameStudio = firstQuest?.GameDeveloper ?? firstItem?.GameDeveloper ?? firstNpc?.GameDeveloper ?? "TVGS";
-                var gameName = firstQuest?.GameName ?? firstItem?.GameName ?? firstNpc?.GameName ?? "Schedule I";
+                var modAuthor = firstQuest?.ModAuthor ?? firstItem?.ModAuthor ?? firstNpc?.ModAuthor ?? firstPhoneApp?.ModAuthor ?? settings?.DefaultModAuthor ?? "Quest Creator";
+                var modVersion = firstQuest?.ModVersion ?? firstItem?.ModVersion ?? firstNpc?.ModVersion ?? firstPhoneApp?.ModVersion ?? settings?.DefaultModVersion ?? "1.0.0";
+                var gameStudio = firstQuest?.GameDeveloper ?? firstItem?.GameDeveloper ?? firstNpc?.GameDeveloper ?? firstPhoneApp?.GameDeveloper ?? "TVGS";
+                var gameName = firstQuest?.GameName ?? firstItem?.GameName ?? firstNpc?.GameName ?? firstPhoneApp?.GameName ?? "Schedule I";
 
                 // Generate .csproj file
-                GenerateCsprojFile(modPath, modName, project.Resources, result, settings, includePhoneApps: false);
+                GenerateCsprojFile(modPath, modName, project.Resources, result, settings, includePhoneApps: hasPhoneApps);
 
                 // Generate .sln file
                 GenerateSolutionFile(modPath, modName, result);
@@ -100,6 +107,12 @@ namespace Schedule1ModdingTool.Services
                 {
                     GenerateItemFile(modPath, item, result);
                     GenerateItemHookFile(modPath, item, result);
+                }
+
+                foreach (var phoneApp in project.PhoneApps ?? Enumerable.Empty<PhoneAppBlueprint>())
+                {
+                    GeneratePhoneAppFile(modPath, phoneApp, result);
+                    GeneratePhoneAppHookFile(modPath, phoneApp, result);
                 }
 
                 // Clean up old generated files that no longer match current NPCs/Quests
@@ -805,6 +818,7 @@ namespace Schedule1ModdingTool.Services
             var className = MakeSafeIdentifier(phoneApp.ClassName, "GeneratedPhoneApp");
             var targetNamespace = CodeGeneration.Common.NamespaceNormalizer.NormalizeForPhoneApp(phoneApp.Namespace);
             var hookPath = Path.Combine(modPath, "PhoneApps", $"{className}.Hooks.cs");
+            var customButtons = CollectPhoneAppButtonNodes(phoneApp.UiNodes);
             var sb = new StringBuilder();
 
             sb.AppendLine("using ScheduleOne.DevUtilities;");
@@ -840,6 +854,17 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine();
             sb.AppendLine("        partial void OnCustomButtonPressedGenerated(string nodeId)");
             sb.AppendLine("        {");
+            if (customButtons.Count > 0)
+            {
+                sb.AppendLine("            switch (nodeId)");
+                sb.AppendLine("            {");
+                foreach (var button in customButtons)
+                {
+                    sb.AppendLine($"                case \"{EscapeString(button.NodeId)}\": // {EscapeString(button.ButtonLabel)}");
+                    sb.AppendLine("                    break;");
+                }
+                sb.AppendLine("            }");
+            }
             sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine("}");
@@ -848,6 +873,32 @@ namespace Schedule1ModdingTool.Services
             {
                 File.WriteAllText(hookPath, sb.ToString());
                 result.GeneratedFiles.Add(hookPath);
+            }
+        }
+
+        private static List<(string NodeId, string ButtonLabel)> CollectPhoneAppButtonNodes(IEnumerable<PhoneAppUiNodeBlueprint> nodes)
+        {
+            var results = new List<(string NodeId, string ButtonLabel)>();
+            CollectPhoneAppButtonNodesRecursive(nodes, results);
+            return results;
+        }
+
+        private static void CollectPhoneAppButtonNodesRecursive(
+            IEnumerable<PhoneAppUiNodeBlueprint> nodes,
+            ICollection<(string NodeId, string ButtonLabel)> results)
+        {
+            foreach (var node in nodes)
+            {
+                if (node.NodeType == PhoneAppUiNodeType.Button && !string.IsNullOrWhiteSpace(node.Id))
+                {
+                    var label = string.IsNullOrWhiteSpace(node.Text) ? node.Name : node.Text;
+                    results.Add((node.Id, label));
+                }
+
+                if (node.Children.Count > 0)
+                {
+                    CollectPhoneAppButtonNodesRecursive(node.Children, results);
+                }
             }
         }
 
@@ -895,108 +946,52 @@ namespace Schedule1ModdingTool.Services
                     }
                 }
 
-                // Clean up NPC files
-                var npcsDir = Path.Combine(modPath, "NPCs");
-                if (Directory.Exists(npcsDir))
+                foreach (var phoneApp in project.PhoneApps)
                 {
-                    var existingNpcFiles = Directory.GetFiles(npcsDir, "*.cs");
-                    foreach (var filePath in existingNpcFiles)
+                    var className = MakeSafeIdentifier(phoneApp.ClassName, "GeneratedPhoneApp");
+                    expectedPhoneAppFiles.Add($"{className}.cs");
+                    if (phoneApp.GenerateHookScaffold)
                     {
-                        var fileName = Path.GetFileName(filePath);
-                        if (!expectedNpcFiles.Contains(fileName))
-                        {
-                            try
-                            {
-                                File.Delete(filePath);
-                                Debug.WriteLine($"[ModProjectGenerator] Deleted old NPC file: {fileName}");
-                                result.Warnings.Add($"Removed old NPC file: {fileName}");
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old NPC file '{fileName}': {ex.Message}");
-                                result.Warnings.Add($"Could not remove old NPC file '{fileName}': {ex.Message}");
-                            }
-                        }
+                        expectedPhoneAppFiles.Add($"{className}.Hooks.cs");
                     }
                 }
 
-                // Clean up Quest files
-                var questsDir = Path.Combine(modPath, "Quests");
-                if (Directory.Exists(questsDir))
-                {
-                    var existingQuestFiles = Directory.GetFiles(questsDir, "*.cs");
-                    foreach (var filePath in existingQuestFiles)
-                    {
-                        var fileName = Path.GetFileName(filePath);
-                        if (!expectedQuestFiles.Contains(fileName))
-                        {
-                            try
-                            {
-                                File.Delete(filePath);
-                                Debug.WriteLine($"[ModProjectGenerator] Deleted old Quest file: {fileName}");
-                                result.Warnings.Add($"Removed old Quest file: {fileName}");
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old Quest file '{fileName}': {ex.Message}");
-                                result.Warnings.Add($"Could not remove old Quest file '{fileName}': {ex.Message}");
-                            }
-                        }
-                    }
-                }
-
-                var itemsDir = Path.Combine(modPath, "Items");
-                if (Directory.Exists(itemsDir))
-                {
-                    var existingItemFiles = Directory.GetFiles(itemsDir, "*.cs");
-                    foreach (var filePath in existingItemFiles)
-                    {
-                        var fileName = Path.GetFileName(filePath);
-                        if (!expectedItemFiles.Contains(fileName))
-                        {
-                            try
-                            {
-                                File.Delete(filePath);
-                                Debug.WriteLine($"[ModProjectGenerator] Deleted old Item file: {fileName}");
-                                result.Warnings.Add($"Removed old Item file: {fileName}");
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old Item file '{fileName}': {ex.Message}");
-                                result.Warnings.Add($"Could not remove old Item file '{fileName}': {ex.Message}");
-                            }
-                        }
-                    }
-                }
-
-                var phoneAppsDir = Path.Combine(modPath, "PhoneApps");
-                if (Directory.Exists(phoneAppsDir))
-                {
-                    var existingPhoneAppFiles = Directory.GetFiles(phoneAppsDir, "*.cs");
-                    foreach (var filePath in existingPhoneAppFiles)
-                    {
-                        var fileName = Path.GetFileName(filePath);
-                        if (!expectedPhoneAppFiles.Contains(fileName))
-                        {
-                            try
-                            {
-                                File.Delete(filePath);
-                                Debug.WriteLine($"[ModProjectGenerator] Deleted old Phone App file: {fileName}");
-                                result.Warnings.Add($"Removed old Phone App file: {fileName}");
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old Phone App file '{fileName}': {ex.Message}");
-                                result.Warnings.Add($"Could not remove old Phone App file '{fileName}': {ex.Message}");
-                            }
-                        }
-                    }
-                }
+                CleanupGeneratedFiles(Path.Combine(modPath, "NPCs"), expectedNpcFiles, "NPC", result);
+                CleanupGeneratedFiles(Path.Combine(modPath, "Quests"), expectedQuestFiles, "Quest", result);
+                CleanupGeneratedFiles(Path.Combine(modPath, "Items"), expectedItemFiles, "Item", result);
+                CleanupGeneratedFiles(Path.Combine(modPath, "PhoneApps"), expectedPhoneAppFiles, "Phone App", result);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[ModProjectGenerator] Error during cleanup of old files: {ex.Message}");
                 result.Warnings.Add($"Error cleaning up old generated files: {ex.Message}");
+            }
+        }
+
+        private static void CleanupGeneratedFiles(string directory, HashSet<string> expectedFiles, string fileCategory, ModProjectGenerationResult result)
+        {
+            if (!Directory.Exists(directory))
+            {
+                return;
+            }
+
+            foreach (var filePath in Directory.GetFiles(directory, "*.cs"))
+            {
+                var fileName = Path.GetFileName(filePath);
+                if (expectedFiles.Contains(fileName))
+                {
+                    continue;
+                }
+
+                if (RetryingFileOperations.TryDeleteFile(filePath, out var deleteError, maxRetries: 3))
+                {
+                    Debug.WriteLine($"[ModProjectGenerator] Deleted old {fileCategory} file: {fileName}");
+                    result.Warnings.Add($"Removed old {fileCategory} file: {fileName}");
+                    continue;
+                }
+
+                Debug.WriteLine($"[ModProjectGenerator] Failed to delete old {fileCategory} file '{fileName}': {deleteError}");
+                result.Warnings.Add($"Could not remove old {fileCategory} file '{fileName}': {deleteError}");
             }
         }
 
@@ -1095,76 +1090,16 @@ namespace Schedule1ModdingTool.Services
                 }
 
                 Debug.WriteLine($"[ModProjectGenerator] Copying '{sourceFullPath}' -> '{destinationFullPath}'");
-                if (!TryCopyFileWithRetry(sourceFullPath, destinationFullPath, result, relative))
+                if (!RetryingFileOperations.TryCopyFile(sourceFullPath, destinationFullPath, out var copyError, maxRetries: 3))
                 {
-                    result.Errors.Add($"Failed to copy resource after retries: {relative}. The file may be locked by another process. Please close any applications using this file and try again.");
+                    Debug.WriteLine($"[ModProjectGenerator] Copy failed for '{relative}': {copyError}");
+                    result.Errors.Add($"Failed to copy resource {relative}: {copyError}");
                 }
                 else
                 {
                     result.GeneratedFiles.Add(destinationFullPath);
                 }
             }
-        }
-
-        private static bool TryCopyFileWithRetry(string source, string destination, ModProjectGenerationResult result, string relativePath, int maxRetries = 3)
-        {
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    Debug.WriteLine($"[ModProjectGenerator] Resource copy attempt {attempt}/{maxRetries}: '{source}' -> '{destination}'");
-                    // If destination exists and is locked, try to delete it first
-                    if (File.Exists(destination))
-                    {
-                        try
-                        {
-                            File.Delete(destination);
-                            Debug.WriteLine($"[ModProjectGenerator] Destination delete failed (attempt {attempt}): {destination}");
-                        }
-                        catch (IOException)
-                        {
-                            // Destination file is locked, wait and retry
-                            if (attempt < maxRetries)
-                            {
-                                Thread.Sleep(100 * attempt); // Exponential backoff: 100ms, 200ms, 300ms
-                                continue;
-                            }
-                            return false;
-                        }
-                    }
-
-                    // Use FileStream with FileShare.ReadWrite to allow reading even if file is open elsewhere
-                    // This allows copying files that might be open in Explorer preview or image viewers
-                    using (var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-                    using (var destStream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None))
-                    {
-                        sourceStream.CopyTo(destStream);
-                    }
-                    Debug.WriteLine($"[ModProjectGenerator] Copy succeeded: '{destination}'");
-                    return true;
-                }
-                catch (IOException ex) when (ex.Message.Contains("being used by another process") || ex.Message.Contains("cannot access"))
-                {
-                    if (attempt < maxRetries)
-                    {
-                        Debug.WriteLine($"[ModProjectGenerator] Resource locked (attempt {attempt}): {relativePath} - {ex.Message}");
-                        result.Errors.Add($"Resource file locked (attempt {attempt}/{maxRetries}): {relativePath}. Retrying...");
-                        Thread.Sleep(100 * attempt); // Exponential backoff: 100ms, 200ms, 300ms
-                        continue;
-                    }
-                    Debug.WriteLine($"[ModProjectGenerator] Resource locked after {maxRetries} attempts: {relativePath}");
-                    result.Errors.Add($"Resource file locked after {maxRetries} attempts: {relativePath}");
-                    return false;
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[ModProjectGenerator] Copy failed for '{relativePath}': {ex.Message}");
-                    result.Errors.Add($"Error copying resource {relativePath}: {ex.Message}");
-                    return false;
-                }
-            }
-
-            return false;
         }
 
         private static string TrimElementSuffix(string namespaceValue)

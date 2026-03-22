@@ -290,7 +290,7 @@ namespace Schedule1ModdingTool.Models
         [JsonIgnore]
         public bool UsesLiveBuilder => UseCustomUiBuilder;
 
-        public void CopyFrom(PhoneAppBlueprint source)
+        public void CopyFrom(PhoneAppBlueprint source, bool preserveNodeIdentities = false)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -328,14 +328,14 @@ namespace Schedule1ModdingTool.Models
             UiNodes.Clear();
             foreach (var node in source.UiNodes)
             {
-                UiNodes.Add(node.DeepCopy());
+                UiNodes.Add(node.DeepCopy(preserveNodeIdentities));
             }
         }
 
-        public PhoneAppBlueprint DeepCopy()
+        public PhoneAppBlueprint DeepCopy(bool preserveNodeIdentities = false)
         {
             var copy = new PhoneAppBlueprint();
-            copy.CopyFrom(this);
+            copy.CopyFrom(this, preserveNodeIdentities);
             return copy;
         }
 

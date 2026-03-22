@@ -738,15 +738,8 @@ namespace Schedule1ModdingTool.ViewModels
                 ItemDescription = "A sample custom item."
             });
 
-            AvailablePhoneAppBlueprints.Add(new PhoneAppBlueprint
-            {
-                ClassName = "SamplePhoneApp",
-                AppName = "sample_phone_app",
-                AppTitle = "Sample Phone App",
-                IconLabel = "Sample",
-                HeaderText = "Sample App",
-                BodyText = "This sample app shows the generated S1API phone app shell."
-            });
+            AvailablePhoneAppBlueprints.Add(PhoneAppBlueprintTemplates.CreatePayphoneScaffold());
+            AvailablePhoneAppBlueprints.Add(PhoneAppBlueprintTemplates.CreateSamplePhoneApp());
         }
 
         public void RefreshLiveGameCatalog()
@@ -2410,6 +2403,7 @@ namespace Schedule1ModdingTool.ViewModels
             CurrentProject.Quests.Count > 0 ||
             CurrentProject.Npcs.Count > 0 ||
             CurrentProject.Items.Count > 0 ||
+            CurrentProject.PhoneApps.Count > 0 ||
             CurrentProject.Resources.Count > 0;
 
         private bool TryGetProjectDirectory(out string projectDir)

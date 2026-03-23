@@ -661,31 +661,39 @@ namespace Schedule1ModdingTool.Models
         [JsonIgnore]
         public string DisplayName => string.IsNullOrWhiteSpace(ItemName) ? ClassName : ItemName;
 
+        private bool IsGenericItem => ItemType == ItemKindOption.Generic;
+
+        private bool IsBuildableItem => ItemType == ItemKindOption.Buildable;
+
+        private bool IsClothingItem => ItemType == ItemKindOption.Clothing;
+
+        private bool IsAdditiveItem => ItemType == ItemKindOption.Additive;
+
         [JsonIgnore]
         public string WorkspaceSubtitle => ItemType == ItemKindOption.Clothing
             ? $"Clothing · {ItemId}"
             : ItemId;
 
         [JsonIgnore]
-        public ItemCategoryOption EffectiveCategory => ItemType == ItemKindOption.Clothing ? ItemCategoryOption.Clothing : Category;
+        public ItemCategoryOption EffectiveCategory => IsClothingItem ? ItemCategoryOption.Clothing : Category;
 
         [JsonIgnore]
-        public bool SupportsCloneSource => ItemType != ItemKindOption.Generic;
+        public bool SupportsCloneSource => !IsGenericItem;
 
         [JsonIgnore]
-        public bool SupportsCategory => ItemType != ItemKindOption.Clothing;
+        public bool SupportsCategory => !IsClothingItem;
 
         [JsonIgnore]
-        public bool SupportsStackLimit => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Buildable || ItemType == ItemKindOption.Additive || ItemType == ItemKindOption.Clothing;
+        public bool SupportsStackLimit => IsGenericItem || IsBuildableItem || IsAdditiveItem || IsClothingItem;
 
         [JsonIgnore]
-        public bool SupportsLegalStatus => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Buildable || ItemType == ItemKindOption.Additive || ItemType == ItemKindOption.Clothing;
+        public bool SupportsLegalStatus => IsGenericItem || IsBuildableItem || IsAdditiveItem || IsClothingItem;
 
         [JsonIgnore]
-        public bool SupportsDemoAvailability => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Additive;
+        public bool SupportsDemoAvailability => IsGenericItem || IsAdditiveItem;
 
         [JsonIgnore]
-        public bool SupportsEquippable => ItemType == ItemKindOption.Generic || ItemType == ItemKindOption.Buildable;
+        public bool SupportsEquippable => IsGenericItem || IsBuildableItem;
 
         [JsonIgnore]
         public bool UsesEquippable => SupportsEquippable && EquippableType != EquippableTypeOption.None;
@@ -694,37 +702,37 @@ namespace Schedule1ModdingTool.Models
         public bool UsesViewmodelEquippable => EquippableType == EquippableTypeOption.Viewmodel;
 
         [JsonIgnore]
-        public bool SupportsStoredItemPrefab => ItemType == ItemKindOption.Generic;
+        public bool SupportsStoredItemPrefab => IsGenericItem;
 
         [JsonIgnore]
-        public bool SupportsStationItemPrefab => ItemType == ItemKindOption.Generic;
+        public bool SupportsStationItemPrefab => IsGenericItem;
 
         [JsonIgnore]
-        public bool SupportsBuildableOptions => ItemType == ItemKindOption.Buildable;
+        public bool SupportsBuildableOptions => IsBuildableItem;
 
         [JsonIgnore]
-        public bool SupportsClothingOptions => ItemType == ItemKindOption.Clothing;
+        public bool SupportsClothingOptions => IsClothingItem;
 
         [JsonIgnore]
-        public bool SupportsAdditiveOptions => ItemType == ItemKindOption.Additive;
+        public bool SupportsAdditiveOptions => IsAdditiveItem;
 
         [JsonIgnore]
-        public bool SupportsDisplayMaterial => ItemType == ItemKindOption.Additive;
+        public bool SupportsDisplayMaterial => IsAdditiveItem;
 
         [JsonIgnore]
-        public bool SupportsGrowContainerIntegration => ItemType == ItemKindOption.Additive;
+        public bool SupportsGrowContainerIntegration => IsAdditiveItem;
 
         [JsonIgnore]
-        public bool SupportsChemistryRecipes => ItemType != ItemKindOption.Clothing;
+        public bool SupportsChemistryRecipes => !IsClothingItem;
 
         [JsonIgnore]
-        public bool SupportsRuntimeEditor => ItemType != ItemKindOption.Clothing;
+        public bool SupportsRuntimeEditor => !IsClothingItem;
 
         [JsonIgnore]
-        public bool SupportsLiveCatalogEditor => ItemType != ItemKindOption.Clothing;
+        public bool SupportsLiveCatalogEditor => !IsClothingItem;
 
         [JsonIgnore]
-        public bool CanEditItemType => ItemType != ItemKindOption.Clothing;
+        public bool CanEditItemType => !IsClothingItem;
 
         [JsonIgnore]
         public string SuggestedClothingAssetPath => ClothingApplicationType switch
@@ -741,14 +749,14 @@ namespace Schedule1ModdingTool.Models
         public bool HasClothingTextureResource => !string.IsNullOrWhiteSpace(ClothingTextureResourcePath);
 
         [JsonIgnore]
-        public bool UsesAccessoryTextureRuntimeOverride => ItemType == ItemKindOption.Clothing
+        public bool UsesAccessoryTextureRuntimeOverride => IsClothingItem
             && ClothingApplicationType == ClothingApplicationTypeOption.Accessory
             && !string.IsNullOrWhiteSpace(ClothingTextureResourcePath)
             && !string.IsNullOrWhiteSpace(ClothingTextureSourceAssetPath)
             && !string.IsNullOrWhiteSpace(ClothingAssetPath);
 
         [JsonIgnore]
-        public bool UsesLayerTextureRuntimeOverride => ItemType == ItemKindOption.Clothing
+        public bool UsesLayerTextureRuntimeOverride => IsClothingItem
             && ClothingApplicationType != ClothingApplicationTypeOption.Accessory
             && !string.IsNullOrWhiteSpace(ClothingTextureResourcePath)
             && !string.IsNullOrWhiteSpace(ClothingAssetPath);

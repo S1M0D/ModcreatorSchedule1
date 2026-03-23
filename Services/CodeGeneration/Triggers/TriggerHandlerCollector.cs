@@ -23,13 +23,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             int handlerIndex = 0;
 
-            // Quest start triggers
             CollectQuestStartTriggers(quest, handlers, usedNames, ref handlerIndex);
-
-            // Quest finish triggers
             CollectQuestFinishTriggers(quest, handlers, usedNames, ref handlerIndex);
-
-            // Objective triggers
             CollectObjectiveTriggers(quest, handlers, usedNames, ref handlerIndex);
 
             return handlers;
@@ -47,21 +42,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (quest.QuestTriggers?.Any(t => t.TriggerTarget == QuestTriggerTarget.QuestStart) != true)
                 return;
 
-            foreach (var trigger in quest.QuestTriggers.Where(t => t.TriggerTarget == QuestTriggerTarget.QuestStart))
-            {
-                if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
-                    !string.IsNullOrWhiteSpace(trigger.TargetAction))
-                {
-                    var handlerName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex);
-                    handlers.Add(new TriggerHandlerInfo
-                    {
-                        Trigger = trigger,
-                        FieldName = handlerName,
-                        ActionMethod = "Begin()",
-                        TriggerCategory = TriggerCategory.QuestStart
-                    });
-                }
-            }
+            CollectQuestTriggerGroup(
+                quest.QuestTriggers.Where(t => t.TriggerTarget == QuestTriggerTarget.QuestStart),
+                handlers,
+                usedNames,
+                ref handlerIndex,
+                TriggerCategory.QuestStart,
+                _ => "Begin()");
         }
 
         /// <summary>
@@ -76,31 +63,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (quest.QuestFinishTriggers?.Any() != true)
                 return;
 
-            foreach (var trigger in quest.QuestFinishTriggers)
-            {
-                if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
-                    !string.IsNullOrWhiteSpace(trigger.TargetAction))
-                {
-                    var finishMethod = trigger.FinishType switch
-                    {
-                        QuestFinishType.Complete => "Complete()",
-                        QuestFinishType.Fail => "Fail()",
-                        QuestFinishType.Cancel => "Cancel()",
-                        QuestFinishType.Expire => "Expire()",
-                        QuestFinishType.End => "End()",
-                        _ => "Complete()"
-                    };
-
-                    var handlerName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex);
-                    handlers.Add(new TriggerHandlerInfo
-                    {
-                        Trigger = trigger,
-                        FieldName = handlerName,
-                        ActionMethod = finishMethod,
-                        TriggerCategory = TriggerCategory.QuestFinish
-                    });
-                }
-            }
+            CollectQuestTriggerGroup(
+                quest.QuestFinishTriggers,
+                handlers,
+                usedNames,
+                ref handlerIndex,
+                TriggerCategory.QuestFinish,
+                trigger => GetFinishActionMethod(trigger.FinishType));
         }
 
         /// <summary>
@@ -119,48 +88,84 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             {
                 var objective = quest.Objectives[i];
 
-                // Objective start triggers
-                if (objective.StartTriggers?.Any() == true)
+                CollectObjectiveTriggerGroup(
+                    objective.StartTriggers,
+                    i,
+                    TriggerCategory.ObjectiveStart,
+                    handlers,
+                    usedNames,
+                    ref handlerIndex);
+
+                CollectObjectiveTriggerGroup(
+                    objective.FinishTriggers,
+                    i,
+                    TriggerCategory.ObjectiveFinish,
+                    handlers,
+                    usedNames,
+                    ref handlerIndex);
+            }
+        }
+
+        private void CollectQuestTriggerGroup<TTrigger>(
+            IEnumerable<TTrigger> triggers,
+            List<TriggerHandlerInfo> handlers,
+            HashSet<string> usedNames,
+            ref int handlerIndex,
+            TriggerCategory triggerCategory,
+            Func<TTrigger, string> actionMethodSelector)
+            where TTrigger : QuestTrigger
+        {
+            foreach (var trigger in triggers)
+            {
+                if (!RequiresHandlerField(trigger))
                 {
-                    foreach (var trigger in objective.StartTriggers)
-                    {
-                        if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
-                            !string.IsNullOrWhiteSpace(trigger.TargetAction))
-                        {
-                            var handlerName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex);
-                            handlers.Add(new TriggerHandlerInfo
-                            {
-                                Trigger = trigger,
-                                FieldName = handlerName,
-                                ActionMethod = GetObjectiveActionMethod(trigger.ActionType),
-                                ObjectiveIndex = i,
-                                TriggerCategory = TriggerCategory.ObjectiveStart
-                            });
-                        }
-                    }
+                    continue;
                 }
 
-                // Objective finish triggers
-                if (objective.FinishTriggers?.Any() == true)
+                handlers.Add(new TriggerHandlerInfo
                 {
-                    foreach (var trigger in objective.FinishTriggers)
-                    {
-                        if ((trigger.TriggerType == QuestTriggerType.NPCEventTrigger || trigger.TriggerType == QuestTriggerType.QuestEventTrigger) &&
-                            !string.IsNullOrWhiteSpace(trigger.TargetAction))
-                        {
-                            var handlerName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex);
-                            handlers.Add(new TriggerHandlerInfo
-                            {
-                                Trigger = trigger,
-                                FieldName = handlerName,
-                                ActionMethod = GetObjectiveActionMethod(trigger.ActionType),
-                                ObjectiveIndex = i,
-                                TriggerCategory = TriggerCategory.ObjectiveFinish
-                            });
-                        }
-                    }
-                }
+                    Trigger = trigger,
+                    FieldName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex),
+                    ActionMethod = actionMethodSelector(trigger),
+                    TriggerCategory = triggerCategory
+                });
             }
+        }
+
+        private void CollectObjectiveTriggerGroup(
+            IEnumerable<QuestObjectiveTrigger>? triggers,
+            int objectiveIndex,
+            TriggerCategory triggerCategory,
+            List<TriggerHandlerInfo> handlers,
+            HashSet<string> usedNames,
+            ref int handlerIndex)
+        {
+            if (triggers?.Any() != true)
+                return;
+
+            foreach (var trigger in triggers)
+            {
+                if (!RequiresHandlerField(trigger))
+                {
+                    continue;
+                }
+
+                handlers.Add(new TriggerHandlerInfo
+                {
+                    Trigger = trigger,
+                    FieldName = GenerateHandlerFieldName(trigger, usedNames, ref handlerIndex),
+                    ActionMethod = GetObjectiveActionMethod(trigger.ActionType),
+                    ObjectiveIndex = objectiveIndex,
+                    TriggerCategory = triggerCategory
+                });
+            }
+        }
+
+        private static bool RequiresHandlerField(QuestTrigger trigger)
+        {
+            return !string.IsNullOrWhiteSpace(trigger.TargetAction)
+                && (trigger.TriggerType == QuestTriggerType.NPCEventTrigger
+                    || trigger.TriggerType == QuestTriggerType.QuestEventTrigger);
         }
 
         /// <summary>
@@ -176,6 +181,19 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             var eventName = actionParts.Length >= 2 ? actionParts[1] : trigger.TargetAction;
             var baseName = $"_{IdentifierSanitizer.MakeSafeIdentifier(eventName, "trigger")}Handler";
             return IdentifierSanitizer.EnsureUniqueIdentifier(baseName, usedNames, ++handlerIndex);
+        }
+
+        private static string GetFinishActionMethod(QuestFinishType finishType)
+        {
+            return finishType switch
+            {
+                QuestFinishType.Complete => "Complete()",
+                QuestFinishType.Fail => "Fail()",
+                QuestFinishType.Cancel => "Cancel()",
+                QuestFinishType.Expire => "Expire()",
+                QuestFinishType.End => "End()",
+                _ => "Complete()"
+            };
         }
 
         private static string GetObjectiveActionMethod(QuestObjectiveTriggerActionType actionType)

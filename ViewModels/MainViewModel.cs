@@ -24,6 +24,7 @@ namespace Schedule1ModdingTool.ViewModels
         private QuestBlueprint? _selectedQuest;
         private NpcBlueprint? _selectedNpc;
         private ItemBlueprint? _selectedItemBlueprint;
+        private PhoneCallBlueprint? _selectedPhoneCall;
         private PhoneAppBlueprint? _selectedPhoneApp;
         private ResourceAsset? _selectedResource;
         private NpcScheduleAction? _selectedScheduleAction;
@@ -62,6 +63,7 @@ namespace Schedule1ModdingTool.ViewModels
         public ObservableCollection<QuestBlueprint> AvailableBlueprints { get; } = new ObservableCollection<QuestBlueprint>();
         public ObservableCollection<NpcBlueprint> AvailableNpcBlueprints { get; } = new ObservableCollection<NpcBlueprint>();
         public ObservableCollection<ItemBlueprint> AvailableItemBlueprints { get; } = new ObservableCollection<ItemBlueprint>();
+        public ObservableCollection<PhoneCallBlueprint> AvailablePhoneCallBlueprints { get; } = new ObservableCollection<PhoneCallBlueprint>();
         public ObservableCollection<PhoneAppBlueprint> AvailablePhoneAppBlueprints { get; } = new ObservableCollection<PhoneAppBlueprint>();
         public ObservableCollection<GameItemCatalogEntry> LiveGameItems { get; } = new ObservableCollection<GameItemCatalogEntry>();
         public ObservableCollection<GameShopCatalogEntry> LiveGameShops { get; } = new ObservableCollection<GameShopCatalogEntry>();
@@ -139,10 +141,11 @@ namespace Schedule1ModdingTool.ViewModels
                     {
                         SelectedNpc = null;
                         SelectedItemBlueprint = null;
+                        SelectedPhoneCall = null;
                         SelectedPhoneApp = null;
                         RegenerateCode();
                     }
-                    else if (SelectedNpc == null && SelectedItemBlueprint == null && SelectedPhoneApp == null)
+                    else if (SelectedNpc == null && SelectedItemBlueprint == null && SelectedPhoneCall == null && SelectedPhoneApp == null)
                     {
                         GeneratedCode = string.Empty;
                     }
@@ -182,6 +185,7 @@ namespace Schedule1ModdingTool.ViewModels
                         _selectedItemBlueprint = null;
                         OnPropertyChanged(nameof(SelectedQuest));
                         OnPropertyChanged(nameof(SelectedItemBlueprint));
+                        SelectedPhoneCall = null;
                         SelectedPhoneApp = null;
                         RegenerateCode();
 
@@ -198,7 +202,7 @@ namespace Schedule1ModdingTool.ViewModels
                             Debug.WriteLine("[MainViewModel] Warning: NPC Appearance is null!");
                         }
                     }
-                    else if (SelectedQuest == null && SelectedItemBlueprint == null && SelectedPhoneApp == null)
+                    else if (SelectedQuest == null && SelectedItemBlueprint == null && SelectedPhoneCall == null && SelectedPhoneApp == null)
                     {
                         GeneratedCode = string.Empty;
                     }
@@ -222,10 +226,11 @@ namespace Schedule1ModdingTool.ViewModels
                         _selectedNpc = null;
                         OnPropertyChanged(nameof(SelectedQuest));
                         OnPropertyChanged(nameof(SelectedNpc));
+                        SelectedPhoneCall = null;
                         SelectedPhoneApp = null;
                         RegenerateCode();
                     }
-                    else if (SelectedQuest == null && SelectedNpc == null && SelectedPhoneApp == null)
+                    else if (SelectedQuest == null && SelectedNpc == null && SelectedPhoneCall == null && SelectedPhoneApp == null)
                     {
                         GeneratedCode = string.Empty;
                     }
@@ -249,12 +254,43 @@ namespace Schedule1ModdingTool.ViewModels
                         _selectedQuest = null;
                         _selectedNpc = null;
                         _selectedItemBlueprint = null;
+                        _selectedPhoneCall = null;
                         OnPropertyChanged(nameof(SelectedQuest));
                         OnPropertyChanged(nameof(SelectedNpc));
                         OnPropertyChanged(nameof(SelectedItemBlueprint));
+                        OnPropertyChanged(nameof(SelectedPhoneCall));
                         RegenerateCode();
                     }
-                    else if (SelectedQuest == null && SelectedNpc == null && SelectedItemBlueprint == null)
+                    else if (SelectedQuest == null && SelectedNpc == null && SelectedItemBlueprint == null && SelectedPhoneCall == null)
+                    {
+                        GeneratedCode = string.Empty;
+                    }
+
+                    OnPropertyChanged(nameof(SelectedElementName));
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            }
+        }
+
+        public PhoneCallBlueprint? SelectedPhoneCall
+        {
+            get => _selectedPhoneCall;
+            set
+            {
+                if (SetProperty(ref _selectedPhoneCall, value))
+                {
+                    if (value != null)
+                    {
+                        _selectedQuest = null;
+                        _selectedNpc = null;
+                        _selectedItemBlueprint = null;
+                        OnPropertyChanged(nameof(SelectedQuest));
+                        OnPropertyChanged(nameof(SelectedNpc));
+                        OnPropertyChanged(nameof(SelectedItemBlueprint));
+                        SelectedPhoneApp = null;
+                        RegenerateCode();
+                    }
+                    else if (SelectedQuest == null && SelectedNpc == null && SelectedItemBlueprint == null && SelectedPhoneApp == null)
                     {
                         GeneratedCode = string.Empty;
                     }
@@ -307,7 +343,7 @@ namespace Schedule1ModdingTool.ViewModels
             set => SetProperty(ref _processState, value);
         }
 
-        public string SelectedElementName => SelectedQuest?.DisplayName ?? SelectedNpc?.DisplayName ?? SelectedItemBlueprint?.DisplayName ?? SelectedPhoneApp?.DisplayName ?? "None";
+        public string SelectedElementName => SelectedQuest?.DisplayName ?? SelectedNpc?.DisplayName ?? SelectedItemBlueprint?.DisplayName ?? SelectedPhoneCall?.DisplayName ?? SelectedPhoneApp?.DisplayName ?? "None";
 
         public NavigationItem? SelectedNavigationItem
         {
@@ -351,6 +387,15 @@ namespace Schedule1ModdingTool.ViewModels
                         SelectedItemBlueprint = _tabManagementService.SelectedTab.Item;
                         SelectedQuest = null;
                         SelectedNpc = null;
+                        SelectedPhoneCall = null;
+                        SelectedPhoneApp = null;
+                    }
+                    else if (_tabManagementService.SelectedTab.PhoneCall != null)
+                    {
+                        SelectedPhoneCall = _tabManagementService.SelectedTab.PhoneCall;
+                        SelectedQuest = null;
+                        SelectedNpc = null;
+                        SelectedItemBlueprint = null;
                         SelectedPhoneApp = null;
                     }
                     else if (_tabManagementService.SelectedTab.PhoneApp != null)
@@ -359,6 +404,7 @@ namespace Schedule1ModdingTool.ViewModels
                         SelectedQuest = null;
                         SelectedNpc = null;
                         SelectedItemBlueprint = null;
+                        SelectedPhoneCall = null;
                     }
                 }
                 else
@@ -366,6 +412,7 @@ namespace Schedule1ModdingTool.ViewModels
                     SelectedQuest = null;
                     SelectedNpc = null;
                     SelectedItemBlueprint = null;
+                    SelectedPhoneCall = null;
                     SelectedPhoneApp = null;
                 }
 
@@ -439,6 +486,9 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _addItemCommand;
         private ICommand? _removeItemCommand;
         private ICommand? _editItemCommand;
+        private ICommand? _addPhoneCallCommand;
+        private ICommand? _removePhoneCallCommand;
+        private ICommand? _editPhoneCallCommand;
         private ICommand? _addPhoneAppCommand;
         private ICommand? _removePhoneAppCommand;
         private ICommand? _editPhoneAppCommand;
@@ -448,6 +498,7 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _duplicateQuestCommand;
         private ICommand? _duplicateNpcCommand;
         private ICommand? _duplicateItemCommand;
+        private ICommand? _duplicatePhoneCallCommand;
         private ICommand? _duplicatePhoneAppCommand;
         private ICommand? _duplicateFolderCommand;
         private ICommand? _deleteFolderCommand;
@@ -460,6 +511,7 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _newNpcCommand;
         private ICommand? _newItemCommand;
         private ICommand? _newCustomClothingCommand;
+        private ICommand? _newPhoneCallCommand;
         private ICommand? _newPhoneAppCommand;
         private ICommand? _visitWikiCommand;
         private ICommand? _checkForUpdatesCommand;
@@ -497,6 +549,9 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand AddItemCommand => _addItemCommand!;
         public ICommand RemoveItemCommand => _removeItemCommand!;
         public ICommand EditItemCommand => _editItemCommand!;
+        public ICommand AddPhoneCallCommand => _addPhoneCallCommand!;
+        public ICommand RemovePhoneCallCommand => _removePhoneCallCommand!;
+        public ICommand EditPhoneCallCommand => _editPhoneCallCommand!;
         public ICommand AddPhoneAppCommand => _addPhoneAppCommand!;
         public ICommand RemovePhoneAppCommand => _removePhoneAppCommand!;
         public ICommand EditPhoneAppCommand => _editPhoneAppCommand!;
@@ -506,6 +561,7 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand DuplicateQuestCommand => _duplicateQuestCommand!;
         public ICommand DuplicateNpcCommand => _duplicateNpcCommand!;
         public ICommand DuplicateItemCommand => _duplicateItemCommand!;
+        public ICommand DuplicatePhoneCallCommand => _duplicatePhoneCallCommand!;
         public ICommand DuplicatePhoneAppCommand => _duplicatePhoneAppCommand!;
         public ICommand DuplicateFolderCommand => _duplicateFolderCommand!;
         public ICommand DeleteFolderCommand => _deleteFolderCommand!;
@@ -518,6 +574,7 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand NewNpcCommand => _newNpcCommand!;
         public ICommand NewItemCommand => _newItemCommand!;
         public ICommand NewCustomClothingCommand => _newCustomClothingCommand!;
+        public ICommand NewPhoneCallCommand => _newPhoneCallCommand!;
         public ICommand NewPhoneAppCommand => _newPhoneAppCommand!;
         public ICommand VisitWikiCommand => _visitWikiCommand!;
         public ICommand CheckForUpdatesCommand => _checkForUpdatesCommand!;
@@ -599,6 +656,15 @@ namespace Schedule1ModdingTool.ViewModels
                             SelectedItemBlueprint = _tabManagementService.SelectedTab.Item;
                             SelectedQuest = null;
                             SelectedNpc = null;
+                            SelectedPhoneCall = null;
+                            SelectedPhoneApp = null;
+                        }
+                        else if (_tabManagementService.SelectedTab.PhoneCall != null)
+                        {
+                            SelectedPhoneCall = _tabManagementService.SelectedTab.PhoneCall;
+                            SelectedQuest = null;
+                            SelectedNpc = null;
+                            SelectedItemBlueprint = null;
                             SelectedPhoneApp = null;
                         }
                         else if (_tabManagementService.SelectedTab.PhoneApp != null)
@@ -607,6 +673,7 @@ namespace Schedule1ModdingTool.ViewModels
                             SelectedQuest = null;
                             SelectedNpc = null;
                             SelectedItemBlueprint = null;
+                            SelectedPhoneCall = null;
                         }
                     }
                     else
@@ -614,6 +681,7 @@ namespace Schedule1ModdingTool.ViewModels
                         SelectedQuest = null;
                         SelectedNpc = null;
                         SelectedItemBlueprint = null;
+                        SelectedPhoneCall = null;
                         SelectedPhoneApp = null;
                     }
                     
@@ -658,14 +726,17 @@ namespace Schedule1ModdingTool.ViewModels
             _addItemCommand = new RelayCommand<ItemBlueprint>(AddItem);
             _removeItemCommand = new RelayCommand(RemoveItem, () => SelectedItemBlueprint != null);
             _editItemCommand = new RelayCommand(EditItem, () => SelectedItemBlueprint != null);
+            _addPhoneCallCommand = new RelayCommand<PhoneCallBlueprint>(AddPhoneCall);
+            _removePhoneCallCommand = new RelayCommand(RemovePhoneCall, () => SelectedPhoneCall != null);
+            _editPhoneCallCommand = new RelayCommand(EditPhoneCall, () => SelectedPhoneCall != null);
             _addPhoneAppCommand = new RelayCommand<PhoneAppBlueprint>(AddPhoneApp);
             _removePhoneAppCommand = new RelayCommand(RemovePhoneApp, () => SelectedPhoneApp != null);
             _editPhoneAppCommand = new RelayCommand(EditPhoneApp, () => SelectedPhoneApp != null);
-            _regenerateCodeCommand = new RelayCommand(RegenerateCode, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null);
-            _compileCommand = new RelayCommand(Compile, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null);
+            _regenerateCodeCommand = new RelayCommand(RegenerateCode, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null);
+            _compileCommand = new RelayCommand(Compile, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null);
             _toggleCodeViewCommand = new RelayCommand(() => IsCodeVisible = !IsCodeVisible);
             _copyCodeCommand = new RelayCommand(CopyGeneratedCode, () => !string.IsNullOrWhiteSpace(GeneratedCode));
-            _exportCodeCommand = new RelayCommand(ExportGeneratedCode, () => (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null) && !string.IsNullOrWhiteSpace(GeneratedCode));
+            _exportCodeCommand = new RelayCommand(ExportGeneratedCode, () => (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null) && !string.IsNullOrWhiteSpace(GeneratedCode));
             _exportModProjectCommand = new RelayCommand(ExportModProject, HasAnyElements);
             _buildModCommand = new RelayCommand(BuildMod, HasAnyElements);
             _playGameCommand = new RelayCommand(PlayGame, () => !string.IsNullOrWhiteSpace(_modSettings.GameInstallPath));
@@ -683,18 +754,20 @@ namespace Schedule1ModdingTool.ViewModels
             _duplicateQuestCommand = new RelayCommand<QuestBlueprint>(DuplicateQuest);
             _duplicateNpcCommand = new RelayCommand<NpcBlueprint>(DuplicateNpc);
             _duplicateItemCommand = new RelayCommand<ItemBlueprint>(DuplicateItem);
+            _duplicatePhoneCallCommand = new RelayCommand<PhoneCallBlueprint>(DuplicatePhoneCall);
             _duplicatePhoneAppCommand = new RelayCommand<PhoneAppBlueprint>(DuplicatePhoneApp);
             _duplicateFolderCommand = new RelayCommand<ModFolder>(DuplicateFolder);
             _deleteFolderCommand = new RelayCommand<ModFolder>(DeleteFolder);
             _undoCommand = new RelayCommand(Undo, () => _undoRedoService.CanUndo);
             _redoCommand = new RelayCommand(Redo, () => _undoRedoService.CanRedo);
-            _deleteSelectedCommand = new RelayCommand(DeleteSelected, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null);
-            _duplicateSelectedCommand = new RelayCommand(DuplicateSelected, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null);
+            _deleteSelectedCommand = new RelayCommand(DeleteSelected, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null);
+            _duplicateSelectedCommand = new RelayCommand(DuplicateSelected, () => SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null);
             _buildAndPlayCommand = new RelayCommand(BuildAndPlay, HasAnyElements);
             _newQuestCommand = new RelayCommand(NewQuest);
             _newNpcCommand = new RelayCommand(NewNpc);
             _newItemCommand = new RelayCommand(NewItem);
             _newCustomClothingCommand = new RelayCommand(NewCustomClothing);
+            _newPhoneCallCommand = new RelayCommand(NewPhoneCall);
             _newPhoneAppCommand = new RelayCommand(NewPhoneApp);
             _visitWikiCommand = new RelayCommand(VisitWiki);
             _checkForUpdatesCommand = new RelayCommand(async () => await CheckForUpdates());
@@ -737,6 +810,9 @@ namespace Schedule1ModdingTool.ViewModels
                 ItemName = "Sample Item",
                 ItemDescription = "A sample custom item."
             });
+
+            AvailablePhoneCallBlueprints.Add(PhoneCallBlueprintTemplates.CreateTutorialCall());
+            AvailablePhoneCallBlueprints.Add(PhoneCallBlueprintTemplates.CreateNpcCallerCall());
 
             AvailablePhoneAppBlueprints.Add(PhoneAppBlueprintTemplates.CreatePayphoneScaffold());
             AvailablePhoneAppBlueprints.Add(PhoneAppBlueprintTemplates.CreateSamplePhoneApp());
@@ -1093,7 +1169,7 @@ namespace Schedule1ModdingTool.ViewModels
         {
             try
             {
-                if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null)
+                if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null)
                 {
                     RegenerateCode();
                 }
@@ -1125,7 +1201,7 @@ namespace Schedule1ModdingTool.ViewModels
         {
             try
             {
-                if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null)
+                if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null)
                 {
                     RegenerateCode();
                 }
@@ -1338,6 +1414,50 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        private void AddPhoneCall(PhoneCallBlueprint? template)
+        {
+            _undoRedoService.SaveSnapshot(CurrentProject);
+
+            var phoneCall = _elementManagementService.AddPhoneCall(CurrentProject, template);
+            phoneCall.PropertyChanged -= OnElementPropertyChanged;
+            phoneCall.PropertyChanged += OnElementPropertyChanged;
+
+            SelectedPhoneCall = phoneCall;
+            _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+            _tabManagementService.OpenPhoneCallInTab(phoneCall);
+        }
+
+        private void RemovePhoneCall()
+        {
+            if (SelectedPhoneCall == null) return;
+
+            _undoRedoService.SaveSnapshot(CurrentProject);
+
+            if (_elementManagementService.RemovePhoneCall(CurrentProject, SelectedPhoneCall))
+            {
+                SelectFirstAvailableElement();
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+            }
+        }
+
+        private void DuplicatePhoneCall(PhoneCallBlueprint? phoneCall)
+        {
+            if (phoneCall == null) return;
+
+            _undoRedoService.SaveSnapshot(CurrentProject);
+
+            var duplicate = _elementManagementService.DuplicatePhoneCall(CurrentProject, phoneCall);
+            if (duplicate != null)
+            {
+                duplicate.PropertyChanged -= OnElementPropertyChanged;
+                duplicate.PropertyChanged += OnElementPropertyChanged;
+
+                SelectedPhoneCall = duplicate;
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
+                _tabManagementService.OpenPhoneCallInTab(duplicate);
+            }
+        }
+
         private void AddPhoneApp(PhoneAppBlueprint? template)
         {
             _undoRedoService.SaveSnapshot(CurrentProject);
@@ -1425,6 +1545,14 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        private void EditPhoneCall()
+        {
+            if (SelectedPhoneCall != null)
+            {
+                _tabManagementService.OpenPhoneCallInTab(SelectedPhoneCall);
+            }
+        }
+
         private void EditPhoneApp()
         {
             if (SelectedPhoneApp != null)
@@ -1447,6 +1575,10 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 RemoveItem();
             }
+            else if (SelectedPhoneCall != null)
+            {
+                RemovePhoneCall();
+            }
             else if (SelectedPhoneApp != null)
             {
                 RemovePhoneApp();
@@ -1467,6 +1599,10 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 DuplicateItem(SelectedItemBlueprint);
             }
+            else if (SelectedPhoneCall != null)
+            {
+                DuplicatePhoneCall(SelectedPhoneCall);
+            }
             else if (SelectedPhoneApp != null)
             {
                 DuplicatePhoneApp(SelectedPhoneApp);
@@ -1478,6 +1614,7 @@ namespace Schedule1ModdingTool.ViewModels
             SelectedQuest = null;
             SelectedNpc = null;
             SelectedItemBlueprint = null;
+            SelectedPhoneCall = null;
             SelectedPhoneApp = null;
         }
 
@@ -1494,6 +1631,10 @@ namespace Schedule1ModdingTool.ViewModels
             else if (CurrentProject.Items.Any())
             {
                 SelectedItemBlueprint = CurrentProject.Items.First();
+            }
+            else if (CurrentProject.PhoneCalls.Any())
+            {
+                SelectedPhoneCall = CurrentProject.PhoneCalls.First();
             }
             else
             {
@@ -1622,6 +1763,14 @@ namespace Schedule1ModdingTool.ViewModels
             AddItem(CreateCustomClothingTemplate());
         }
 
+        private void NewPhoneCall()
+        {
+            if (AvailablePhoneCallBlueprints.Count > 0)
+            {
+                AddPhoneCall(AvailablePhoneCallBlueprints[0]);
+            }
+        }
+
         private void NewPhoneApp()
         {
             if (AvailablePhoneAppBlueprints.Count > 0)
@@ -1687,6 +1836,11 @@ namespace Schedule1ModdingTool.ViewModels
             _tabManagementService.OpenItemInTab(item);
         }
 
+        public void OpenPhoneCallInTab(PhoneCallBlueprint phoneCall)
+        {
+            _tabManagementService.OpenPhoneCallInTab(phoneCall);
+        }
+
         public void OpenPhoneAppInTab(PhoneAppBlueprint phoneApp)
         {
             _tabManagementService.OpenPhoneAppInTab(phoneApp);
@@ -1701,6 +1855,7 @@ namespace Schedule1ModdingTool.ViewModels
                     SelectedQuest = null;
                     SelectedNpc = null;
                     SelectedItemBlueprint = null;
+                    SelectedPhoneCall = null;
                     SelectedPhoneApp = null;
                 }
             }
@@ -1814,6 +1969,10 @@ namespace Schedule1ModdingTool.ViewModels
                 {
                     GeneratedCode = _codeGenService.GenerateItemCode(SelectedItemBlueprint);
                 }
+                else if (SelectedPhoneCall != null)
+                {
+                    GeneratedCode = _codeGenService.GeneratePhoneCallCode(SelectedPhoneCall);
+                }
                 else if (SelectedPhoneApp != null)
                 {
                     GeneratedCode = _codeGenService.GeneratePhoneAppCode(SelectedPhoneApp);
@@ -1852,7 +2011,7 @@ namespace Schedule1ModdingTool.ViewModels
 
         private void ExportGeneratedCode()
         {
-            if ((SelectedQuest == null && SelectedNpc == null && SelectedItemBlueprint == null && SelectedPhoneApp == null) || string.IsNullOrWhiteSpace(GeneratedCode))
+            if ((SelectedQuest == null && SelectedNpc == null && SelectedItemBlueprint == null && SelectedPhoneCall == null && SelectedPhoneApp == null) || string.IsNullOrWhiteSpace(GeneratedCode))
                 return;
 
             try
@@ -1863,6 +2022,8 @@ namespace Schedule1ModdingTool.ViewModels
                         ? $"{SelectedNpc.ClassName}.cs"
                         : SelectedItemBlueprint != null
                             ? $"{SelectedItemBlueprint.ClassName}.cs"
+                            : SelectedPhoneCall != null
+                                ? $"{SelectedPhoneCall.ClassName}.cs"
                             : $"{SelectedPhoneApp!.ClassName}.cs";
                 var suggestedName = AppUtils.MakeSafeFilename(fileName);
                 _projectService.ExportCode(GeneratedCode, suggestedName);
@@ -1930,7 +2091,7 @@ namespace Schedule1ModdingTool.ViewModels
                 // Regenerate code on UI thread before starting background work
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null)
+                    if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null)
                     {
                         RegenerateCode();
                     }
@@ -2376,7 +2537,8 @@ namespace Schedule1ModdingTool.ViewModels
                 project.Quests.Count,
                 project.Npcs.Count,
                 GetVisibleItemCount(project),
-                GetCustomClothingCount(project));
+                GetCustomClothingCount(project),
+                project.PhoneCalls.Count);
         }
 
         private static int GetVisibleItemCount(QuestProject project) =>
@@ -2403,6 +2565,7 @@ namespace Schedule1ModdingTool.ViewModels
             CurrentProject.Quests.Count > 0 ||
             CurrentProject.Npcs.Count > 0 ||
             CurrentProject.Items.Count > 0 ||
+            CurrentProject.PhoneCalls.Count > 0 ||
             CurrentProject.PhoneApps.Count > 0 ||
             CurrentProject.Resources.Count > 0;
 
@@ -2504,6 +2667,7 @@ namespace Schedule1ModdingTool.ViewModels
             var selectedQuestId = SelectedQuest?.QuestId;
             var selectedNpcId = SelectedNpc?.NpcId;
             var selectedItemId = SelectedItemBlueprint?.ItemId;
+            var selectedPhoneCallId = SelectedPhoneCall?.CallId;
             var selectedPhoneAppName = SelectedPhoneApp?.AppName;
             
             var restoredProject = _undoRedoService.Undo(CurrentProject);
@@ -2530,7 +2694,7 @@ namespace Schedule1ModdingTool.ViewModels
                     _wasModifiedBeforeChange = CurrentProject.IsModified;
                     
                     // Restore selected quest/NPC references to point to new objects
-                    RestoreSelectedElements(selectedQuestId, selectedNpcId, selectedItemId, selectedPhoneAppName);
+                    RestoreSelectedElements(selectedQuestId, selectedNpcId, selectedItemId, selectedPhoneCallId, selectedPhoneAppName);
                     
                     // Update open tabs to reference new objects
                     UpdateOpenTabsReferences();
@@ -2542,7 +2706,7 @@ namespace Schedule1ModdingTool.ViewModels
                     UpdateProcessState();
                     
                     // Regenerate code if needed
-                    if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null)
+                    if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null)
                     {
                         RegenerateCode();
                     }
@@ -2563,6 +2727,7 @@ namespace Schedule1ModdingTool.ViewModels
             var selectedQuestId = SelectedQuest?.QuestId;
             var selectedNpcId = SelectedNpc?.NpcId;
             var selectedItemId = SelectedItemBlueprint?.ItemId;
+            var selectedPhoneCallId = SelectedPhoneCall?.CallId;
             var selectedPhoneAppName = SelectedPhoneApp?.AppName;
             
             var restoredProject = _undoRedoService.Redo(CurrentProject);
@@ -2589,7 +2754,7 @@ namespace Schedule1ModdingTool.ViewModels
                     _wasModifiedBeforeChange = CurrentProject.IsModified;
                     
                     // Restore selected quest/NPC references to point to new objects
-                    RestoreSelectedElements(selectedQuestId, selectedNpcId, selectedItemId, selectedPhoneAppName);
+                    RestoreSelectedElements(selectedQuestId, selectedNpcId, selectedItemId, selectedPhoneCallId, selectedPhoneAppName);
                     
                     // Update open tabs to reference new objects
                     UpdateOpenTabsReferences();
@@ -2601,7 +2766,7 @@ namespace Schedule1ModdingTool.ViewModels
                     UpdateProcessState();
                     
                     // Regenerate code if needed
-                    if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneApp != null)
+                    if (SelectedQuest != null || SelectedNpc != null || SelectedItemBlueprint != null || SelectedPhoneCall != null || SelectedPhoneApp != null)
                     {
                         RegenerateCode();
                     }
@@ -2616,7 +2781,7 @@ namespace Schedule1ModdingTool.ViewModels
         /// <summary>
         /// Restores SelectedQuest and SelectedNpc references to point to objects in the restored project
         /// </summary>
-        private void RestoreSelectedElements(string? selectedQuestId, string? selectedNpcId, string? selectedItemId, string? selectedPhoneAppName)
+        private void RestoreSelectedElements(string? selectedQuestId, string? selectedNpcId, string? selectedItemId, string? selectedPhoneCallId, string? selectedPhoneAppName)
         {
             // Restore selected quest if it existed before
             if (!string.IsNullOrEmpty(selectedQuestId))
@@ -2647,7 +2812,7 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 SelectedQuest = null;
             }
-            else if (!string.IsNullOrEmpty(selectedPhoneAppName))
+            else if (!string.IsNullOrEmpty(selectedPhoneCallId) || !string.IsNullOrEmpty(selectedPhoneAppName))
             {
                 SelectedQuest = null;
             }
@@ -2681,7 +2846,7 @@ namespace Schedule1ModdingTool.ViewModels
                 // Only clear NPC if we're restoring a quest
                 SelectedNpc = null;
             }
-            else if (!string.IsNullOrEmpty(selectedPhoneAppName))
+            else if (!string.IsNullOrEmpty(selectedPhoneCallId) || !string.IsNullOrEmpty(selectedPhoneAppName))
             {
                 SelectedNpc = null;
             }
@@ -2701,9 +2866,28 @@ namespace Schedule1ModdingTool.ViewModels
                     SelectedItemBlueprint = null;
                 }
             }
-            else if (!string.IsNullOrEmpty(selectedQuestId) || !string.IsNullOrEmpty(selectedNpcId) || !string.IsNullOrEmpty(selectedPhoneAppName))
+            else if (!string.IsNullOrEmpty(selectedQuestId) || !string.IsNullOrEmpty(selectedNpcId) || !string.IsNullOrEmpty(selectedPhoneCallId) || !string.IsNullOrEmpty(selectedPhoneAppName))
             {
                 SelectedItemBlueprint = null;
+            }
+
+            if (!string.IsNullOrEmpty(selectedPhoneCallId))
+            {
+                var restoredPhoneCall = CurrentProject.PhoneCalls.FirstOrDefault(call => call.CallId == selectedPhoneCallId);
+                if (restoredPhoneCall != null)
+                {
+                    _selectedPhoneCall = null;
+                    OnPropertyChanged(nameof(SelectedPhoneCall));
+                    SelectedPhoneCall = restoredPhoneCall;
+                }
+                else
+                {
+                    SelectedPhoneCall = null;
+                }
+            }
+            else if (!string.IsNullOrEmpty(selectedQuestId) || !string.IsNullOrEmpty(selectedNpcId) || !string.IsNullOrEmpty(selectedItemId))
+            {
+                SelectedPhoneCall = null;
             }
 
             if (!string.IsNullOrEmpty(selectedPhoneAppName))
@@ -2720,7 +2904,7 @@ namespace Schedule1ModdingTool.ViewModels
                     SelectedPhoneApp = null;
                 }
             }
-            else if (!string.IsNullOrEmpty(selectedQuestId) || !string.IsNullOrEmpty(selectedNpcId) || !string.IsNullOrEmpty(selectedItemId))
+            else if (!string.IsNullOrEmpty(selectedQuestId) || !string.IsNullOrEmpty(selectedNpcId) || !string.IsNullOrEmpty(selectedItemId) || !string.IsNullOrEmpty(selectedPhoneCallId))
             {
                 SelectedPhoneApp = null;
             }
@@ -2769,6 +2953,18 @@ namespace Schedule1ModdingTool.ViewModels
                     if (restoredItem != null)
                     {
                         tab.Item = restoredItem;
+                    }
+                    else
+                    {
+                        tabsToClose.Add(tab);
+                    }
+                }
+                else if (tab.PhoneCall != null)
+                {
+                    var restoredPhoneCall = CurrentProject.PhoneCalls.FirstOrDefault(call => call.CallId == tab.PhoneCall.CallId);
+                    if (restoredPhoneCall != null)
+                    {
+                        tab.PhoneCall = restoredPhoneCall;
                     }
                     else
                     {
@@ -2831,6 +3027,12 @@ namespace Schedule1ModdingTool.ViewModels
                 item.PropertyChanged += OnElementPropertyChanged;
             }
 
+            foreach (var phoneCall in CurrentProject.PhoneCalls)
+            {
+                phoneCall.PropertyChanged -= OnElementPropertyChanged;
+                phoneCall.PropertyChanged += OnElementPropertyChanged;
+            }
+
             foreach (var phoneApp in CurrentProject.PhoneApps)
             {
                 phoneApp.PropertyChanged -= OnElementPropertyChanged;
@@ -2863,6 +3065,11 @@ namespace Schedule1ModdingTool.ViewModels
             foreach (var item in CurrentProject.Items)
             {
                 item.PropertyChanged -= OnElementPropertyChanged;
+            }
+
+            foreach (var phoneCall in CurrentProject.PhoneCalls)
+            {
+                phoneCall.PropertyChanged -= OnElementPropertyChanged;
             }
 
             foreach (var phoneApp in CurrentProject.PhoneApps)
@@ -2982,6 +3189,12 @@ namespace Schedule1ModdingTool.ViewModels
                 _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
                 RebuildAvailableItemReferences();
                 RefreshShopCompatibilityPreviews();
+            }
+            else if (e.PropertyName == nameof(QuestProject.PhoneCalls))
+            {
+                SubscribeToElementPropertyChanges();
+                UpdateNavigationElementCounts(CurrentProject);
+                _navigationService.UpdateWorkspaceProjectInfo(CurrentProject);
             }
             else if (e.PropertyName == nameof(QuestProject.PhoneApps))
             {

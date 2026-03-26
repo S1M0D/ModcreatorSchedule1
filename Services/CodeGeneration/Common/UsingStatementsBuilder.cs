@@ -112,6 +112,30 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         }
 
         /// <summary>
+        /// Adds standard using statements for phone call code generation.
+        /// Includes S1API phone-call wrappers, trigger helpers, quest setters, and common System namespaces.
+        /// </summary>
+        public UsingStatementsBuilder AddPhoneCallUsings()
+        {
+            return Add(
+                "System",
+                "System.IO",
+                "System.Linq",
+                "System.Reflection",
+                "MelonLoader",
+                "S1API.Conditions",
+                "S1API.Entities",
+                "S1API.PhoneCalls",
+                "S1API.PhoneCalls.Constants",
+                "S1API.Quests",
+                "S1API.Quests.Constants",
+                "S1API.Quests.Identifiers",
+                "S1API.Utils",
+                "UnityEngine"
+            );
+        }
+
+        /// <summary>
         /// Adds standard using statements for phone app code generation.
         /// Includes S1API phone UI helpers, Unity UI, and the Schedule I ExitAction type.
         /// </summary>

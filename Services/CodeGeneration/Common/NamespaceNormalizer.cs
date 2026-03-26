@@ -11,6 +11,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         private const string DefaultNamespace = "Schedule1Mods.Quests";
         private const string DefaultNpcNamespace = "Schedule1Mods.NPCs";
         private const string DefaultItemNamespace = "Schedule1Mods.Items";
+        private const string DefaultPhoneCallNamespace = "Schedule1Mods.PhoneCalls";
         private const string DefaultPhoneAppNamespace = "Schedule1Mods.PhoneApps";
 
         /// <summary>
@@ -79,6 +80,15 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Common
         public static string NormalizeForItem(string? namespaceValue)
         {
             return Normalize(namespaceValue, DefaultItemNamespace);
+        }
+
+        /// <summary>
+        /// Normalizes a namespace for phone call code generation.
+        /// Uses a default phone-call-specific namespace if input is invalid.
+        /// </summary>
+        public static string NormalizeForPhoneCall(string? namespaceValue)
+        {
+            return Normalize(namespaceValue, DefaultPhoneCallNamespace);
         }
 
         /// <summary>

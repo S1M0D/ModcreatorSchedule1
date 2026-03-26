@@ -125,6 +125,7 @@ namespace Schedule1ModdingTool.Services
                 ModCategory.NPCs => "NPCS",
                 ModCategory.CustomClothing => "CUSTOM CLOTHING",
                 ModCategory.Items => "ITEMS",
+                ModCategory.PhoneCalls => "PHONE CALLS",
                 _ => "MOD ELEMENTS"
             };
         }
@@ -136,7 +137,7 @@ namespace Schedule1ModdingTool.Services
         public void UpdateWorkspaceProjectInfo(QuestProject project)
         {
             var projectName = string.IsNullOrEmpty(project.ProjectName) ? "Untitled Project" : project.ProjectName;
-            var totalElements = project.Quests.Count + project.Npcs.Count + project.Items.Count;
+            var totalElements = project.Quests.Count + project.Npcs.Count + project.Items.Count + project.PhoneCalls.Count;
             _workspaceViewModel.ProjectInfo = $"{projectName}: {totalElements} mod elements";
         }
 
@@ -146,12 +147,13 @@ namespace Schedule1ModdingTool.Services
         /// <param name="questCount">Number of quests.</param>
         /// <param name="npcCount">Number of NPCs.</param>
         /// <param name="itemCount">Number of items.</param>
-        public void UpdateElementCounts(int questCount, int npcCount, int itemCount, int customClothingCount)
+        public void UpdateElementCounts(int questCount, int npcCount, int itemCount, int customClothingCount, int phoneCallCount)
         {
             _workspaceViewModel.UpdateQuestCount(questCount);
             _workspaceViewModel.UpdateNpcCount(npcCount);
             _workspaceViewModel.UpdateItemCount(itemCount);
             _workspaceViewModel.UpdateCustomClothingCount(customClothingCount);
+            _workspaceViewModel.UpdatePhoneCallCount(phoneCallCount);
         }
     }
 }

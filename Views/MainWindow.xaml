@@ -33,6 +33,10 @@
 			<views:ItemPropertiesControl
 				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
 		</DataTemplate>
+		<DataTemplate x:Key="PhoneCallEditorTemplate">
+			<views:PhoneCallPropertiesControl
+				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
+		</DataTemplate>
 		<DataTemplate x:Key="PhoneAppEditorTemplate">
 			<views:PhoneAppPropertiesControl
 				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
@@ -45,6 +49,7 @@
 		                                     QuestTemplate="{StaticResource QuestEditorTemplate}"
 		                                     NpcTemplate="{StaticResource NpcEditorTemplate}"
 		                                     ItemTemplate="{StaticResource ItemEditorTemplate}"
+		                                     PhoneCallTemplate="{StaticResource PhoneCallEditorTemplate}"
 		                                     PhoneAppTemplate="{StaticResource PhoneAppEditorTemplate}"
 		                                     WorkspaceTemplate="{StaticResource WorkspaceEditorTemplate}" />
 	</Window.Resources>
@@ -241,6 +246,13 @@
 						<MenuItem Header="Custom Clothing" Click="AddCustomClothingMenuItem_Click" InputGestureText="Ctrl+Shift+C" Style="{StaticResource DarkMenuItemStyle}">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Phone Call" Click="AddPhoneCallMenuItem_Click" InputGestureText="Ctrl+Shift+P" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource PhoneAppsIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>

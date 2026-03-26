@@ -120,7 +120,7 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             // Create new tab
-            var tab = new OpenElementTab { Quest = quest, Npc = null, Item = null, PhoneApp = null };
+            var tab = new OpenElementTab { Quest = quest, Npc = null, Item = null, PhoneCall = null, PhoneApp = null };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }
@@ -161,6 +161,25 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             var tab = new OpenElementTab { Item = item };
+            _openTabs.Add(tab);
+            SelectedTab = tab;
+        }
+
+        /// <summary>
+        /// Opens a phone call in a tab, or activates it if already open.
+        /// </summary>
+        public void OpenPhoneCallInTab(PhoneCallBlueprint phoneCall)
+        {
+            var existingTab = _openTabs.FirstOrDefault(t => t.PhoneCall == phoneCall);
+            if (existingTab != null)
+            {
+                SelectedTab = existingTab;
+                return;
+            }
+
+            EnsureWorkspaceTabExists();
+
+            var tab = new OpenElementTab { PhoneCall = phoneCall };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }

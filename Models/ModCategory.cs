@@ -9,6 +9,7 @@ namespace Schedule1ModdingTool.Models
         NPCs,
         CustomClothing,
         Items,
+        PhoneCalls,
         PhoneApps
     }
     

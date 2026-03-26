@@ -349,6 +349,9 @@ namespace Schedule1ModdingTool.Views
 
             // Ctrl+Shift+C - New Custom Clothing
             InputBindings.Add(new KeyBinding(vm.NewCustomClothingCommand, Key.C, ModifierKeys.Control | ModifierKeys.Shift));
+
+            // Ctrl+Shift+P - New Phone Call
+            InputBindings.Add(new KeyBinding(vm.NewPhoneCallCommand, Key.P, ModifierKeys.Control | ModifierKeys.Shift));
             
             // Ctrl+D - Duplicate Selected
             InputBindings.Add(new KeyBinding(vm.DuplicateSelectedCommand, Key.D, ModifierKeys.Control));
@@ -449,6 +452,14 @@ namespace Schedule1ModdingTool.Views
             if (DataContext is MainViewModel vm)
             {
                 vm.NewCustomClothingCommand.Execute(null);
+            }
+        }
+
+        private void AddPhoneCallMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.NewPhoneCallCommand.Execute(null);
             }
         }
 

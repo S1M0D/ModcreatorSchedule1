@@ -1,0 +1,319 @@
+<UserControl x:Class="Schedule1ModdingTool.Views.PhoneCallPropertiesControl"
+             x:Name="Root"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:Schedule1ModdingTool.Models"
+             xmlns:views="clr-namespace:Schedule1ModdingTool.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="720" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+        <DataTemplate x:Key="PhoneCallVariableSetterTemplate" DataType="{x:Type models:PhoneCallVariableSetterBlueprint}">
+            <Border BorderBrush="#44363F4A" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Column="0"
+                              ItemsSource="{x:Static models:PhoneCallBlueprintOptions.TriggerEvaluations}"
+                              SelectedItem="{Binding Evaluation, UpdateSourceTrigger=PropertyChanged}"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Margin="0,0,8,0" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding VariableName, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"
+                             Margin="0,0,8,0" />
+                    <TextBox Grid.Column="2"
+                             Text="{Binding NewValue, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"
+                             Margin="0,0,8,0" />
+                    <Button Grid.Column="3"
+                            Content="Remove"
+                            Tag="{Binding}"
+                            Click="RemoveVariableSetter_Click"
+                            Style="{StaticResource IconButtonStyle}" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PhoneCallQuestSetterTemplate" DataType="{x:Type models:PhoneCallQuestSetterBlueprint}">
+            <Border BorderBrush="#44363F4A" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{x:Static models:PhoneCallBlueprintOptions.QuestTargetModes}"
+                                  SelectedItem="{Binding QuestTargetMode, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource ComboBoxStyle}"
+                                  Margin="0,0,8,8" />
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{x:Static models:PhoneCallBlueprintOptions.TriggerEvaluations}"
+                                  SelectedItem="{Binding Evaluation, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource ComboBoxStyle}"
+                                  Margin="0,0,8,8" />
+                        <Button Grid.Column="2"
+                                Content="Remove"
+                                Tag="{Binding}"
+                                Click="RemoveQuestSetter_Click"
+                                Style="{StaticResource IconButtonStyle}"
+                                Margin="0,0,0,8" />
+                    </Grid>
+
+                    <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Quests, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                              DisplayMemberPath="DisplayName"
+                              SelectedValuePath="QuestId"
+                              SelectedValue="{Binding QuestId, UpdateSourceTrigger=PropertyChanged}"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Visibility="{Binding UsesProjectQuest, Converter={StaticResource BoolToVisibilityConverter}}"
+                              IsEditable="True" />
+
+                    <ComboBox ItemsSource="{Binding BaseGameQuests, ElementName=Root}"
+                              DisplayMemberPath="DisplayName"
+                              SelectedValuePath="IdentifierName"
+                              SelectedValue="{Binding QuestId, UpdateSourceTrigger=PropertyChanged}"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Visibility="{Binding UsesBaseGameQuest, Converter={StaticResource BoolToVisibilityConverter}}"
+                              IsEditable="True" />
+
+                    <WrapPanel Margin="0,8,0,0">
+                        <CheckBox Content="Set Quest Action"
+                                  IsChecked="{Binding SetQuestAction, UpdateSourceTrigger=PropertyChanged}"
+                                  Foreground="{StaticResource LightTextBrush}"
+                                  Margin="0,0,12,0" />
+                        <CheckBox Content="Set Quest Entry State"
+                                  IsChecked="{Binding SetQuestEntryState, UpdateSourceTrigger=PropertyChanged}"
+                                  Foreground="{StaticResource LightTextBrush}" />
+                    </WrapPanel>
+
+                    <ComboBox ItemsSource="{x:Static models:PhoneCallBlueprintOptions.QuestActions}"
+                              SelectedItem="{Binding QuestAction, UpdateSourceTrigger=PropertyChanged}"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Visibility="{Binding SetQuestAction, Converter={StaticResource BoolToVisibilityConverter}}"
+                              Margin="0,8,0,0" />
+
+                    <Grid Visibility="{Binding SetQuestEntryState, Converter={StaticResource BoolToVisibilityConverter}}"
+                          Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding QuestEntryIndex, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource TextBoxStyle}"
+                                 Margin="0,0,8,0" />
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{x:Static models:PhoneCallBlueprintOptions.QuestStates}"
+                                  SelectedItem="{Binding QuestEntryState, UpdateSourceTrigger=PropertyChanged}"
+                                  Style="{StaticResource ComboBoxStyle}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PhoneCallTriggerTemplate" DataType="{x:Type models:PhoneCallSystemTriggerBlueprint}">
+            <Border Background="#221C2430" BorderBrush="#44363F4A" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,10">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" DockPanel.Dock="Left" />
+                        <Button Content="Remove"
+                                Style="{StaticResource IconButtonStyle}"
+                                Tag="{Binding}"
+                                DockPanel.Dock="Right"
+                                Click="RemoveTrigger_Click" />
+                    </DockPanel>
+
+                    <Label Content="Trigger Name" Style="{StaticResource LabelStyle}" />
+                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                    <DockPanel Margin="0,12,0,8">
+                        <TextBlock Text="Variable Setters" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" DockPanel.Dock="Left" />
+                        <Button Content="+ Variable Setter"
+                                DockPanel.Dock="Right"
+                                Style="{StaticResource IconButtonStyle}"
+                                Tag="{Binding}"
+                                Click="AddVariableSetter_Click" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding VariableSetters}" ItemTemplate="{StaticResource PhoneCallVariableSetterTemplate}" />
+
+                    <DockPanel Margin="0,8,0,8">
+                        <TextBlock Text="Quest Setters" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" DockPanel.Dock="Left" />
+                        <Button Content="+ Quest Setter"
+                                DockPanel.Dock="Right"
+                                Style="{StaticResource IconButtonStyle}"
+                                Tag="{Binding}"
+                                Click="AddQuestSetter_Click" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding QuestSetters}" ItemTemplate="{StaticResource PhoneCallQuestSetterTemplate}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Margin="8">
+        <TabControl Style="{StaticResource EditorTabControlStyle}" VerticalAlignment="Stretch">
+            <TabItem Header="Overview">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <WrapPanel Margin="12" DataContext="{Binding SelectedPhoneCall}">
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="340" MaxWidth="520">
+                            <StackPanel Margin="12">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Identity" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,8,0" />
+                                    <views:InfoIcon TooltipText="Phone calls generate PhoneCallDefinition subclasses. Keep Class Name and Call ID unique so Core can create and queue the right call." />
+                                </StackPanel>
+                                <Label Content="Class Name" Style="{StaticResource LabelStyle}" Margin="0,12,0,0" />
+                                <TextBox Text="{Binding ClassName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                <Label Content="Namespace" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <TextBox Text="{Binding Namespace, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                <Label Content="Call ID" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <TextBox Text="{Binding CallId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                <Label Content="Call Title" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <TextBox Text="{Binding CallTitle, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                <CheckBox Margin="0,12,0,0"
+                                          Content="Generate Hook Scaffold"
+                                          IsChecked="{Binding GenerateHookScaffold, UpdateSourceTrigger=PropertyChanged}"
+                                          Foreground="{StaticResource LightTextBrush}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="340" MaxWidth="520">
+                            <StackPanel Margin="12">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Caller &amp; Queue" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,8,0" />
+                                    <views:InfoIcon TooltipText="Use Custom Caller for a raw name and optional icon. Use NPC Caller for a runtime lookup through NPC.All. Queue Mode controls whether Core auto-queues the call or leaves it manual." />
+                                </StackPanel>
+                                <Label Content="Caller Mode" Style="{StaticResource LabelStyle}" Margin="0,12,0,0" />
+                                <ComboBox ItemsSource="{x:Static models:PhoneCallBlueprintOptions.CallerModes}"
+                                          SelectedItem="{Binding CallerMode, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource ComboBoxStyle}" />
+
+                                <StackPanel Visibility="{Binding UsesCustomCaller, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Label Content="Caller Name" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding CallerName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                    <Label Content="Caller Icon Resource" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Resources, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              DisplayMemberPath="RelativePath"
+                                              SelectedValuePath="RelativePath"
+                                              SelectedValue="{Binding CallerIconResourcePath, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource ComboBoxStyle}"
+                                              IsEditable="True" />
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding UsesNpcCaller, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <Label Content="NPC Caller ID" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Npcs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              DisplayMemberPath="DisplayName"
+                                              SelectedValuePath="NpcId"
+                                              SelectedValue="{Binding CallerNpcId, UpdateSourceTrigger=PropertyChanged}"
+                                              Style="{StaticResource ComboBoxStyle}"
+                                              IsEditable="True" />
+                                </StackPanel>
+
+                                <Label Content="Queue Mode" Style="{StaticResource LabelStyle}" Margin="0,12,0,0" />
+                                <ComboBox ItemsSource="{x:Static models:PhoneCallBlueprintOptions.QueueModes}"
+                                          SelectedItem="{Binding QueueMode, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource ComboBoxStyle}" />
+                                <Label Content="Queue Delay (seconds)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                <TextBox Text="{Binding QueueDelaySeconds, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="320" MaxWidth="460">
+                            <StackPanel Margin="12">
+                                <TextBlock Text="S1API Notes" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,0,12" />
+                                <TextBlock TextWrapping="Wrap"
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           Text="Each stage maps to AddStage(text). Start triggers fire when the stage begins, and Done triggers fire when the player advances past it." />
+                                <TextBlock Margin="0,12,0,0"
+                                           TextWrapping="Wrap"
+                                           Foreground="{StaticResource DimTextBrush}"
+                                           Text="Trigger setters can change save variables or quest state without writing code. If you need more runtime logic, keep hook generation enabled and extend the generated partial class." />
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Stages">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="12">
+                        <DockPanel Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                <TextBlock Text="Stages &amp; Triggers" Style="{StaticResource PanelHeaderStyle}" Margin="0,0,8,0" />
+                                <views:InfoIcon TooltipText="Stages are the readable call flow. Use Start Triggers for 'when this stage opens' logic and Done Triggers for 'after the player finishes this stage' logic." />
+                            </StackPanel>
+                            <Button Content="+ Add Stage"
+                                    DockPanel.Dock="Right"
+                                    Style="{StaticResource IconButtonStyle}"
+                                    Click="AddStage_Click" />
+                        </DockPanel>
+
+                        <ItemsControl ItemsSource="{Binding SelectedPhoneCall.Stages}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type models:PhoneCallStageBlueprint}">
+                                    <Border Style="{StaticResource PanelStyle}" Margin="0,0,0,12">
+                                        <StackPanel Margin="12">
+                                            <DockPanel Margin="0,0,0,12">
+                                                <TextBlock Text="{Binding DisplayName}" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left" />
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                    <Button Content="Duplicate"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Margin="0,0,8,0"
+                                                            Tag="{Binding}"
+                                                            Click="DuplicateStage_Click" />
+                                                    <Button Content="Remove"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Tag="{Binding}"
+                                                            Click="RemoveStage_Click" />
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <Label Content="Stage Name" Style="{StaticResource LabelStyle}" />
+                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                            <Label Content="Stage Text" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                            <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource TextBoxStyle}"
+                                                     AcceptsReturn="True"
+                                                     TextWrapping="Wrap"
+                                                     MinHeight="70" />
+
+                                            <DockPanel Margin="0,12,0,8">
+                                                <TextBlock Text="Start Triggers" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" DockPanel.Dock="Left" />
+                                                <Button Content="+ Add Start Trigger"
+                                                        DockPanel.Dock="Right"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Tag="{Binding}"
+                                                        Click="AddStartTrigger_Click" />
+                                            </DockPanel>
+                                            <ItemsControl ItemsSource="{Binding StartTriggers}" ItemTemplate="{StaticResource PhoneCallTriggerTemplate}" />
+
+                                            <DockPanel Margin="0,12,0,8">
+                                                <TextBlock Text="Done Triggers" FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" DockPanel.Dock="Left" />
+                                                <Button Content="+ Add Done Trigger"
+                                                        DockPanel.Dock="Right"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Tag="{Binding}"
+                                                        Click="AddDoneTrigger_Click" />
+                                            </DockPanel>
+                                            <ItemsControl ItemsSource="{Binding DoneTriggers}" ItemTemplate="{StaticResource PhoneCallTriggerTemplate}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

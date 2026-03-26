@@ -4,6 +4,7 @@ using Schedule1ModdingTool.Services.CodeGeneration.Abstractions;
 using Schedule1ModdingTool.Services.CodeGeneration.Item;
 using Schedule1ModdingTool.Services.CodeGeneration.Quest;
 using Schedule1ModdingTool.Services.CodeGeneration.Npc;
+using Schedule1ModdingTool.Services.CodeGeneration.PhoneCall;
 using Schedule1ModdingTool.Services.CodeGeneration.PhoneApp;
 
 namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
@@ -18,13 +19,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
         private readonly ICodeGenerator<QuestBlueprint> _questGenerator;
         private readonly ICodeGenerator<NpcBlueprint> _npcGenerator;
         private readonly ICodeGenerator<ItemBlueprint> _itemGenerator;
+        private readonly ICodeGenerator<PhoneCallBlueprint> _phoneCallGenerator;
         private readonly ICodeGenerator<PhoneAppBlueprint> _phoneAppGenerator;
 
         /// <summary>
         /// Creates a new orchestrator with default generators.
         /// </summary>
         public CodeGenerationOrchestrator()
-            : this(null, null, null, null)
+            : this(null, null, null, null, null)
         {
         }
 
@@ -37,11 +39,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
             ICodeGenerator<QuestBlueprint>? questGenerator = null,
             ICodeGenerator<NpcBlueprint>? npcGenerator = null,
             ICodeGenerator<ItemBlueprint>? itemGenerator = null,
+            ICodeGenerator<PhoneCallBlueprint>? phoneCallGenerator = null,
             ICodeGenerator<PhoneAppBlueprint>? phoneAppGenerator = null)
         {
             _questGenerator = questGenerator ?? new QuestCodeGenerator();
             _npcGenerator = npcGenerator ?? new NpcCodeGenerator();
             _itemGenerator = itemGenerator ?? new ItemCodeGenerator();
+            _phoneCallGenerator = phoneCallGenerator ?? new PhoneCallCodeGenerator();
             _phoneAppGenerator = phoneAppGenerator ?? new PhoneAppCodeGenerator();
         }
 
@@ -82,6 +86,17 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
                 throw new ArgumentNullException(nameof(item));
 
             return _itemGenerator.GenerateCode(item);
+        }
+
+        /// <summary>
+        /// Generates complete C# source code for a phone call blueprint.
+        /// </summary>
+        public string GeneratePhoneCallCode(PhoneCallBlueprint phoneCall)
+        {
+            if (phoneCall == null)
+                throw new ArgumentNullException(nameof(phoneCall));
+
+            return _phoneCallGenerator.GenerateCode(phoneCall);
         }
 
         /// <summary>
@@ -142,6 +157,21 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
                 };
 
             return _itemGenerator.Validate(item);
+        }
+
+        /// <summary>
+        /// Validates a phone call blueprint before generation.
+        /// </summary>
+        public CodeGenerationValidationResult ValidatePhoneCall(PhoneCallBlueprint phoneCall)
+        {
+            if (phoneCall == null)
+                return new CodeGenerationValidationResult
+                {
+                    IsValid = false,
+                    Errors = { "Phone call blueprint cannot be null" }
+                };
+
+            return _phoneCallGenerator.Validate(phoneCall);
         }
 
         /// <summary>

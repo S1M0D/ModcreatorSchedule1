@@ -20,6 +20,7 @@ namespace Schedule1ModdingTool.Models
         private readonly HashSet<NpcBlueprint> _trackedNpcs = new HashSet<NpcBlueprint>();
         private readonly HashSet<ItemBlueprint> _trackedItems = new HashSet<ItemBlueprint>();
         private readonly HashSet<PhoneAppBlueprint> _trackedPhoneApps = new HashSet<PhoneAppBlueprint>();
+        private readonly HashSet<PhoneCallBlueprint> _trackedPhoneCalls = new HashSet<PhoneCallBlueprint>();
         private readonly HashSet<ResourceAsset> _trackedResources = new HashSet<ResourceAsset>();
         private readonly HashSet<ModFolder> _trackedFolders = new HashSet<ModFolder>();
         private bool _suppressNotifications;
@@ -95,6 +96,9 @@ namespace Schedule1ModdingTool.Models
         [JsonProperty("phoneApps")]
         public ObservableCollection<PhoneAppBlueprint> PhoneApps { get; } = new ObservableCollection<PhoneAppBlueprint>();
 
+        [JsonProperty("phoneCalls")]
+        public ObservableCollection<PhoneCallBlueprint> PhoneCalls { get; } = new ObservableCollection<PhoneCallBlueprint>();
+
         [JsonProperty("resources")]
         public ObservableCollection<ResourceAsset> Resources { get; } = new ObservableCollection<ResourceAsset>();
 
@@ -120,6 +124,7 @@ namespace Schedule1ModdingTool.Models
             Npcs.CollectionChanged += OnNpcsCollectionChanged;
             Items.CollectionChanged += OnItemsCollectionChanged;
             PhoneApps.CollectionChanged += OnPhoneAppsCollectionChanged;
+            PhoneCalls.CollectionChanged += OnPhoneCallsCollectionChanged;
             Folders.CollectionChanged += OnFoldersCollectionChanged;
             Resources.CollectionChanged += OnResourcesCollectionChanged;
             EnsureRootFolder();
@@ -164,6 +169,16 @@ namespace Schedule1ModdingTool.Models
         public void RemovePhoneApp(PhoneAppBlueprint phoneApp)
         {
             PhoneApps.Remove(phoneApp);
+        }
+
+        public void AddPhoneCall(PhoneCallBlueprint phoneCall)
+        {
+            PhoneCalls.Add(phoneCall);
+        }
+
+        public void RemovePhoneCall(PhoneCallBlueprint phoneCall)
+        {
+            PhoneCalls.Remove(phoneCall);
         }
 
         public void AddResource(ResourceAsset asset)
@@ -235,7 +250,8 @@ namespace Schedule1ModdingTool.Models
                     var firstNamespace = project.Quests.FirstOrDefault()?.Namespace
                         ?? project.Items.FirstOrDefault()?.Namespace
                         ?? project.Npcs.FirstOrDefault()?.Namespace
-                        ?? project.PhoneApps.FirstOrDefault()?.Namespace;
+                        ?? project.PhoneApps.FirstOrDefault()?.Namespace
+                        ?? project.PhoneCalls.FirstOrDefault()?.Namespace;
 
                     if (!string.IsNullOrWhiteSpace(firstNamespace))
                     {
@@ -254,6 +270,7 @@ namespace Schedule1ModdingTool.Models
                 project.AttachExistingNpcHandlers();
                 project.AttachExistingItemHandlers();
                 project.AttachExistingPhoneAppHandlers();
+                project.AttachExistingPhoneCallHandlers();
                 project.AttachExistingFolderHandlers();
                 project.AttachExistingResourceHandlers();
                 project.EnsureRootFolder();
@@ -268,7 +285,8 @@ namespace Schedule1ModdingTool.Models
             if (namespaceValue.EndsWith(".Quests", StringComparison.Ordinal) ||
                 namespaceValue.EndsWith(".NPCs", StringComparison.Ordinal) ||
                 namespaceValue.EndsWith(".Items", StringComparison.Ordinal) ||
-                namespaceValue.EndsWith(".PhoneApps", StringComparison.Ordinal))
+                namespaceValue.EndsWith(".PhoneApps", StringComparison.Ordinal) ||
+                namespaceValue.EndsWith(".PhoneCalls", StringComparison.Ordinal))
             {
                 var lastDot = namespaceValue.LastIndexOf('.');
                 return lastDot > 0 ? namespaceValue.Substring(0, lastDot) : namespaceValue;
@@ -447,6 +465,15 @@ namespace Schedule1ModdingTool.Models
             phoneApp.PropertyChanged += PhoneAppOnPropertyChanged;
         }
 
+        private void AttachPhoneCallHandlers(PhoneCallBlueprint phoneCall)
+        {
+            if (_trackedPhoneCalls.Contains(phoneCall))
+                return;
+
+            _trackedPhoneCalls.Add(phoneCall);
+            phoneCall.PropertyChanged += PhoneCallOnPropertyChanged;
+        }
+
         private void DetachQuestHandlers(QuestBlueprint quest)
         {
             if (!_trackedQuests.Remove(quest))
@@ -576,6 +603,14 @@ namespace Schedule1ModdingTool.Models
                 return;
 
             phoneApp.PropertyChanged -= PhoneAppOnPropertyChanged;
+        }
+
+        private void DetachPhoneCallHandlers(PhoneCallBlueprint phoneCall)
+        {
+            if (!_trackedPhoneCalls.Remove(phoneCall))
+                return;
+
+            phoneCall.PropertyChanged -= PhoneCallOnPropertyChanged;
         }
 
         private void QuestOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -742,6 +777,12 @@ namespace Schedule1ModdingTool.Models
         {
             MarkAsModified();
             OnPropertyChanged(nameof(PhoneApps));
+        }
+
+        private void PhoneCallOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            MarkAsModified();
+            OnPropertyChanged(nameof(PhoneCalls));
         }
 
         private void OnObjectivesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -1348,6 +1389,14 @@ namespace Schedule1ModdingTool.Models
             }
         }
 
+        internal void AttachExistingPhoneCallHandlers()
+        {
+            foreach (var phoneCall in PhoneCalls)
+            {
+                AttachPhoneCallHandlers(phoneCall);
+            }
+        }
+
         internal void AttachExistingFolderHandlers()
         {
             foreach (var folder in Folders)
@@ -1405,6 +1454,11 @@ namespace Schedule1ModdingTool.Models
                 phoneApp.PropertyChanged -= PhoneAppOnPropertyChanged;
             }
 
+            foreach (var phoneCall in _trackedPhoneCalls.ToArray())
+            {
+                phoneCall.PropertyChanged -= PhoneCallOnPropertyChanged;
+            }
+
             foreach (var folder in _trackedFolders.ToArray())
             {
                 folder.PropertyChanged -= FolderOnPropertyChanged;
@@ -1420,6 +1474,7 @@ namespace Schedule1ModdingTool.Models
             _trackedNpcs.Clear();
             _trackedItems.Clear();
             _trackedPhoneApps.Clear();
+            _trackedPhoneCalls.Clear();
             _trackedFolders.Clear();
             _trackedResources.Clear();
             RebuildObjectiveTracking();
@@ -1427,6 +1482,7 @@ namespace Schedule1ModdingTool.Models
             AttachExistingNpcHandlers();
             AttachExistingItemHandlers();
             AttachExistingPhoneAppHandlers();
+            AttachExistingPhoneCallHandlers();
             AttachExistingFolderHandlers();
             AttachExistingResourceHandlers();
         }
@@ -1533,6 +1589,34 @@ namespace Schedule1ModdingTool.Models
             OnPropertyChanged(nameof(PhoneApps));
         }
 
+        private void OnPhoneCallsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is PhoneCallBlueprint blueprint)
+                    {
+                        AttachPhoneCallHandlers(blueprint);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is PhoneCallBlueprint blueprint)
+                    {
+                        DetachPhoneCallHandlers(blueprint);
+                    }
+                }
+            }
+
+            MarkAsModified();
+            OnPropertyChanged(nameof(PhoneCalls));
+        }
+
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
         {
@@ -1545,6 +1629,8 @@ namespace Schedule1ModdingTool.Models
             Items.CollectionChanged += OnItemsCollectionChanged;
             PhoneApps.CollectionChanged -= OnPhoneAppsCollectionChanged;
             PhoneApps.CollectionChanged += OnPhoneAppsCollectionChanged;
+            PhoneCalls.CollectionChanged -= OnPhoneCallsCollectionChanged;
+            PhoneCalls.CollectionChanged += OnPhoneCallsCollectionChanged;
             Folders.CollectionChanged -= OnFoldersCollectionChanged;
             Folders.CollectionChanged += OnFoldersCollectionChanged;
             Resources.CollectionChanged -= OnResourcesCollectionChanged;
@@ -1558,6 +1644,7 @@ namespace Schedule1ModdingTool.Models
             AttachExistingNpcHandlers();
             AttachExistingItemHandlers();
             AttachExistingPhoneAppHandlers();
+            AttachExistingPhoneCallHandlers();
             AttachExistingFolderHandlers();
             AttachExistingResourceHandlers();
             EnsureRootFolder();
@@ -1687,6 +1774,12 @@ namespace Schedule1ModdingTool.Models
             {
                 if (string.IsNullOrWhiteSpace(phoneApp.FolderId))
                     phoneApp.FolderId = RootFolderId;
+            }
+
+            foreach (var phoneCall in PhoneCalls)
+            {
+                if (string.IsNullOrWhiteSpace(phoneCall.FolderId))
+                    phoneCall.FolderId = RootFolderId;
             }
         }
     }

@@ -39,6 +39,7 @@ namespace Schedule1ModdingTool.Services
                 Directory.CreateDirectory(Path.Combine(modPath, "Quests"));
                 Directory.CreateDirectory(Path.Combine(modPath, "NPCs"));
                 Directory.CreateDirectory(Path.Combine(modPath, "Items"));
+                Directory.CreateDirectory(Path.Combine(modPath, "Saveables"));
                 Directory.CreateDirectory(Path.Combine(modPath, "PhoneCalls"));
                 Directory.CreateDirectory(Path.Combine(modPath, "Utils"));
                 Directory.CreateDirectory(Path.Combine(modPath, "Resources"));
@@ -47,6 +48,7 @@ namespace Schedule1ModdingTool.Services
                 var firstQuest = project.Quests.FirstOrDefault();
                 var firstNpc = project.Npcs.FirstOrDefault();
                 var firstItem = project.Items.FirstOrDefault();
+                var firstGlobalState = project.GlobalStates.FirstOrDefault();
                 var firstPhoneCall = project.PhoneCalls.FirstOrDefault();
                 var firstPhoneApp = project.PhoneApps.FirstOrDefault();
                 var hasQuests = project.Quests != null && project.Quests.Any();
@@ -57,7 +59,7 @@ namespace Schedule1ModdingTool.Services
                     Directory.CreateDirectory(Path.Combine(modPath, "PhoneApps"));
                 }
 
-                var discoveredNamespace = firstQuest?.Namespace ?? firstItem?.Namespace ?? firstNpc?.Namespace ?? firstPhoneCall?.Namespace ?? firstPhoneApp?.Namespace;
+                var discoveredNamespace = firstQuest?.Namespace ?? firstItem?.Namespace ?? firstGlobalState?.Namespace ?? firstNpc?.Namespace ?? firstPhoneCall?.Namespace ?? firstPhoneApp?.Namespace;
                 
                 // Use project namespace if set, otherwise derive from first quest or project name
                 string rootNamespace;
@@ -74,10 +76,10 @@ namespace Schedule1ModdingTool.Services
                         : MakeSafeIdentifier(project.ProjectName, "GeneratedMod"));
                     rootNamespace = TrimElementSuffix(modNamespace);
                 }
-                var modAuthor = firstQuest?.ModAuthor ?? firstItem?.ModAuthor ?? firstNpc?.ModAuthor ?? firstPhoneCall?.ModAuthor ?? firstPhoneApp?.ModAuthor ?? settings?.DefaultModAuthor ?? "Quest Creator";
-                var modVersion = firstQuest?.ModVersion ?? firstItem?.ModVersion ?? firstNpc?.ModVersion ?? firstPhoneCall?.ModVersion ?? firstPhoneApp?.ModVersion ?? settings?.DefaultModVersion ?? "1.0.0";
-                var gameStudio = firstQuest?.GameDeveloper ?? firstItem?.GameDeveloper ?? firstNpc?.GameDeveloper ?? firstPhoneCall?.GameDeveloper ?? firstPhoneApp?.GameDeveloper ?? "TVGS";
-                var gameName = firstQuest?.GameName ?? firstItem?.GameName ?? firstNpc?.GameName ?? firstPhoneCall?.GameName ?? firstPhoneApp?.GameName ?? "Schedule I";
+                var modAuthor = firstQuest?.ModAuthor ?? firstItem?.ModAuthor ?? firstGlobalState?.ModAuthor ?? firstNpc?.ModAuthor ?? firstPhoneCall?.ModAuthor ?? firstPhoneApp?.ModAuthor ?? settings?.DefaultModAuthor ?? "Quest Creator";
+                var modVersion = firstQuest?.ModVersion ?? firstItem?.ModVersion ?? firstGlobalState?.ModVersion ?? firstNpc?.ModVersion ?? firstPhoneCall?.ModVersion ?? firstPhoneApp?.ModVersion ?? settings?.DefaultModVersion ?? "1.0.0";
+                var gameStudio = firstQuest?.GameDeveloper ?? firstItem?.GameDeveloper ?? firstGlobalState?.GameDeveloper ?? firstNpc?.GameDeveloper ?? firstPhoneCall?.GameDeveloper ?? firstPhoneApp?.GameDeveloper ?? "TVGS";
+                var gameName = firstQuest?.GameName ?? firstItem?.GameName ?? firstGlobalState?.GameName ?? firstNpc?.GameName ?? firstPhoneCall?.GameName ?? firstPhoneApp?.GameName ?? "Schedule I";
 
                 // Generate .csproj file
                 GenerateCsprojFile(modPath, modName, project.Resources, result, settings, includePhoneCalls: hasPhoneCalls, includePhoneApps: hasPhoneApps);
@@ -110,6 +112,12 @@ namespace Schedule1ModdingTool.Services
                 {
                     GenerateItemFile(modPath, item, result);
                     GenerateItemHookFile(modPath, item, result);
+                }
+
+                foreach (var globalState in project.GlobalStates ?? Enumerable.Empty<GlobalStateBlueprint>())
+                {
+                    GenerateGlobalStateFile(modPath, globalState, result);
+                    GenerateGlobalStateHookFile(modPath, globalState, result);
                 }
 
                 foreach (var phoneCall in project.PhoneCalls ?? Enumerable.Empty<PhoneCallBlueprint>())
@@ -251,6 +259,7 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("    <Compile Include=\"Quests\\*.cs\" />");
             sb.AppendLine("    <Compile Include=\"NPCs\\*.cs\" />");
             sb.AppendLine("    <Compile Include=\"Items\\*.cs\" />");
+            sb.AppendLine("    <Compile Include=\"Saveables\\*.cs\" />");
             if (includePhoneCalls)
             {
                 sb.AppendLine("    <Compile Include=\"PhoneCalls\\*.cs\" />");
@@ -363,6 +372,7 @@ namespace Schedule1ModdingTool.Services
             var phoneCalls = project.PhoneCalls ?? Enumerable.Empty<PhoneCallBlueprint>();
             var hasQuests = project.Quests != null && project.Quests.Any();
             var hasItems = project.Items != null && project.Items.Any();
+            var hasGlobalStates = project.GlobalStates != null && project.GlobalStates.Any();
             var hasPhoneCalls = phoneCalls.Any();
             var hasPlayerSpawnPhoneCalls = phoneCalls.Any(call => call.QueueMode == PhoneCallQueueMode.OnLocalPlayerSpawned);
             var hasMainScenePhoneCalls = phoneCalls.Any(call => call.QueueMode == PhoneCallQueueMode.OnMainSceneLoaded);
@@ -399,6 +409,10 @@ namespace Schedule1ModdingTool.Services
             if (hasItems)
             {
                 sb.AppendLine($"using {rootNamespace}.Items;");
+            }
+            if (hasGlobalStates)
+            {
+                sb.AppendLine($"using {rootNamespace}.Saveables;");
             }
             if (hasPhoneCalls)
             {
@@ -685,6 +699,11 @@ namespace Schedule1ModdingTool.Services
                 sb.AppendLine();
             }
 
+            if (hasGlobalStates)
+            {
+                AppendGlobalStateValueHelpers(sb, project);
+            }
+
             if (hasPhoneCalls)
             {
                 AppendPhoneCallFactoryMethods(sb, project);
@@ -737,6 +756,10 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("        {");
             sb.AppendLine("        }");
             sb.AppendLine();
+            sb.AppendLine("        partial void OnAfterSavedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
             sb.AppendLine("        partial void OnAfterTriggerSubscriptionsGenerated()");
             sb.AppendLine("        {");
             sb.AppendLine("        }");
@@ -746,6 +769,49 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("        }");
             sb.AppendLine();
             sb.AppendLine("        partial void OnQuestFailedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
+
+            if (!File.Exists(hookPath))
+            {
+                File.WriteAllText(hookPath, sb.ToString());
+                result.GeneratedFiles.Add(hookPath);
+            }
+        }
+
+        private void GenerateGlobalStateFile(string modPath, GlobalStateBlueprint globalState, ModProjectGenerationResult result)
+        {
+            var globalStateCode = _codeGenService.GenerateGlobalStateCode(globalState);
+            var className = MakeSafeIdentifier(globalState.ClassName, "GeneratedGlobalState");
+            var globalStatePath = Path.Combine(modPath, "Saveables", $"{className}.cs");
+
+            File.WriteAllText(globalStatePath, globalStateCode);
+            result.GeneratedFiles.Add(globalStatePath);
+        }
+
+        private void GenerateGlobalStateHookFile(string modPath, GlobalStateBlueprint globalState, ModProjectGenerationResult result)
+        {
+            if (!globalState.GenerateHookScaffold)
+            {
+                return;
+            }
+
+            var className = MakeSafeIdentifier(globalState.ClassName, "GeneratedGlobalState");
+            var targetNamespace = CodeGeneration.Common.NamespaceNormalizer.Normalize(globalState.Namespace, "Schedule1Mods.Saveables");
+            var hookPath = Path.Combine(modPath, "Saveables", $"{className}.Hooks.cs");
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"namespace {targetNamespace}");
+            sb.AppendLine("{");
+            sb.AppendLine($"    public partial class {className}");
+            sb.AppendLine("    {");
+            sb.AppendLine("        partial void OnAfterLoadedGenerated()");
+            sb.AppendLine("        {");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+            sb.AppendLine("        partial void OnAfterSavedGenerated()");
             sb.AppendLine("        {");
             sb.AppendLine("        }");
             sb.AppendLine("    }");
@@ -1089,6 +1155,114 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("        }");
         }
 
+        private static void AppendGlobalStateValueHelpers(StringBuilder sb, QuestProject project)
+        {
+            sb.AppendLine("        public static bool SetGeneratedGlobalStateValue(string stateClassName, string fieldKey, string rawValue, bool requestSave = true)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            if (string.IsNullOrWhiteSpace(stateClassName) || string.IsNullOrWhiteSpace(fieldKey))");
+            sb.AppendLine("                return false;");
+            sb.AppendLine();
+            sb.AppendLine("            switch (stateClassName)");
+            sb.AppendLine("            {");
+            foreach (var globalState in project.GlobalStates)
+            {
+                var className = MakeSafeIdentifier(globalState.ClassName, "GeneratedGlobalState");
+                sb.AppendLine($"                case \"{EscapeString(globalState.ClassName)}\":");
+                sb.AppendLine($"                case \"{EscapeString(className)}\":");
+                sb.AppendLine($"                    return SetGeneratedGlobalStateValue_{className}(fieldKey, rawValue, requestSave);");
+            }
+            sb.AppendLine("                default:");
+            sb.AppendLine("                    return false;");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+
+            foreach (var globalState in project.GlobalStates)
+            {
+                AppendGlobalStateSetterSwitch(sb, globalState);
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("        private static List<string> ParseGeneratedGlobalStateStringList(string rawValue)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            if (string.IsNullOrWhiteSpace(rawValue))");
+            sb.AppendLine("                return new List<string>();");
+            sb.AppendLine();
+            sb.AppendLine("            return rawValue");
+            sb.AppendLine("                .Split(new[] { ',', '\\n', '\\r' }, StringSplitOptions.RemoveEmptyEntries)");
+            sb.AppendLine("                .Select(value => value.Trim())");
+            sb.AppendLine("                .Where(value => !string.IsNullOrWhiteSpace(value))");
+            sb.AppendLine("                .ToList();");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+        }
+
+        private static void AppendGlobalStateSetterSwitch(StringBuilder sb, GlobalStateBlueprint globalState)
+        {
+            var className = MakeSafeIdentifier(globalState.ClassName, "GeneratedGlobalState");
+            sb.AppendLine($"        private static bool SetGeneratedGlobalStateValue_{className}(string fieldKey, string rawValue, bool requestSave)");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            var state = {className}.Instance;");
+            sb.AppendLine("            if (state == null)");
+            sb.AppendLine("                return false;");
+            sb.AppendLine();
+            sb.AppendLine("            switch (fieldKey)");
+            sb.AppendLine("            {");
+
+            for (var index = 0; index < globalState.Fields.Count; index++)
+            {
+                var field = globalState.Fields[index];
+                var propertyName = MakeSafeIdentifier(field.FieldName, $"Field{index + 1}");
+                var escapedFieldName = EscapeString(field.FieldName);
+                var escapedSaveKey = EscapeString(field.ResolvedSaveKey);
+                var parsedVariable = $"parsed{propertyName}";
+
+                sb.AppendLine($"                case \"{escapedFieldName}\":");
+                if (!string.Equals(escapedFieldName, escapedSaveKey, StringComparison.Ordinal))
+                {
+                    sb.AppendLine($"                case \"{escapedSaveKey}\":");
+                }
+
+                switch (field.FieldType)
+                {
+                    case DataClassFieldType.Bool:
+                        sb.AppendLine($"                    if (!bool.TryParse(rawValue, out var {parsedVariable}))");
+                        sb.AppendLine("                        return false;");
+                        sb.AppendLine($"                    state.Set{propertyName}({parsedVariable}, requestSave);");
+                        sb.AppendLine("                    return true;");
+                        break;
+                    case DataClassFieldType.Int:
+                        sb.AppendLine($"                    if (!int.TryParse(rawValue, out var {parsedVariable}))");
+                        sb.AppendLine("                        return false;");
+                        sb.AppendLine($"                    state.Set{propertyName}({parsedVariable}, requestSave);");
+                        sb.AppendLine("                    return true;");
+                        break;
+                    case DataClassFieldType.Float:
+                        sb.AppendLine($"                    if (!float.TryParse(rawValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var {parsedVariable}))");
+                        sb.AppendLine("                        return false;");
+                        sb.AppendLine($"                    state.Set{propertyName}({parsedVariable}, requestSave);");
+                        sb.AppendLine("                    return true;");
+                        break;
+                    case DataClassFieldType.String:
+                        sb.AppendLine($"                    state.Set{propertyName}(rawValue ?? string.Empty, requestSave);");
+                        sb.AppendLine("                    return true;");
+                        break;
+                    case DataClassFieldType.ListString:
+                        sb.AppendLine($"                    state.Set{propertyName}(ParseGeneratedGlobalStateStringList(rawValue), requestSave);");
+                        sb.AppendLine("                    return true;");
+                        break;
+                    default:
+                        sb.AppendLine("                    return false;");
+                        break;
+                }
+            }
+
+            sb.AppendLine("                default:");
+            sb.AppendLine("                    return false;");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+        }
+
         private static void AppendPhoneCallFactoryMethods(StringBuilder sb, QuestProject project)
         {
             sb.AppendLine("        public static bool QueueGeneratedPhoneCall(string callId)");
@@ -1131,6 +1305,7 @@ namespace Schedule1ModdingTool.Services
                 var expectedNpcFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var expectedQuestFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var expectedItemFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var expectedGlobalStateFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var expectedPhoneCallFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var expectedPhoneAppFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -1164,6 +1339,16 @@ namespace Schedule1ModdingTool.Services
                     }
                 }
 
+                foreach (var globalState in project.GlobalStates)
+                {
+                    var className = MakeSafeIdentifier(globalState.ClassName, "GeneratedGlobalState");
+                    expectedGlobalStateFiles.Add($"{className}.cs");
+                    if (globalState.GenerateHookScaffold)
+                    {
+                        expectedGlobalStateFiles.Add($"{className}.Hooks.cs");
+                    }
+                }
+
                 foreach (var phoneApp in project.PhoneApps)
                 {
                     var className = MakeSafeIdentifier(phoneApp.ClassName, "GeneratedPhoneApp");
@@ -1187,6 +1372,7 @@ namespace Schedule1ModdingTool.Services
                 CleanupGeneratedFiles(Path.Combine(modPath, "NPCs"), expectedNpcFiles, "NPC", result);
                 CleanupGeneratedFiles(Path.Combine(modPath, "Quests"), expectedQuestFiles, "Quest", result);
                 CleanupGeneratedFiles(Path.Combine(modPath, "Items"), expectedItemFiles, "Item", result);
+                CleanupGeneratedFiles(Path.Combine(modPath, "Saveables"), expectedGlobalStateFiles, "Global Saveable", result);
                 CleanupGeneratedFiles(Path.Combine(modPath, "PhoneCalls"), expectedPhoneCallFiles, "Phone Call", result);
                 CleanupGeneratedFiles(Path.Combine(modPath, "PhoneApps"), expectedPhoneAppFiles, "Phone App", result);
             }
@@ -1338,7 +1524,7 @@ namespace Schedule1ModdingTool.Services
                 return "GeneratedMod";
             }
 
-            var suffixes = new[] { ".Quests", ".NPCs", ".Items", ".PhoneCalls", ".PhoneApps" };
+            var suffixes = new[] { ".Quests", ".NPCs", ".Items", ".Saveables", ".PhoneCalls", ".PhoneApps" };
             foreach (var suffix in suffixes)
             {
                 if (namespaceValue.EndsWith(suffix, StringComparison.Ordinal))

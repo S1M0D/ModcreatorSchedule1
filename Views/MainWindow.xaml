@@ -33,6 +33,10 @@
 			<views:ItemPropertiesControl
 				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
 		</DataTemplate>
+		<DataTemplate x:Key="GlobalStateEditorTemplate">
+			<views:GlobalStatePropertiesControl
+				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
+		</DataTemplate>
 		<DataTemplate x:Key="PhoneCallEditorTemplate">
 			<views:PhoneCallPropertiesControl
 				DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}" />
@@ -49,6 +53,7 @@
 		                                     QuestTemplate="{StaticResource QuestEditorTemplate}"
 		                                     NpcTemplate="{StaticResource NpcEditorTemplate}"
 		                                     ItemTemplate="{StaticResource ItemEditorTemplate}"
+		                                     GlobalStateTemplate="{StaticResource GlobalStateEditorTemplate}"
 		                                     PhoneCallTemplate="{StaticResource PhoneCallEditorTemplate}"
 		                                     PhoneAppTemplate="{StaticResource PhoneAppEditorTemplate}"
 		                                     WorkspaceTemplate="{StaticResource WorkspaceEditorTemplate}" />
@@ -246,6 +251,13 @@
 						<MenuItem Header="Custom Clothing" Click="AddCustomClothingMenuItem_Click" InputGestureText="Ctrl+Shift+C" Style="{StaticResource DarkMenuItemStyle}">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Global Save Variables" Click="AddGlobalStateMenuItem_Click" InputGestureText="Ctrl+Shift+G" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource SaveIcon}"
 								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>

@@ -120,7 +120,7 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             // Create new tab
-            var tab = new OpenElementTab { Quest = quest, Npc = null, Item = null, PhoneCall = null, PhoneApp = null };
+            var tab = new OpenElementTab { Quest = quest, Npc = null, Item = null, GlobalState = null, PhoneCall = null, PhoneApp = null };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }
@@ -161,6 +161,25 @@ namespace Schedule1ModdingTool.Services
             EnsureWorkspaceTabExists();
 
             var tab = new OpenElementTab { Item = item };
+            _openTabs.Add(tab);
+            SelectedTab = tab;
+        }
+
+        /// <summary>
+        /// Opens a global saveable in a tab, or activates it if already open.
+        /// </summary>
+        public void OpenGlobalStateInTab(GlobalStateBlueprint globalState)
+        {
+            var existingTab = _openTabs.FirstOrDefault(t => t.GlobalState == globalState);
+            if (existingTab != null)
+            {
+                SelectedTab = existingTab;
+                return;
+            }
+
+            EnsureWorkspaceTabExists();
+
+            var tab = new OpenElementTab { GlobalState = globalState };
             _openTabs.Add(tab);
             SelectedTab = tab;
         }

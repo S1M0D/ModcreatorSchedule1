@@ -109,6 +109,7 @@ namespace Schedule1ModdingTool.Utils
                 { "GenerateHookScaffold", "Generates a companion .Hooks.cs file with partial methods for advanced quest code, custom quest-entry setup, and quest lifecycle callbacks." },
                 { "TrackOnBegin", "If enabled, S1API marks this quest as tracked when it begins so it appears in the player's tracked quest UI automatically." },
                 { "AutoCompleteOnAllEntriesComplete", "If enabled, S1API completes the quest automatically after every quest entry reaches Completed." },
+                { "LoadOrder", "Controls when this quest saveable loads relative to base-game saveables. AfterBaseGame is the safe default. BeforeBaseGame is advanced-only because base-game NPCs, buildings, and similar entities may not exist yet when OnLoaded runs." },
                 { "FinishType", "The quest lifecycle action to run when this trigger fires: Complete, Fail, Cancel, Expire, or End." },
                 { "ActionType", "The quest-entry action to run when this trigger fires. You can begin the entry, complete it, or move it into an inactive, failed, cancelled, or expired state." },
 
@@ -164,6 +165,7 @@ namespace Schedule1ModdingTool.Utils
                 { "Title", "Display title for this quest objective." },
                 { "RequiredProgress", "Current generated quests still create one S1API QuestEntry per objective. This value is documentation-only unless you use hook code or your own custom quest logic to apply it." },
                 { "AutoStart", "If enabled and there are no start triggers, the generated quest entry begins immediately. If you add start triggers, the entry starts inactive until one of them fires." },
+                { "CreatePOI", "If enabled, the generated quest entry creates a player-facing POI marker for its location. Disable it when the objective needs a stored location or NPC follow target without showing a quest marker on the map/compass." },
             };
 
             if (descriptions.TryGetValue(propertyName, out var description))

@@ -157,6 +157,25 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.AppendLine();
         }
 
+        public void GenerateOnSavedMethod(ICodeBuilder builder, QuestBlueprint quest)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+            if (quest == null)
+                throw new ArgumentNullException(nameof(quest));
+
+            builder.AppendComment("Generated from: Quest.GenerateHookScaffold");
+            builder.AppendBlockComment(
+                "Called after S1API has serialized this quest's saveable fields.",
+                "Use the generated hook to react after quest state has been written."
+            );
+            builder.OpenBlock("protected override void OnSaved()");
+            builder.AppendLine("base.OnSaved();");
+            builder.AppendLine("OnAfterSavedGenerated();");
+            builder.CloseBlock();
+            builder.AppendLine();
+        }
+
         /// <summary>
         /// Generates a coroutine that waits for NPCs to spawn before creating quest entries.
         /// This is needed because NPCs may not be available immediately when a quest is loaded from save.
@@ -320,6 +339,10 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
 
                 builder.AppendComment($"Generated from: Objectives[{objectiveIndex}].Title, HasLocation, LocationX/Y/Z");
                 builder.AppendLine($"{objectiveVar} = AddEntry(\"{CodeFormatter.EscapeString(objective.Title)}\", {CodeFormatter.FormatVector3(objective)});");
+                if (!objective.CreatePOI)
+                {
+                    builder.AppendLine($"DisableGeneratedObjectivePoi({objectiveVar});");
+                }
                 return;
             }
 
@@ -355,6 +378,10 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.AppendLine($"{objectiveVar} = AddEntry(\"{escapedObjectiveTitle}\", {npcVariableName});");
             builder.AppendComment("Ensure POI is created and follows NPC location (handles cases where NPC transform wasn't ready during AddEntry)");
             builder.AppendLine($"{objectiveVar}.SetPOIToNPC({npcVariableName});");
+            if (!objective.CreatePOI)
+            {
+                builder.AppendLine($"DisableGeneratedObjectivePoi({objectiveVar});");
+            }
             builder.CloseBlock();
             builder.OpenBlock("else");
             builder.AppendLine($"MelonLogger.Warning($\"[Quest] NPC '{escapedNpcId}' not found for quest entry '{escapedObjectiveTitle}'{missingNpcWarningSuffix}\");");
@@ -482,6 +509,50 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.AppendLine();
         }
 
+        public void GenerateCompletionGlobalStateSetterMethod(
+            ICodeBuilder builder,
+            QuestBlueprint quest,
+            string rootNamespace)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+            if (quest == null)
+                throw new ArgumentNullException(nameof(quest));
+
+            builder.AppendComment("Generated from: Quest.CompletionGlobalStateSetters[]");
+            builder.OpenBlock("private void ApplyGeneratedCompletionGlobalStateSetters()");
+
+            if (!GlobalStateSetterWriter.AppendSetterInvocations(builder, quest.CompletionGlobalStateSetters, rootNamespace))
+            {
+                builder.AppendLine("return;");
+            }
+
+            builder.CloseBlock();
+            builder.AppendLine();
+        }
+
+        public void GenerateFailureGlobalStateSetterMethod(
+            ICodeBuilder builder,
+            QuestBlueprint quest,
+            string rootNamespace)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+            if (quest == null)
+                throw new ArgumentNullException(nameof(quest));
+
+            builder.AppendComment("Generated from: Quest.FailureGlobalStateSetters[]");
+            builder.OpenBlock("private void ApplyGeneratedFailureGlobalStateSetters()");
+
+            if (!GlobalStateSetterWriter.AppendSetterInvocations(builder, quest.FailureGlobalStateSetters, rootNamespace))
+            {
+                builder.AppendLine("return;");
+            }
+
+            builder.CloseBlock();
+            builder.AppendLine();
+        }
+
         /// <summary>
         /// Generates a custom icon loading method.
         /// </summary>
@@ -524,6 +595,32 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 builder.AppendLine("return null;");
             }
 
+            builder.CloseBlock();
+            builder.AppendLine();
+        }
+
+        public void GenerateDisableObjectivePoiMethod(ICodeBuilder builder)
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+
+            builder.AppendComment("Generated from: Quest.Objectives[].CreatePOI = false");
+            builder.AppendBlockComment(
+                "Disables automatic quest marker creation while preserving the stored objective location.",
+                "This keeps NPC-follow or coordinate-based objective data available without forcing a player-facing POI marker."
+            );
+            builder.OpenBlock("private static void DisableGeneratedObjectivePoi(QuestEntry? entry)");
+            builder.OpenBlock("if (entry == null)");
+            builder.AppendLine("return;");
+            builder.CloseBlock();
+            builder.AppendLine();
+            builder.AppendLine("var nativeQuestEntry = ReflectionUtils.TryGetFieldOrProperty(entry, \"S1QuestEntry\");");
+            builder.OpenBlock("if (nativeQuestEntry == null)");
+            builder.AppendLine("return;");
+            builder.CloseBlock();
+            builder.AppendLine();
+            builder.AppendLine("ReflectionUtils.TrySetFieldOrProperty(nativeQuestEntry, \"AutoCreatePoI\", false);");
+            builder.AppendLine("ReflectionUtils.TrySetFieldOrProperty(nativeQuestEntry, \"AutoUpdatePoILocation\", false);");
             builder.CloseBlock();
             builder.AppendLine();
         }

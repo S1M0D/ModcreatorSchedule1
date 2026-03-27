@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
@@ -33,8 +38,13 @@ namespace Schedule1ModdingTool.Models
         private ObservableCollection<QuestFinishTrigger> _questFinishTriggers = new ObservableCollection<QuestFinishTrigger>();
         private bool _trackOnBegin = true;
         private bool _autoCompleteOnAllEntriesComplete = true;
+        private QuestSaveLoadOrderOption _loadOrder = QuestSaveLoadOrderOption.AfterBaseGame;
         private ObservableCollection<QuestReward> _questRewardsList = new ObservableCollection<QuestReward>();
         private ObservableCollection<DataClassField> _dataClassFields = new ObservableCollection<DataClassField>();
+        private readonly HashSet<GlobalStateSetterBlueprint> _trackedCompletionGlobalStateSetters = new();
+        private readonly HashSet<GlobalStateSetterBlueprint> _trackedFailureGlobalStateSetters = new();
+        private ObservableCollection<GlobalStateSetterBlueprint> _completionGlobalStateSetters = new ObservableCollection<GlobalStateSetterBlueprint>();
+        private ObservableCollection<GlobalStateSetterBlueprint> _failureGlobalStateSetters = new ObservableCollection<GlobalStateSetterBlueprint>();
 
         [Required(ErrorMessage = "Class name is required")]
         [JsonProperty("className")]
@@ -191,6 +201,46 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _dataClassFields, value);
         }
 
+        [JsonProperty("completionGlobalStateSetters")]
+        public ObservableCollection<GlobalStateSetterBlueprint> CompletionGlobalStateSetters
+        {
+            get => _completionGlobalStateSetters;
+            set
+            {
+                var nextValue = value ?? new ObservableCollection<GlobalStateSetterBlueprint>();
+                if (ReferenceEquals(_completionGlobalStateSetters, nextValue))
+                    return;
+
+                _completionGlobalStateSetters.CollectionChanged -= CompletionGlobalStateSettersOnCollectionChanged;
+                DetachGlobalStateSetterHandlers(_completionGlobalStateSetters, _trackedCompletionGlobalStateSetters);
+
+                _completionGlobalStateSetters = nextValue;
+                _completionGlobalStateSetters.CollectionChanged += CompletionGlobalStateSettersOnCollectionChanged;
+                AttachGlobalStateSetterHandlers(_completionGlobalStateSetters, _trackedCompletionGlobalStateSetters);
+                OnPropertyChanged();
+            }
+        }
+
+        [JsonProperty("failureGlobalStateSetters")]
+        public ObservableCollection<GlobalStateSetterBlueprint> FailureGlobalStateSetters
+        {
+            get => _failureGlobalStateSetters;
+            set
+            {
+                var nextValue = value ?? new ObservableCollection<GlobalStateSetterBlueprint>();
+                if (ReferenceEquals(_failureGlobalStateSetters, nextValue))
+                    return;
+
+                _failureGlobalStateSetters.CollectionChanged -= FailureGlobalStateSettersOnCollectionChanged;
+                DetachGlobalStateSetterHandlers(_failureGlobalStateSetters, _trackedFailureGlobalStateSetters);
+
+                _failureGlobalStateSetters = nextValue;
+                _failureGlobalStateSetters.CollectionChanged += FailureGlobalStateSettersOnCollectionChanged;
+                AttachGlobalStateSetterHandlers(_failureGlobalStateSetters, _trackedFailureGlobalStateSetters);
+                OnPropertyChanged();
+            }
+        }
+
         [JsonProperty("generateDataClass")]
         public bool GenerateDataClass
         {
@@ -269,6 +319,13 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _autoCompleteOnAllEntriesComplete, value);
         }
 
+        [JsonProperty("loadOrder")]
+        public QuestSaveLoadOrderOption LoadOrder
+        {
+            get => _loadOrder;
+            set => SetProperty(ref _loadOrder, value);
+        }
+
         [JsonIgnore]
         public string DisplayName => string.IsNullOrEmpty(QuestTitle) ? ClassName : QuestTitle;
 
@@ -283,6 +340,8 @@ namespace Schedule1ModdingTool.Models
             // Initialize collections
             _questRewardsList = new ObservableCollection<QuestReward>();
             _dataClassFields = new ObservableCollection<DataClassField>();
+            _completionGlobalStateSetters.CollectionChanged += CompletionGlobalStateSettersOnCollectionChanged;
+            _failureGlobalStateSetters.CollectionChanged += FailureGlobalStateSettersOnCollectionChanged;
         }
 
         public QuestBlueprint(QuestBlueprintType type) : this()
@@ -349,6 +408,22 @@ namespace Schedule1ModdingTool.Models
             {
                 _dataClassFields = new ObservableCollection<DataClassField>();
             }
+
+            if (_completionGlobalStateSetters == null)
+            {
+                _completionGlobalStateSetters = new ObservableCollection<GlobalStateSetterBlueprint>();
+            }
+            _completionGlobalStateSetters.CollectionChanged -= CompletionGlobalStateSettersOnCollectionChanged;
+            _completionGlobalStateSetters.CollectionChanged += CompletionGlobalStateSettersOnCollectionChanged;
+            AttachGlobalStateSetterHandlers(_completionGlobalStateSetters, _trackedCompletionGlobalStateSetters);
+
+            if (_failureGlobalStateSetters == null)
+            {
+                _failureGlobalStateSetters = new ObservableCollection<GlobalStateSetterBlueprint>();
+            }
+            _failureGlobalStateSetters.CollectionChanged -= FailureGlobalStateSettersOnCollectionChanged;
+            _failureGlobalStateSetters.CollectionChanged += FailureGlobalStateSettersOnCollectionChanged;
+            AttachGlobalStateSetterHandlers(_failureGlobalStateSetters, _trackedFailureGlobalStateSetters);
         }
 
         public void AddObjective()
@@ -416,6 +491,7 @@ namespace Schedule1ModdingTool.Models
             BlueprintType = source.BlueprintType;
             TrackOnBegin = source.TrackOnBegin;
             AutoCompleteOnAllEntriesComplete = source.AutoCompleteOnAllEntriesComplete;
+            LoadOrder = source.LoadOrder;
             Namespace = source.Namespace;
             ModName = source.ModName;
             ModVersion = source.ModVersion;
@@ -465,6 +541,18 @@ namespace Schedule1ModdingTool.Models
                     DataClassFields.Add(field.DeepCopy());
                 }
             }
+
+            CompletionGlobalStateSetters.Clear();
+            foreach (var setter in source.CompletionGlobalStateSetters)
+            {
+                CompletionGlobalStateSetters.Add(setter.DeepCopy());
+            }
+
+            FailureGlobalStateSetters.Clear();
+            foreach (var setter in source.FailureGlobalStateSetters)
+            {
+                FailureGlobalStateSetters.Add(setter.DeepCopy());
+            }
         }
 
         public QuestBlueprint DeepCopy()
@@ -478,11 +566,94 @@ namespace Schedule1ModdingTool.Models
         {
             return DisplayName;
         }
+
+        private void CompletionGlobalStateSettersOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            HandleGlobalStateSetterCollectionChanged(e, _trackedCompletionGlobalStateSetters);
+            OnPropertyChanged(nameof(CompletionGlobalStateSetters));
+        }
+
+        private void FailureGlobalStateSettersOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            HandleGlobalStateSetterCollectionChanged(e, _trackedFailureGlobalStateSetters);
+            OnPropertyChanged(nameof(FailureGlobalStateSetters));
+        }
+
+        private void HandleGlobalStateSetterCollectionChanged(
+            NotifyCollectionChangedEventArgs e,
+            ISet<GlobalStateSetterBlueprint> trackedSetters)
+        {
+            if (e.OldItems != null)
+            {
+                foreach (var removed in e.OldItems.OfType<GlobalStateSetterBlueprint>())
+                {
+                    if (trackedSetters.Remove(removed))
+                    {
+                        removed.PropertyChanged -= GlobalStateSetterOnPropertyChanged;
+                    }
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var added in e.NewItems.OfType<GlobalStateSetterBlueprint>())
+                {
+                    if (trackedSetters.Add(added))
+                    {
+                        added.PropertyChanged += GlobalStateSetterOnPropertyChanged;
+                    }
+                }
+            }
+        }
+
+        private void AttachGlobalStateSetterHandlers(
+            IEnumerable<GlobalStateSetterBlueprint> setters,
+            ISet<GlobalStateSetterBlueprint> trackedSetters)
+        {
+            foreach (var setter in setters)
+            {
+                if (trackedSetters.Add(setter))
+                {
+                    setter.PropertyChanged += GlobalStateSetterOnPropertyChanged;
+                }
+            }
+        }
+
+        private void DetachGlobalStateSetterHandlers(
+            IEnumerable<GlobalStateSetterBlueprint> setters,
+            ISet<GlobalStateSetterBlueprint> trackedSetters)
+        {
+            foreach (var setter in setters)
+            {
+                if (trackedSetters.Remove(setter))
+                {
+                    setter.PropertyChanged -= GlobalStateSetterOnPropertyChanged;
+                }
+            }
+        }
+
+        private void GlobalStateSetterOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(CompletionGlobalStateSetters));
+            OnPropertyChanged(nameof(FailureGlobalStateSetters));
+        }
     }
 
     public enum QuestBlueprintType
     {
         Standard,
         Advanced
+    }
+
+    public enum QuestSaveLoadOrderOption
+    {
+        AfterBaseGame,
+        BeforeBaseGame
+    }
+
+    public static class QuestBlueprintOptions
+    {
+        public static IReadOnlyList<QuestSaveLoadOrderOption> LoadOrders { get; } =
+            Enum.GetValues(typeof(QuestSaveLoadOrderOption)).Cast<QuestSaveLoadOrderOption>().ToArray();
     }
 }

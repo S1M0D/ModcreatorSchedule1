@@ -145,6 +145,38 @@ namespace Schedule1ModdingTool.Views
             collection?.Remove(setter);
         }
 
+        private void AddGlobalStateSetter_Click(object sender, RoutedEventArgs e)
+        {
+            var trigger = GetTag<PhoneCallSystemTriggerBlueprint>(sender);
+            if (trigger == null)
+            {
+                return;
+            }
+
+            var setter = new GlobalStateSetterBlueprint();
+            var defaultReference = ViewModel?.AvailableGlobalStateFieldReferences.FirstOrDefault();
+            if (defaultReference != null)
+            {
+                setter.ApplyReference(defaultReference);
+                setter.NewValue = GetDefaultValueForFieldType(defaultReference.FieldType);
+            }
+
+            trigger.GlobalStateSetters.Add(setter);
+        }
+
+        private void RemoveGlobalStateSetter_Click(object sender, RoutedEventArgs e)
+        {
+            var phoneCall = CurrentPhoneCall;
+            var setter = GetTag<GlobalStateSetterBlueprint>(sender);
+            if (phoneCall == null || setter == null)
+            {
+                return;
+            }
+
+            var collection = FindGlobalStateSetterCollection(phoneCall, setter);
+            collection?.Remove(setter);
+        }
+
         private void AddQuestSetter_Click(object sender, RoutedEventArgs e)
         {
             var trigger = GetTag<PhoneCallSystemTriggerBlueprint>(sender);
@@ -231,6 +263,55 @@ namespace Schedule1ModdingTool.Views
             return null;
         }
 
+        private static ObservableCollection<GlobalStateSetterBlueprint>? FindGlobalStateSetterCollection(
+            PhoneCallBlueprint phoneCall,
+            GlobalStateSetterBlueprint setter)
+        {
+            foreach (var trigger in EnumerateTriggers(phoneCall))
+            {
+                if (trigger.GlobalStateSetters.Contains(setter))
+                {
+                    return trigger.GlobalStateSetters;
+                }
+            }
+
+            return null;
+        }
+
+        private void GlobalStateFieldComboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.ComboBox comboBox || comboBox.Tag is not GlobalStateSetterBlueprint setter || ViewModel == null)
+            {
+                return;
+            }
+
+            var selectedReference = ViewModel.AvailableGlobalStateFieldReferences.FirstOrDefault(reference =>
+                string.Equals(reference.GlobalStateClassName, setter.GlobalStateClassName, System.StringComparison.Ordinal) &&
+                string.Equals(reference.FieldSaveKey, setter.FieldSaveKey, System.StringComparison.Ordinal));
+
+            if (selectedReference != null)
+            {
+                comboBox.SelectedItem = selectedReference;
+            }
+        }
+
+        private void GlobalStateFieldComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.ComboBox comboBox ||
+                comboBox.Tag is not GlobalStateSetterBlueprint setter ||
+                comboBox.SelectedItem is not GlobalStateFieldReferenceInfo reference)
+            {
+                return;
+            }
+
+            var previousType = setter.FieldType;
+            setter.ApplyReference(reference);
+            if (string.IsNullOrWhiteSpace(setter.NewValue) || previousType != reference.FieldType)
+            {
+                setter.NewValue = GetDefaultValueForFieldType(reference.FieldType);
+            }
+        }
+
         private static IEnumerable<PhoneCallSystemTriggerBlueprint> EnumerateTriggers(PhoneCallBlueprint phoneCall)
         {
             foreach (var stage in phoneCall.Stages)
@@ -245,6 +326,18 @@ namespace Schedule1ModdingTool.Views
                     yield return trigger;
                 }
             }
+        }
+
+        private static string GetDefaultValueForFieldType(DataClassFieldType fieldType)
+        {
+            return fieldType switch
+            {
+                DataClassFieldType.Bool => "true",
+                DataClassFieldType.Int => "0",
+                DataClassFieldType.Float => "0",
+                DataClassFieldType.ListString => "item_a,item_b",
+                _ => string.Empty
+            };
         }
     }
 }

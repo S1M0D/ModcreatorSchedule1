@@ -1075,6 +1075,81 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void AddCompletionGlobalStateSetter_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainViewModel vm || vm.SelectedQuest == null)
+                return;
+
+            var setter = CreateQuestGlobalStateSetter(vm);
+            vm.SelectedQuest.CompletionGlobalStateSetters.Add(setter);
+            vm.CurrentProject.MarkAsModified();
+        }
+
+        private void AddFailureGlobalStateSetter_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not MainViewModel vm || vm.SelectedQuest == null)
+                return;
+
+            var setter = CreateQuestGlobalStateSetter(vm);
+            vm.SelectedQuest.FailureGlobalStateSetters.Add(setter);
+            vm.CurrentProject.MarkAsModified();
+        }
+
+        private void RemoveQuestGlobalStateSetter_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not GlobalStateSetterBlueprint setter)
+                return;
+
+            if (DataContext is not MainViewModel vm || vm.SelectedQuest == null)
+                return;
+
+            if (vm.SelectedQuest.CompletionGlobalStateSetters.Remove(setter) ||
+                vm.SelectedQuest.FailureGlobalStateSetters.Remove(setter))
+            {
+                vm.CurrentProject.MarkAsModified();
+            }
+        }
+
+        private void QuestGlobalStateFieldComboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not ComboBox comboBox || comboBox.Tag is not GlobalStateSetterBlueprint setter)
+                return;
+
+            if (DataContext is not MainViewModel vm)
+                return;
+
+            var selectedReference = vm.AvailableGlobalStateFieldReferences.FirstOrDefault(reference =>
+                string.Equals(reference.GlobalStateClassName, setter.GlobalStateClassName, StringComparison.Ordinal) &&
+                string.Equals(reference.FieldSaveKey, setter.FieldSaveKey, StringComparison.Ordinal));
+
+            if (selectedReference != null)
+            {
+                comboBox.SelectedItem = selectedReference;
+            }
+        }
+
+        private void QuestGlobalStateFieldComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is not ComboBox comboBox ||
+                comboBox.Tag is not GlobalStateSetterBlueprint setter ||
+                comboBox.SelectedItem is not GlobalStateFieldReferenceInfo reference)
+            {
+                return;
+            }
+
+            var previousType = setter.FieldType;
+            setter.ApplyReference(reference);
+            if (string.IsNullOrWhiteSpace(setter.NewValue) || previousType != reference.FieldType)
+            {
+                setter.NewValue = GetDefaultGlobalStateFieldValue(reference.FieldType);
+            }
+
+            if (DataContext is MainViewModel vm)
+            {
+                vm.CurrentProject.MarkAsModified();
+            }
+        }
+
         private void RewardTypeComboBox_Loaded(object sender, RoutedEventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -1120,6 +1195,31 @@ namespace Schedule1ModdingTool.Views
             {
                 vm.CurrentProject.MarkAsModified();
             }
+        }
+
+        private static GlobalStateSetterBlueprint CreateQuestGlobalStateSetter(MainViewModel vm)
+        {
+            var setter = new GlobalStateSetterBlueprint();
+            var defaultReference = vm.AvailableGlobalStateFieldReferences.FirstOrDefault();
+            if (defaultReference != null)
+            {
+                setter.ApplyReference(defaultReference);
+                setter.NewValue = GetDefaultGlobalStateFieldValue(defaultReference.FieldType);
+            }
+
+            return setter;
+        }
+
+        private static string GetDefaultGlobalStateFieldValue(DataClassFieldType fieldType)
+        {
+            return fieldType switch
+            {
+                DataClassFieldType.Bool => "true",
+                DataClassFieldType.Int => "0",
+                DataClassFieldType.Float => "0",
+                DataClassFieldType.ListString => "item_a,item_b",
+                _ => string.Empty
+            };
         }
     }
 

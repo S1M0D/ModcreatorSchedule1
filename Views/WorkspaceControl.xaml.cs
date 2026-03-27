@@ -72,6 +72,15 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void NewGlobalState_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = GetMainViewModel();
+            if (vm != null && vm.AvailableGlobalStateBlueprints.Count > 0)
+            {
+                vm.AddGlobalStateCommand.Execute(vm.AvailableGlobalStateBlueprints[0]);
+            }
+        }
+
         private void NewPhoneCall_Click(object sender, RoutedEventArgs e)
         {
             var vm = GetMainViewModel();
@@ -135,6 +144,18 @@ namespace Schedule1ModdingTool.Views
             });
         }
 
+        private void GlobalStateTile_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.DataContext is not GlobalStateBlueprint globalState)
+                return;
+
+            _dragStartPoint = e.GetPosition(null);
+            HandleTileInteraction(globalState, () =>
+            {
+                GetMainViewModel()?.OpenGlobalStateInTab(globalState);
+            });
+        }
+
         private void PhoneAppTile_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (sender is not FrameworkElement element || element.DataContext is not PhoneAppBlueprint phoneApp)
@@ -191,6 +212,9 @@ namespace Schedule1ModdingTool.Views
                     break;
                 case ItemBlueprint itemBlueprint:
                     vm.SelectedItemBlueprint = itemBlueprint;
+                    break;
+                case GlobalStateBlueprint globalState:
+                    vm.SelectedGlobalState = globalState;
                     break;
                 case PhoneCallBlueprint phoneCall:
                     vm.SelectedPhoneCall = phoneCall;
@@ -251,6 +275,18 @@ namespace Schedule1ModdingTool.Views
                 if (vm != null)
                 {
                     vm.SelectedItemBlueprint = item;
+                }
+            }
+        }
+
+        private void GlobalStateTile_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is GlobalStateBlueprint globalState)
+            {
+                var vm = GetMainViewModel();
+                if (vm != null)
+                {
+                    vm.SelectedGlobalState = globalState;
                 }
             }
         }
@@ -332,6 +368,18 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void OpenGlobalState_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem)
+            {
+                var globalState = GetDataContextFromMenuItem<GlobalStateBlueprint>(menuItem);
+                if (globalState != null)
+                {
+                    GetMainViewModel()?.OpenGlobalStateInTab(globalState);
+                }
+            }
+        }
+
         private void OpenFolder_Click(object sender, RoutedEventArgs e)
         {
             if (sender is MenuItem menuItem)
@@ -400,6 +448,18 @@ namespace Schedule1ModdingTool.Views
                 if (item != null)
                 {
                     GetMainViewModel()?.DuplicateItemCommand.Execute(item);
+                }
+            }
+        }
+
+        private void DuplicateGlobalState_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem)
+            {
+                var globalState = GetDataContextFromMenuItem<GlobalStateBlueprint>(menuItem);
+                if (globalState != null)
+                {
+                    GetMainViewModel()?.DuplicateGlobalStateCommand.Execute(globalState);
                 }
             }
         }
@@ -486,6 +546,23 @@ namespace Schedule1ModdingTool.Views
                     {
                         vm.SelectedItemBlueprint = item;
                         vm.RemoveItemCommand.Execute(null);
+                    }
+                }
+            }
+        }
+
+        private void DeleteGlobalState_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem)
+            {
+                var globalState = GetDataContextFromMenuItem<GlobalStateBlueprint>(menuItem);
+                if (globalState != null)
+                {
+                    var vm = GetMainViewModel();
+                    if (vm != null)
+                    {
+                        vm.SelectedGlobalState = globalState;
+                        vm.RemoveGlobalStateCommand.Execute(null);
                     }
                 }
             }
@@ -599,6 +676,22 @@ namespace Schedule1ModdingTool.Views
                     if (!string.IsNullOrWhiteSpace(newName) && newName != item.ItemName)
                     {
                         item.ItemName = newName;
+                    }
+                }
+            }
+        }
+
+        private void RenameGlobalState_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem)
+            {
+                var globalState = GetDataContextFromMenuItem<GlobalStateBlueprint>(menuItem);
+                if (globalState != null)
+                {
+                    var newName = ShowInputDialog("Rename Global Save Variables", "Enter new global saveable name:", globalState.StateName);
+                    if (!string.IsNullOrWhiteSpace(newName) && newName != globalState.StateName)
+                    {
+                        globalState.StateName = newName;
                     }
                 }
             }
@@ -788,6 +881,30 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void GlobalStateTile_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed && sender is FrameworkElement element)
+            {
+                if (!_isDragging)
+                {
+                    var position = e.GetPosition(null);
+                    if (Math.Abs(position.X - _dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                        Math.Abs(position.Y - _dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+                    {
+                        if (element.DataContext is GlobalStateBlueprint globalState)
+                        {
+                            _isDragging = true;
+                            _doubleClickTimer.Stop();
+                            _lastClickedItem = null;
+                            var dataObject = new DataObject("GlobalStateBlueprint", globalState);
+                            DragDrop.DoDragDrop(element, dataObject, DragDropEffects.Move);
+                            _isDragging = false;
+                        }
+                    }
+                }
+            }
+        }
+
         private void PhoneAppTile_MouseMove(object sender, MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed && sender is FrameworkElement element)
@@ -840,7 +957,7 @@ namespace Schedule1ModdingTool.Views
         {
             if (sender is FrameworkElement element && element.DataContext is ModFolder folder)
             {
-                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
+                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("GlobalStateBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
                 {
                     e.Effects = DragDropEffects.Move;
                     e.Handled = true;
@@ -871,6 +988,11 @@ namespace Schedule1ModdingTool.Views
                     item.FolderId = folder.Id;
                     e.Handled = true;
                 }
+                else if (e.Data.GetData("GlobalStateBlueprint") is GlobalStateBlueprint globalState)
+                {
+                    globalState.FolderId = folder.Id;
+                    e.Handled = true;
+                }
                 else if (e.Data.GetData("PhoneCallBlueprint") is PhoneCallBlueprint phoneCall)
                 {
                     phoneCall.FolderId = folder.Id;
@@ -888,7 +1010,7 @@ namespace Schedule1ModdingTool.Views
         {
             if (sender is Border border)
             {
-                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
+                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("GlobalStateBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
                 {
                     border.BorderBrush = new SolidColorBrush(Color.FromArgb(200, 100, 150, 255));
                     border.BorderThickness = new Thickness(2);
@@ -908,7 +1030,7 @@ namespace Schedule1ModdingTool.Views
 
         private void UpButton_DragOver(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
+            if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("GlobalStateBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
             {
                 e.Effects = DragDropEffects.Move;
                 e.Handled = true;
@@ -940,6 +1062,11 @@ namespace Schedule1ModdingTool.Views
                 item.FolderId = parentId;
                 e.Handled = true;
             }
+            else if (e.Data.GetData("GlobalStateBlueprint") is GlobalStateBlueprint globalState)
+            {
+                globalState.FolderId = parentId;
+                e.Handled = true;
+            }
             else if (e.Data.GetData("PhoneCallBlueprint") is PhoneCallBlueprint phoneCall)
             {
                 phoneCall.FolderId = parentId;
@@ -956,7 +1083,7 @@ namespace Schedule1ModdingTool.Views
         {
             if (sender is Button button)
             {
-                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
+                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("GlobalStateBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
                 {
                     button.Background = new SolidColorBrush(Color.FromArgb(100, 100, 150, 255));
                 }
@@ -975,7 +1102,7 @@ namespace Schedule1ModdingTool.Views
         {
             if (sender is Button btn && btn.DataContext is ModFolder folder)
             {
-                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
+                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("GlobalStateBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
                 {
                     e.Effects = DragDropEffects.Move;
                     e.Handled = true;
@@ -1002,6 +1129,11 @@ namespace Schedule1ModdingTool.Views
                     item.FolderId = folder.Id;
                     e.Handled = true;
                 }
+                else if (e.Data.GetData("GlobalStateBlueprint") is GlobalStateBlueprint globalState)
+                {
+                    globalState.FolderId = folder.Id;
+                    e.Handled = true;
+                }
                 else if (e.Data.GetData("PhoneCallBlueprint") is PhoneCallBlueprint phoneCall)
                 {
                     phoneCall.FolderId = folder.Id;
@@ -1019,7 +1151,7 @@ namespace Schedule1ModdingTool.Views
         {
             if (sender is Button button)
             {
-                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
+                if (e.Data.GetDataPresent("QuestBlueprint") || e.Data.GetDataPresent("NpcBlueprint") || e.Data.GetDataPresent("ItemBlueprint") || e.Data.GetDataPresent("GlobalStateBlueprint") || e.Data.GetDataPresent("PhoneCallBlueprint") || e.Data.GetDataPresent("PhoneAppBlueprint"))
                 {
                     button.Background = new SolidColorBrush(Color.FromArgb(100, 100, 150, 255));
                 }

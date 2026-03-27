@@ -255,6 +255,69 @@ namespace Schedule1ModdingTool.Services
         }
 
         /// <summary>
+        /// Adds a new global saveable blueprint to the project.
+        /// </summary>
+        public GlobalStateBlueprint AddGlobalState(QuestProject project, GlobalStateBlueprint? template)
+        {
+            var settings = ModSettings.Load();
+            var projectNamespace = !string.IsNullOrWhiteSpace(project.ProjectNamespace)
+                ? project.ProjectNamespace
+                : settings.DefaultModNamespace;
+            var globalState = template?.DeepCopy() ?? new GlobalStateBlueprint();
+            var defaultIndex = project.GlobalStates.Count + 1;
+
+            globalState.ClassName = MakeUniqueGlobalStateClassName(project, string.IsNullOrWhiteSpace(globalState.ClassName) ? $"GlobalState{defaultIndex}" : globalState.ClassName);
+            globalState.StateName = string.IsNullOrWhiteSpace(globalState.StateName) ? $"Global Save Variables {defaultIndex}" : globalState.StateName;
+            globalState.Namespace = $"{projectNamespace}.Saveables";
+            globalState.ModName = string.IsNullOrWhiteSpace(project.ProjectName) ? globalState.ModName : project.ProjectName;
+            globalState.ModAuthor = settings.DefaultModAuthor;
+            globalState.ModVersion = settings.DefaultModVersion;
+            globalState.FolderId = _workspaceViewModel.SelectedFolder?.Id ?? QuestProject.RootFolderId;
+
+            project.AddGlobalState(globalState);
+            _workspaceViewModel.UpdateGlobalStateCount(project.GlobalStates.Count);
+            return globalState;
+        }
+
+        /// <summary>
+        /// Removes a global saveable blueprint from the project after confirmation.
+        /// </summary>
+        public bool RemoveGlobalState(QuestProject project, GlobalStateBlueprint globalState)
+        {
+            if (globalState == null) return false;
+
+            var result = MessageBox.Show($"Are you sure you want to remove '{globalState.DisplayName}'?",
+                "Remove Global Save Variables", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                DeleteGeneratedGlobalStateFile(project, globalState);
+                project.RemoveGlobalState(globalState);
+                _workspaceViewModel.UpdateGlobalStateCount(project.GlobalStates.Count);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Duplicates an existing global saveable blueprint.
+        /// </summary>
+        public GlobalStateBlueprint? DuplicateGlobalState(QuestProject project, GlobalStateBlueprint? globalState)
+        {
+            if (globalState == null) return null;
+
+            var duplicate = globalState.DeepCopy();
+            duplicate.ClassName = MakeUniqueGlobalStateClassName(project, $"{duplicate.ClassName}Copy");
+            duplicate.StateName = $"{duplicate.StateName} (Copy)";
+            duplicate.FolderId = globalState.FolderId;
+
+            project.AddGlobalState(duplicate);
+            _workspaceViewModel.UpdateGlobalStateCount(project.GlobalStates.Count);
+            return duplicate;
+        }
+
+        /// <summary>
         /// Adds a new phone app to the project based on a template.
         /// </summary>
         public PhoneAppBlueprint AddPhoneApp(QuestProject project, PhoneAppBlueprint? template)
@@ -432,6 +495,14 @@ namespace Schedule1ModdingTool.Services
                 suffixFormatter: index => $"{baseCallId}_{index}");
         }
 
+        private static string MakeUniqueGlobalStateClassName(QuestProject project, string baseClassName)
+        {
+            return MakeUniqueValue(
+                project.GlobalStates.Select(state => state.ClassName),
+                baseClassName,
+                suffixFormatter: index => $"{baseClassName}{index}");
+        }
+
         private static string MakeUniqueValue(IEnumerable<string> existingValues, string baseValue, Func<int, string> suffixFormatter)
         {
             var candidate = string.IsNullOrWhiteSpace(baseValue) ? "generated_phone_app" : baseValue.Trim();
@@ -506,6 +577,7 @@ namespace Schedule1ModdingTool.Services
                              project.Quests.Any(q => q.FolderId == folder.Id) ||
                              project.Npcs.Any(n => n.FolderId == folder.Id) ||
                              project.Items.Any(i => i.FolderId == folder.Id) ||
+                             project.GlobalStates.Any(state => state.FolderId == folder.Id) ||
                              project.PhoneCalls.Any(call => call.FolderId == folder.Id) ||
                              project.PhoneApps.Any(app => app.FolderId == folder.Id);
 
@@ -537,6 +609,10 @@ namespace Schedule1ModdingTool.Services
                 foreach (var item in project.Items.Where(i => i.FolderId == folder.Id))
                 {
                     item.FolderId = parentId;
+                }
+                foreach (var globalState in project.GlobalStates.Where(state => state.FolderId == folder.Id))
+                {
+                    globalState.FolderId = parentId;
                 }
                 foreach (var phoneCall in project.PhoneCalls.Where(call => call.FolderId == folder.Id))
                 {
@@ -652,6 +728,34 @@ namespace Schedule1ModdingTool.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[ElementManagementService] Failed to delete item file: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Deletes the generated C# file for a global saveable blueprint.
+        /// </summary>
+        private void DeleteGeneratedGlobalStateFile(QuestProject project, GlobalStateBlueprint globalState)
+        {
+            if (project == null || globalState == null) return;
+            if (string.IsNullOrWhiteSpace(project.FilePath)) return;
+
+            try
+            {
+                var projectDir = Path.GetDirectoryName(project.FilePath);
+                if (string.IsNullOrWhiteSpace(projectDir) || !Directory.Exists(projectDir))
+                    return;
+
+                var className = MakeSafeIdentifier(globalState.ClassName, "GeneratedGlobalState");
+                var globalStateFilePath = Path.Combine(projectDir, "Saveables", $"{className}.cs");
+
+                if (File.Exists(globalStateFilePath))
+                {
+                    File.Delete(globalStateFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ElementManagementService] Failed to delete global state file: {ex.Message}");
             }
         }
 

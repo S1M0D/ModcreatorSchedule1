@@ -86,6 +86,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneCall
                     }
                 }
 
+                foreach (var setter in trigger.GlobalStateSetters)
+                {
+                    if (string.IsNullOrWhiteSpace(setter.GlobalStateClassName) || string.IsNullOrWhiteSpace(setter.FieldSaveKey))
+                    {
+                        result.Errors.Add($"{labelPrefix} {triggerIndex}: global save setter requires a target save field.");
+                    }
+                }
+
                 foreach (var questSetter in trigger.QuestSetters)
                 {
                     if (string.IsNullOrWhiteSpace(questSetter.QuestId))
@@ -190,6 +198,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneCall
                 var triggerVariable = $"trigger_{stageIndex + 1}_{triggerType.ToLowerInvariant()}_{triggerIndex}";
                 builder.AppendLine($"var {triggerVariable} = {stageVariable}.AddSystemTrigger(SystemTriggerType.{systemTriggerType});");
                 AppendVariableSetters(builder, trigger.VariableSetters, triggerVariable);
+                AppendGlobalStateSetters(builder, trigger.GlobalStateSetters, triggerVariable, rootNamespace);
                 AppendQuestSetters(builder, trigger.QuestSetters, triggerVariable, stageIndex, triggerIndex, rootNamespace);
                 builder.AppendLine($"OnGeneratedTriggerBuilt(\"Stage{stageIndex + 1}\", \"{triggerType}\", {triggerIndex}, {triggerVariable});");
             }
@@ -207,6 +216,33 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.PhoneCall
                     $"EvaluationType.{setter.Evaluation}, " +
                     $"\"{CodeFormatter.EscapeString(setter.VariableName)}\", " +
                     $"\"{CodeFormatter.EscapeString(setter.NewValue)}\");");
+            }
+        }
+
+        private static void AppendGlobalStateSetters(
+            ICodeBuilder builder,
+            IEnumerable<GlobalStateSetterBlueprint> setters,
+            string triggerVariable,
+            string rootNamespace)
+        {
+            foreach (var setter in setters)
+            {
+                if (string.IsNullOrWhiteSpace(setter.GlobalStateClassName) || string.IsNullOrWhiteSpace(setter.FieldSaveKey))
+                {
+                    continue;
+                }
+
+                var evaluationEvent = setter.Evaluation == PhoneCallTriggerEvaluationOption.PassOnFalse
+                    ? "OnEvaluateFalse"
+                    : "OnEvaluateTrue";
+
+                builder.AppendLine(
+                    $"{triggerVariable}.{evaluationEvent} += () => " +
+                    $"global::{rootNamespace}.Core.SetGeneratedGlobalStateValue(" +
+                    $"\"{CodeFormatter.EscapeString(setter.GlobalStateClassName)}\", " +
+                    $"\"{CodeFormatter.EscapeString(setter.FieldSaveKey)}\", " +
+                    $"\"{CodeFormatter.EscapeString(setter.NewValue)}\", " +
+                    $"{setter.RequestSave.ToString().ToLowerInvariant()});");
             }
         }
 

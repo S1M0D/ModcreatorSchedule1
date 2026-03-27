@@ -14,6 +14,57 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <DataTemplate x:Key="NpcGlobalStateSetterTemplate" DataType="{x:Type models:GlobalStateSetterBlueprint}">
+            <Border BorderBrush="{StaticResource DarkBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,6">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Row="0"
+                              Grid.Column="0"
+                              ItemsSource="{Binding DataContext.AvailableGlobalStateFieldReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                              DisplayMemberPath="DisplayLabel"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Margin="0,0,8,8"
+                              Tag="{Binding}"
+                              Loaded="NpcGlobalStateFieldComboBox_Loaded"
+                              SelectionChanged="NpcGlobalStateFieldComboBox_SelectionChanged"/>
+                    <TextBox Grid.Row="0"
+                             Grid.Column="1"
+                             Text="{Binding NewValue, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"
+                             Margin="0,0,8,8"/>
+                    <CheckBox Grid.Row="0"
+                              Grid.Column="2"
+                              Content="Save"
+                              IsChecked="{Binding RequestSave, UpdateSourceTrigger=PropertyChanged}"
+                              Foreground="{StaticResource LightTextBrush}"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,8"/>
+                    <Button Grid.Row="0"
+                            Grid.Column="3"
+                            Content="Remove"
+                            Tag="{Binding}"
+                            Click="RemoveGeneratedActionGlobalStateSetter_Click"
+                            Style="{StaticResource IconButtonStyle}"
+                            Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="4"
+                               Text="{Binding DisplayName, StringFormat='Target: {0}'}"
+                               Foreground="{StaticResource MediumTextBrush}"
+                               FontSize="10"
+                               TextWrapping="Wrap"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Margin="8" Loaded="Grid_Loaded" VerticalAlignment="Stretch">
@@ -1255,6 +1306,18 @@
                                                             <CheckBox Content="Stop Dialogue Override" IsChecked="{Binding StopDialogueOverride}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,6"/>
                                                             <views:InfoIcon TooltipText="Stops the current dialogue override before the rest of the generated action runs. Safe for choice callbacks. Avoid enabling this on NodeDisplayed because it can recurse."/>
                                                         </StackPanel>
+                                                        <DockPanel Margin="0,0,0,6">
+                                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                                <TextBlock Text="Global Save Setters" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}"/>
+                                                                <views:InfoIcon TooltipText="Writes into generated Global Save Variables when this callback fires. Values are authored as text and parsed into the selected save-field type at runtime." Margin="8,0,0,0"/>
+                                                            </StackPanel>
+                                                            <Button Content="+ Add Setter"
+                                                                    Style="{StaticResource IconButtonStyle}"
+                                                                    Click="AddGeneratedActionGlobalStateSetter_Click"
+                                                                    Tag="{Binding}"
+                                                                    DockPanel.Dock="Right"/>
+                                                        </DockPanel>
+                                                        <ItemsControl ItemsSource="{Binding GlobalStateSetters}" ItemTemplate="{StaticResource NpcGlobalStateSetterTemplate}"/>
                                                         <Button Content="Remove Callback" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueCallback_Click" Tag="{Binding}"/>
                                                     </StackPanel>
                                                 </Border>
@@ -1341,6 +1404,18 @@
                                                             <CheckBox Content="Stop Dialogue Override" IsChecked="{Binding StopDialogueOverride}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,6"/>
                                                             <views:InfoIcon TooltipText="Stops the current override on the target NPC before any generated message or jump runs."/>
                                                         </StackPanel>
+                                                        <DockPanel Margin="0,0,0,6">
+                                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                                <TextBlock Text="Global Save Setters" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}"/>
+                                                                <views:InfoIcon TooltipText="Writes into generated Global Save Variables after this injection runs. Useful for conversation flags, once-only gates, or cross-system state handoff." Margin="8,0,0,0"/>
+                                                            </StackPanel>
+                                                            <Button Content="+ Add Setter"
+                                                                    Style="{StaticResource IconButtonStyle}"
+                                                                    Click="AddGeneratedActionGlobalStateSetter_Click"
+                                                                    Tag="{Binding}"
+                                                                    DockPanel.Dock="Right"/>
+                                                        </DockPanel>
+                                                        <ItemsControl ItemsSource="{Binding GlobalStateSetters}" ItemTemplate="{StaticResource NpcGlobalStateSetterTemplate}"/>
                                                         <Button Content="Remove Injection" Style="{StaticResource IconButtonStyle}" Click="RemoveDialogueInjection_Click" Tag="{Binding}"/>
                                                     </StackPanel>
                                                 </Border>
@@ -1392,6 +1467,18 @@
                                                             <CheckBox Content="Stop Dialogue Override" IsChecked="{Binding StopDialogueOverride}" Foreground="{StaticResource LightTextBrush}" Margin="0,0,0,6"/>
                                                             <views:InfoIcon TooltipText="Stops the current dialogue override before the generated message or jump runs."/>
                                                         </StackPanel>
+                                                        <DockPanel Margin="0,0,0,6">
+                                                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                                <TextBlock Text="Global Save Setters" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}"/>
+                                                                <views:InfoIcon TooltipText="Writes into generated Global Save Variables when this runtime event fires. Use it for counters, unlock flags, or relationship/dealer/customer state handoff." Margin="8,0,0,0"/>
+                                                            </StackPanel>
+                                                            <Button Content="+ Add Setter"
+                                                                    Style="{StaticResource IconButtonStyle}"
+                                                                    Click="AddGeneratedActionGlobalStateSetter_Click"
+                                                                    Tag="{Binding}"
+                                                                    DockPanel.Dock="Right"/>
+                                                        </DockPanel>
+                                                        <ItemsControl ItemsSource="{Binding GlobalStateSetters}" ItemTemplate="{StaticResource NpcGlobalStateSetterTemplate}"/>
                                                         <Button Content="Remove Reaction" Style="{StaticResource IconButtonStyle}" Click="RemoveEventReaction_Click" Tag="{Binding}"/>
                                                     </StackPanel>
                                                 </Border>

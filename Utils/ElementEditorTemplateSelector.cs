@@ -12,6 +12,7 @@ namespace Schedule1ModdingTool.Utils
         public DataTemplate? QuestTemplate { get; set; }
         public DataTemplate? NpcTemplate { get; set; }
         public DataTemplate? ItemTemplate { get; set; }
+        public DataTemplate? GlobalStateTemplate { get; set; }
         public DataTemplate? PhoneCallTemplate { get; set; }
         public DataTemplate? PhoneAppTemplate { get; set; }
         public DataTemplate? WorkspaceTemplate { get; set; }
@@ -38,6 +39,11 @@ namespace Schedule1ModdingTool.Utils
                 if (tab.Item != null && ItemTemplate != null)
                 {
                     return ItemTemplate;
+                }
+
+                if (tab.GlobalState != null && GlobalStateTemplate != null)
+                {
+                    return GlobalStateTemplate;
                 }
 
                 if (tab.PhoneCall != null && PhoneCallTemplate != null)

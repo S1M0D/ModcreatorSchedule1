@@ -493,6 +493,63 @@ namespace Schedule1ModdingTool.Views
             RemoveTaggedItem(sender, CurrentNpc.DialogueInjections);
         }
 
+        private void AddGeneratedActionGlobalStateSetter_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not NpcGeneratedActionBlueprint action || ViewModel == null)
+                return;
+
+            var setter = CreateDefaultGlobalStateSetter(ViewModel);
+            action.GlobalStateSetters.Add(setter);
+            ViewModel.CurrentProject.MarkAsModified();
+        }
+
+        private void RemoveGeneratedActionGlobalStateSetter_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentNpc == null || sender is not Button button || button.Tag is not GlobalStateSetterBlueprint setter)
+                return;
+
+            var collection = FindGeneratedActionGlobalStateSetterCollection(CurrentNpc, setter);
+            if (collection == null)
+                return;
+
+            collection.Remove(setter);
+            ViewModel?.CurrentProject.MarkAsModified();
+        }
+
+        private void NpcGlobalStateFieldComboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.ComboBox comboBox || comboBox.Tag is not GlobalStateSetterBlueprint setter || ViewModel == null)
+                return;
+
+            var selectedReference = ViewModel.AvailableGlobalStateFieldReferences.FirstOrDefault(reference =>
+                string.Equals(reference.GlobalStateClassName, setter.GlobalStateClassName, StringComparison.Ordinal) &&
+                string.Equals(reference.FieldSaveKey, setter.FieldSaveKey, StringComparison.Ordinal));
+
+            if (selectedReference != null)
+            {
+                comboBox.SelectedItem = selectedReference;
+            }
+        }
+
+        private void NpcGlobalStateFieldComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is not System.Windows.Controls.ComboBox comboBox ||
+                comboBox.Tag is not GlobalStateSetterBlueprint setter ||
+                comboBox.SelectedItem is not GlobalStateFieldReferenceInfo reference)
+            {
+                return;
+            }
+
+            var previousType = setter.FieldType;
+            setter.ApplyReference(reference);
+            if (string.IsNullOrWhiteSpace(setter.NewValue) || previousType != reference.FieldType)
+            {
+                setter.NewValue = GetDefaultGlobalStateValue(reference.FieldType);
+            }
+
+            ViewModel?.CurrentProject.MarkAsModified();
+        }
+
         private void AddEventReaction_Click(object sender, RoutedEventArgs e)
         {
             CurrentNpc?.EventReactions.Add(new NpcRuntimeEventReactionBlueprint());
@@ -689,6 +746,56 @@ namespace Schedule1ModdingTool.Views
 
             value = tag;
             return true;
+        }
+
+        private static ObservableCollection<GlobalStateSetterBlueprint>? FindGeneratedActionGlobalStateSetterCollection(
+            NpcBlueprint npc,
+            GlobalStateSetterBlueprint setter)
+        {
+            foreach (var callback in npc.DialogueCallbacks)
+            {
+                if (callback.GlobalStateSetters.Contains(setter))
+                    return callback.GlobalStateSetters;
+            }
+
+            foreach (var injection in npc.DialogueInjections)
+            {
+                if (injection.GlobalStateSetters.Contains(setter))
+                    return injection.GlobalStateSetters;
+            }
+
+            foreach (var reaction in npc.EventReactions)
+            {
+                if (reaction.GlobalStateSetters.Contains(setter))
+                    return reaction.GlobalStateSetters;
+            }
+
+            return null;
+        }
+
+        private static GlobalStateSetterBlueprint CreateDefaultGlobalStateSetter(MainViewModel viewModel)
+        {
+            var setter = new GlobalStateSetterBlueprint();
+            var defaultReference = viewModel.AvailableGlobalStateFieldReferences.FirstOrDefault();
+            if (defaultReference != null)
+            {
+                setter.ApplyReference(defaultReference);
+                setter.NewValue = GetDefaultGlobalStateValue(defaultReference.FieldType);
+            }
+
+            return setter;
+        }
+
+        private static string GetDefaultGlobalStateValue(DataClassFieldType fieldType)
+        {
+            return fieldType switch
+            {
+                DataClassFieldType.Bool => "true",
+                DataClassFieldType.Int => "0",
+                DataClassFieldType.Float => "0",
+                DataClassFieldType.ListString => "item_a,item_b",
+                _ => string.Empty
+            };
         }
     }
 }

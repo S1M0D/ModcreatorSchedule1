@@ -121,6 +121,61 @@
             </Border>
         </DataTemplate>
 
+        <DataTemplate x:Key="PhoneCallGlobalStateSetterTemplate" DataType="{x:Type models:GlobalStateSetterBlueprint}">
+            <Border BorderBrush="#44363F4A" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="170" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ComboBox Grid.Row="0"
+                              Grid.Column="0"
+                              ItemsSource="{x:Static models:PhoneCallBlueprintOptions.TriggerEvaluations}"
+                              SelectedItem="{Binding Evaluation, UpdateSourceTrigger=PropertyChanged}"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Margin="0,0,8,8" />
+                    <ComboBox Grid.Row="0"
+                              Grid.Column="1"
+                              Grid.ColumnSpan="2"
+                              ItemsSource="{Binding DataContext.AvailableGlobalStateFieldReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                              DisplayMemberPath="DisplayLabel"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Margin="0,0,8,8"
+                              Tag="{Binding}"
+                              Loaded="GlobalStateFieldComboBox_Loaded"
+                              SelectionChanged="GlobalStateFieldComboBox_SelectionChanged" />
+                    <CheckBox Grid.Row="0"
+                              Grid.Column="3"
+                              Content="Save"
+                              IsChecked="{Binding RequestSave, UpdateSourceTrigger=PropertyChanged}"
+                              Foreground="{StaticResource LightTextBrush}"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,8" />
+                    <Button Grid.Row="0"
+                            Grid.Column="4"
+                            Content="Remove"
+                            Tag="{Binding}"
+                            Click="RemoveGlobalStateSetter_Click"
+                            Style="{StaticResource IconButtonStyle}"
+                            Margin="0,0,0,8" />
+
+                    <TextBox Grid.Row="1"
+                             Grid.Column="1"
+                             Grid.ColumnSpan="2"
+                             Text="{Binding NewValue, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+
         <DataTemplate x:Key="PhoneCallTriggerTemplate" DataType="{x:Type models:PhoneCallSystemTriggerBlueprint}">
             <Border Background="#221C2430" BorderBrush="#44363F4A" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,0,10">
                 <StackPanel>
@@ -145,6 +200,19 @@
                                 Click="AddVariableSetter_Click" />
                     </DockPanel>
                     <ItemsControl ItemsSource="{Binding VariableSetters}" ItemTemplate="{StaticResource PhoneCallVariableSetterTemplate}" />
+
+                    <DockPanel Margin="0,8,0,8">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                            <TextBlock Text="Global Save Setters" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" />
+                            <views:InfoIcon TooltipText="Sets one of your generated Global Save Variable fields when this trigger evaluates true or false. The Value field is always entered as text, then parsed to the selected save-field type at runtime." Margin="8,0,0,0" />
+                        </StackPanel>
+                        <Button Content="+ Save Setter"
+                                DockPanel.Dock="Right"
+                                Style="{StaticResource IconButtonStyle}"
+                                Tag="{Binding}"
+                                Click="AddGlobalStateSetter_Click" />
+                    </DockPanel>
+                    <ItemsControl ItemsSource="{Binding GlobalStateSetters}" ItemTemplate="{StaticResource PhoneCallGlobalStateSetterTemplate}" />
 
                     <DockPanel Margin="0,8,0,8">
                         <TextBlock Text="Quest Setters" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource LightTextBrush}" DockPanel.Dock="Left" />

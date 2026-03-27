@@ -19,6 +19,7 @@ namespace Schedule1ModdingTool.ViewModels
         private readonly HashSet<QuestBlueprint> _observedQuests = new HashSet<QuestBlueprint>();
         private readonly HashSet<NpcBlueprint> _observedNpcs = new HashSet<NpcBlueprint>();
         private readonly HashSet<ItemBlueprint> _observedItems = new HashSet<ItemBlueprint>();
+        private readonly HashSet<GlobalStateBlueprint> _observedGlobalStates = new HashSet<GlobalStateBlueprint>();
         private readonly HashSet<PhoneCallBlueprint> _observedPhoneCalls = new HashSet<PhoneCallBlueprint>();
         private readonly HashSet<PhoneAppBlueprint> _observedPhoneApps = new HashSet<PhoneAppBlueprint>();
 
@@ -185,6 +186,20 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        public IEnumerable<GlobalStateBlueprint> CurrentGlobalStates
+        {
+            get
+            {
+                if (Project == null || SelectedFolder == null)
+                    return Enumerable.Empty<GlobalStateBlueprint>();
+
+                return Project.GlobalStates
+                    .Where(state => string.Equals(state.FolderId, SelectedFolder.Id, StringComparison.Ordinal))
+                    .Where(state => MatchesSearch(state.DisplayName))
+                    .OrderBy(state => state.DisplayName, StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
         public IEnumerable<PhoneAppBlueprint> CurrentPhoneApps
         {
             get
@@ -218,6 +233,7 @@ namespace Schedule1ModdingTool.ViewModels
                 .Concat(CurrentNpcs)
                 .Concat(CurrentCustomClothing)
                 .Concat(CurrentItems)
+                .Concat(CurrentGlobalStates)
                 .Concat(CurrentPhoneCalls)
                 .Concat(CurrentQuests);
 
@@ -235,6 +251,7 @@ namespace Schedule1ModdingTool.ViewModels
                 Project.Quests.CollectionChanged -= OnProjectQuestsChanged;
                 Project.Npcs.CollectionChanged -= OnProjectNpcsChanged;
                 Project.Items.CollectionChanged -= OnProjectItemsChanged;
+                Project.GlobalStates.CollectionChanged -= OnProjectGlobalStatesChanged;
                 Project.PhoneCalls.CollectionChanged -= OnProjectPhoneCallsChanged;
                 Project.PhoneApps.CollectionChanged -= OnProjectPhoneAppsChanged;
                 Project.Folders.CollectionChanged -= OnProjectFoldersChanged;
@@ -250,6 +267,10 @@ namespace Schedule1ModdingTool.ViewModels
                 {
                     item.PropertyChanged -= BlueprintOnPropertyChanged;
                 }
+                foreach (var globalState in _observedGlobalStates.ToArray())
+                {
+                    globalState.PropertyChanged -= BlueprintOnPropertyChanged;
+                }
                 foreach (var phoneCall in _observedPhoneCalls.ToArray())
                 {
                     phoneCall.PropertyChanged -= BlueprintOnPropertyChanged;
@@ -261,6 +282,7 @@ namespace Schedule1ModdingTool.ViewModels
                 _observedQuests.Clear();
                 _observedNpcs.Clear();
                 _observedItems.Clear();
+                _observedGlobalStates.Clear();
                 _observedPhoneCalls.Clear();
                 _observedPhoneApps.Clear();
             }
@@ -269,6 +291,7 @@ namespace Schedule1ModdingTool.ViewModels
             Project.Quests.CollectionChanged += OnProjectQuestsChanged;
             Project.Npcs.CollectionChanged += OnProjectNpcsChanged;
             Project.Items.CollectionChanged += OnProjectItemsChanged;
+            Project.GlobalStates.CollectionChanged += OnProjectGlobalStatesChanged;
             Project.PhoneCalls.CollectionChanged += OnProjectPhoneCallsChanged;
             Project.PhoneApps.CollectionChanged += OnProjectPhoneAppsChanged;
             Project.Folders.CollectionChanged += OnProjectFoldersChanged;
@@ -286,6 +309,11 @@ namespace Schedule1ModdingTool.ViewModels
             foreach (var item in Project.Items)
             {
                 ObserveBlueprint(item);
+            }
+
+            foreach (var globalState in Project.GlobalStates)
+            {
+                ObserveBlueprint(globalState);
             }
 
             foreach (var phoneCall in Project.PhoneCalls)
@@ -383,6 +411,15 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
+        public void UpdateGlobalStateCount(int count)
+        {
+            var globalStateCategory = Categories.FirstOrDefault(c => c.Category == ModCategory.GlobalSaveVariables);
+            if (globalStateCategory != null)
+            {
+                globalStateCategory.Count = count;
+            }
+        }
+
         public void UpdatePhoneCallCount(int count)
         {
             var phoneCallCategory = Categories.FirstOrDefault(c => c.Category == ModCategory.PhoneCalls);
@@ -440,6 +477,17 @@ namespace Schedule1ModdingTool.ViewModels
                 DisplayName = "Items",
                 IconKey = "ItemsIcon",
                 Description = "Create custom items",
+                IsEnabled = true,
+                Count = 0,
+                ComingSoonText = string.Empty
+            });
+
+            Categories.Add(new ModCategoryInfo
+            {
+                Category = ModCategory.GlobalSaveVariables,
+                DisplayName = "Global Save Variables",
+                IconKey = "SaveIcon",
+                Description = "Create persistent S1API saveable state containers",
                 IsEnabled = true,
                 Count = 0,
                 ComingSoonText = string.Empty
@@ -529,6 +577,30 @@ namespace Schedule1ModdingTool.ViewModels
             RaiseItemsChanged();
         }
 
+        private void OnProjectGlobalStatesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems.OfType<GlobalStateBlueprint>())
+                {
+                    ObserveBlueprint(item);
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems.OfType<GlobalStateBlueprint>())
+                {
+                    if (_observedGlobalStates.Remove(item))
+                    {
+                        item.PropertyChanged -= BlueprintOnPropertyChanged;
+                    }
+                }
+            }
+
+            RaiseItemsChanged();
+        }
+
         private void OnProjectPhoneCallsChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
@@ -601,6 +673,7 @@ namespace Schedule1ModdingTool.ViewModels
                 e.PropertyName == nameof(NpcBlueprint.FolderId) ||
                 e.PropertyName == nameof(ItemBlueprint.FolderId) ||
                 e.PropertyName == nameof(ItemBlueprint.ItemType) ||
+                e.PropertyName == nameof(GlobalStateBlueprint.FolderId) ||
                 e.PropertyName == nameof(PhoneCallBlueprint.FolderId) ||
                 e.PropertyName == nameof(PhoneAppBlueprint.FolderId))
             {
@@ -629,6 +702,14 @@ namespace Schedule1ModdingTool.ViewModels
             if (_observedItems.Add(item))
             {
                 item.PropertyChanged += BlueprintOnPropertyChanged;
+            }
+        }
+
+        private void ObserveBlueprint(GlobalStateBlueprint globalState)
+        {
+            if (_observedGlobalStates.Add(globalState))
+            {
+                globalState.PropertyChanged += BlueprintOnPropertyChanged;
             }
         }
 

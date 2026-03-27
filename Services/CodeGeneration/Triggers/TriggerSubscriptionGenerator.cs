@@ -39,6 +39,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 || (quest.QuestFinishTriggers?.Any() == true)
                 || (quest.Objectives?.Any(o => o.StartTriggers?.Any() == true || o.FinishTriggers?.Any() == true) == true);
             var hasRewards = quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0;
+            var hasCompletionGlobalStateSetters = quest.CompletionGlobalStateSetters.Count > 0;
+            var hasFailureGlobalStateSetters = quest.FailureGlobalStateSetters.Count > 0;
             var hasHooks = quest.GenerateHookScaffold;
 
             builder.AppendComment("Generated from: Quest.QuestTriggers, Quest.QuestFinishTriggers, Quest.Objectives[].StartTriggers, Quest.Objectives[].FinishTriggers");
@@ -46,7 +48,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
 
             builder.OpenBlock("private void SubscribeToTriggers()");
 
-            if (!hasTriggers && !hasRewards && !hasHooks)
+            if (!hasTriggers && !hasRewards && !hasCompletionGlobalStateSetters && !hasFailureGlobalStateSetters && !hasHooks)
             {
                 builder.AppendComment("No triggers configured for this quest");
                 builder.CloseBlock();
@@ -61,6 +63,11 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
             if (hasRewards)
             {
                 GenerateQuestRewardSubscription(builder, quest);
+            }
+
+            if (hasCompletionGlobalStateSetters || hasFailureGlobalStateSetters)
+            {
+                GenerateQuestGlobalStateSetterSubscriptions(builder, quest);
             }
 
             if (hasHooks)
@@ -469,6 +476,27 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Triggers
                 builder,
                 "Failed to subscribe to quest completion event",
                 () => AppendMethodHandlerSubscription(builder, "OnComplete", "_onQuestCompletedHandler", "GrantQuestRewards"));
+        }
+
+        private void GenerateQuestGlobalStateSetterSubscriptions(ICodeBuilder builder, QuestBlueprint quest)
+        {
+            if (quest.CompletionGlobalStateSetters.Count > 0)
+            {
+                builder.AppendComment("Generated from: Quest.CompletionGlobalStateSetters[]");
+                AppendSubscriptionWithErrorHandling(
+                    builder,
+                    "Failed to subscribe generated quest completion save setters",
+                    () => AppendMethodHandlerSubscription(builder, "OnComplete", "_onQuestCompletedGlobalStateHandler", "ApplyGeneratedCompletionGlobalStateSetters"));
+            }
+
+            if (quest.FailureGlobalStateSetters.Count > 0)
+            {
+                builder.AppendComment("Generated from: Quest.FailureGlobalStateSetters[]");
+                AppendSubscriptionWithErrorHandling(
+                    builder,
+                    "Failed to subscribe generated quest failure save setters",
+                    () => AppendMethodHandlerSubscription(builder, "OnFail", "_onQuestFailedGlobalStateHandler", "ApplyGeneratedFailureGlobalStateSetters"));
+            }
         }
 
         private void GenerateQuestHookSubscriptions(ICodeBuilder builder)

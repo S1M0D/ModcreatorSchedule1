@@ -435,12 +435,14 @@ namespace Schedule1ModdingTool.Models
     public class PhoneCallSystemTriggerBlueprint : ObservableObject
     {
         private readonly HashSet<PhoneCallVariableSetterBlueprint> _trackedVariableSetters = new();
+        private readonly HashSet<GlobalStateSetterBlueprint> _trackedGlobalStateSetters = new();
         private readonly HashSet<PhoneCallQuestSetterBlueprint> _trackedQuestSetters = new();
         private string _name = "Trigger";
 
         public PhoneCallSystemTriggerBlueprint()
         {
             VariableSetters.CollectionChanged += VariableSettersOnCollectionChanged;
+            GlobalStateSetters.CollectionChanged += GlobalStateSettersOnCollectionChanged;
             QuestSetters.CollectionChanged += QuestSettersOnCollectionChanged;
         }
 
@@ -460,6 +462,9 @@ namespace Schedule1ModdingTool.Models
         [JsonProperty("variableSetters")]
         public ObservableCollection<PhoneCallVariableSetterBlueprint> VariableSetters { get; } = new();
 
+        [JsonProperty("globalStateSetters")]
+        public ObservableCollection<GlobalStateSetterBlueprint> GlobalStateSetters { get; } = new();
+
         [JsonProperty("questSetters")]
         public ObservableCollection<PhoneCallQuestSetterBlueprint> QuestSetters { get; } = new();
 
@@ -473,7 +478,7 @@ namespace Schedule1ModdingTool.Models
                     return Name;
                 }
 
-                var setterCount = VariableSetters.Count + QuestSetters.Count;
+                var setterCount = VariableSetters.Count + GlobalStateSetters.Count + QuestSetters.Count;
                 return setterCount == 0 ? "Trigger" : $"Trigger ({setterCount} setters)";
             }
         }
@@ -488,6 +493,12 @@ namespace Schedule1ModdingTool.Models
             foreach (var variableSetter in source.VariableSetters)
             {
                 VariableSetters.Add(variableSetter.DeepCopy());
+            }
+
+            GlobalStateSetters.Clear();
+            foreach (var setter in source.GlobalStateSetters)
+            {
+                GlobalStateSetters.Add(setter.DeepCopy());
             }
 
             QuestSetters.Clear();
@@ -548,6 +559,28 @@ namespace Schedule1ModdingTool.Models
             OnPropertyChanged(nameof(DisplayName));
         }
 
+        private void GlobalStateSettersOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+            {
+                foreach (var removed in e.OldItems.OfType<GlobalStateSetterBlueprint>())
+                {
+                    DetachGlobalStateSetterHandlers(removed);
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var added in e.NewItems.OfType<GlobalStateSetterBlueprint>())
+                {
+                    AttachGlobalStateSetterHandlers(added);
+                }
+            }
+
+            OnPropertyChanged(nameof(GlobalStateSetters));
+            OnPropertyChanged(nameof(DisplayName));
+        }
+
         private void AttachVariableSetterHandlers(PhoneCallVariableSetterBlueprint variableSetter)
         {
             if (_trackedVariableSetters.Add(variableSetter))
@@ -561,6 +594,22 @@ namespace Schedule1ModdingTool.Models
             if (_trackedVariableSetters.Remove(variableSetter))
             {
                 variableSetter.PropertyChanged -= SetterOnPropertyChanged;
+            }
+        }
+
+        private void AttachGlobalStateSetterHandlers(GlobalStateSetterBlueprint setter)
+        {
+            if (_trackedGlobalStateSetters.Add(setter))
+            {
+                setter.PropertyChanged += SetterOnPropertyChanged;
+            }
+        }
+
+        private void DetachGlobalStateSetterHandlers(GlobalStateSetterBlueprint setter)
+        {
+            if (_trackedGlobalStateSetters.Remove(setter))
+            {
+                setter.PropertyChanged -= SetterOnPropertyChanged;
             }
         }
 
@@ -583,6 +632,7 @@ namespace Schedule1ModdingTool.Models
         private void SetterOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             OnPropertyChanged(nameof(VariableSetters));
+            OnPropertyChanged(nameof(GlobalStateSetters));
             OnPropertyChanged(nameof(QuestSetters));
             OnPropertyChanged(nameof(DisplayName));
         }

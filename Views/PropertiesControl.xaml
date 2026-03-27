@@ -15,6 +15,62 @@
         <utils:FilteredTriggersConverter x:Key="FilteredTriggersConverter" />
         <utils:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter" />
         <utils:QuestEntryVisibilityConverter x:Key="QuestEntryVisibilityConverter" />
+        <DataTemplate x:Key="QuestGlobalStateSetterTemplate" DataType="{x:Type models:GlobalStateSetterBlueprint}">
+            <Border Background="{StaticResource DarkBackgroundBrush}"
+                    BorderBrush="{StaticResource DarkBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Margin="0,0,0,8"
+                    Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Row="0"
+                              Grid.Column="0"
+                              ItemsSource="{Binding DataContext.AvailableGlobalStateFieldReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                              DisplayMemberPath="DisplayLabel"
+                              Style="{StaticResource ComboBoxStyle}"
+                              Margin="0,0,8,8"
+                              Tag="{Binding}"
+                              Loaded="QuestGlobalStateFieldComboBox_Loaded"
+                              SelectionChanged="QuestGlobalStateFieldComboBox_SelectionChanged"/>
+                    <TextBox Grid.Row="0"
+                             Grid.Column="1"
+                             Text="{Binding NewValue, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource TextBoxStyle}"
+                             Margin="0,0,8,8"/>
+                    <CheckBox Grid.Row="0"
+                              Grid.Column="2"
+                              Content="Save"
+                              IsChecked="{Binding RequestSave, UpdateSourceTrigger=PropertyChanged}"
+                              Foreground="{StaticResource LightTextBrush}"
+                              VerticalAlignment="Center"
+                              Margin="0,0,8,8"/>
+                    <Button Grid.Row="0"
+                            Grid.Column="3"
+                            Content="Remove"
+                            Tag="{Binding}"
+                            Click="RemoveQuestGlobalStateSetter_Click"
+                            Style="{StaticResource IconButtonStyle}"
+                            Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="1"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="4"
+                               Text="{Binding DisplayName, StringFormat='Target: {0}'}"
+                               Foreground="{StaticResource MediumTextBrush}"
+                               FontSize="10"
+                               TextWrapping="Wrap"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Margin="8" VerticalAlignment="Stretch">
@@ -330,6 +386,53 @@
                                               IsChecked="{Binding SelectedQuest.AutoCompleteOnAllEntriesComplete}"
                                               Foreground="{StaticResource LightTextBrush}"/>
                                     <views:InfoIcon PropertyName="AutoCompleteOnAllEntriesComplete"/>
+                                </StackPanel>
+
+                                <StackPanel Margin="0,10,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Load Order" Style="{StaticResource LabelStyle}" />
+                                        <views:InfoIcon PropertyName="LoadOrder" />
+                                    </StackPanel>
+                                    <ComboBox ItemsSource="{x:Static models:QuestBlueprintOptions.LoadOrders}"
+                                              SelectedItem="{Binding SelectedQuest.LoadOrder}"
+                                              Style="{StaticResource ComboBoxStyle}" />
+                                    <TextBlock Text="Use AfterBaseGame for most quests. BeforeBaseGame is only for advanced cases where your saveable data must load before base-game saveables."
+                                               Foreground="{StaticResource MediumTextBrush}"
+                                               FontSize="10"
+                                               Margin="4,4,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <StackPanel Margin="0,12,0,0">
+                                    <DockPanel Margin="0,0,0,8">
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                            <TextBlock Text="On Complete Save Setters" FontWeight="SemiBold"/>
+                                            <views:InfoIcon TooltipText="When the quest completes, these setters write values into your generated Global Save Variables. Values are authored as text and parsed into the selected save-field type at runtime." Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                        <Button Content="+ Add Setter"
+                                                Click="AddCompletionGlobalStateSetter_Click"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                DockPanel.Dock="Right"
+                                                HorizontalAlignment="Right"/>
+                                    </DockPanel>
+                                    <ItemsControl ItemsSource="{Binding SelectedQuest.CompletionGlobalStateSetters}"
+                                                  ItemTemplate="{StaticResource QuestGlobalStateSetterTemplate}"/>
+                                </StackPanel>
+
+                                <StackPanel Margin="0,12,0,0">
+                                    <DockPanel Margin="0,0,0,8">
+                                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                            <TextBlock Text="On Fail Save Setters" FontWeight="SemiBold"/>
+                                            <views:InfoIcon TooltipText="When the quest fails, these setters write values into your generated Global Save Variables. Use this for global flags, counters, or state handoffs into other systems." Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                        <Button Content="+ Add Setter"
+                                                Click="AddFailureGlobalStateSetter_Click"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                DockPanel.Dock="Right"
+                                                HorizontalAlignment="Right"/>
+                                    </DockPanel>
+                                    <ItemsControl ItemsSource="{Binding SelectedQuest.FailureGlobalStateSetters}"
+                                                  ItemTemplate="{StaticResource QuestGlobalStateSetterTemplate}"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -831,7 +934,7 @@
                                                         <CheckBox Content="Has Location"
                                                                   IsChecked="{Binding HasLocation}"
                                                                   Foreground="{StaticResource LightTextBrush}"/>
-                                                        <views:InfoIcon TooltipText="If enabled, this objective has a specific location and will automatically create a POI marker. Used for location-based triggers and waypoints"/>
+                                                        <views:InfoIcon TooltipText="If enabled, this objective stores a world location or follows an NPC. You can separately choose whether that location should create a player-facing POI marker."/>
                                                     </StackPanel>
 
                                                     <StackPanel Visibility="{Binding HasLocation, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -841,6 +944,13 @@
                                                                       IsChecked="{Binding UseNpcLocation}"
                                                                       Foreground="{StaticResource LightTextBrush}"/>
                                                             <views:InfoIcon TooltipText="If enabled, the POI marker will follow the selected NPC as they move"/>
+                                                        </StackPanel>
+
+                                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                            <CheckBox Content="Create POI Marker"
+                                                                      IsChecked="{Binding CreatePOI}"
+                                                                      Foreground="{StaticResource LightTextBrush}"/>
+                                                            <views:InfoIcon PropertyName="CreatePOI" Margin="8,0,0,0"/>
                                                         </StackPanel>
 
                                                         <views:NpcSelector SelectedNpcId="{Binding NpcId, Mode=TwoWay}"

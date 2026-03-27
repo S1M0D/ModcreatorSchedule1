@@ -38,6 +38,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             var builder = new CodeBuilder();
             var className = IdentifierSanitizer.MakeSafeIdentifier(quest.ClassName, "GeneratedQuest");
             var targetNamespace = NamespaceNormalizer.Normalize(quest.Namespace);
+            var rootNamespace = GetRootNamespace(targetNamespace);
 
             // File header
             _headerGenerator.Generate(builder, quest);
@@ -51,7 +52,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.OpenBlock($"namespace {targetNamespace}");
 
             // Quest class
-            GenerateQuestClass(builder, quest, className, targetNamespace);
+            GenerateQuestClass(builder, quest, className, targetNamespace, rootNamespace);
 
             builder.CloseBlock(); // namespace
 
@@ -61,7 +62,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
         /// <summary>
         /// Generates the quest class definition with all members.
         /// </summary>
-        private void GenerateQuestClass(ICodeBuilder builder, QuestBlueprint quest, string className, string targetNamespace)
+        private void GenerateQuestClass(ICodeBuilder builder, QuestBlueprint quest, string className, string targetNamespace, string rootNamespace)
         {
             var questId = string.IsNullOrWhiteSpace(quest.QuestId) ? className : quest.QuestId.Trim();
 
@@ -102,16 +103,36 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             // OnLoaded method
             _methodGenerator.GenerateOnLoadedMethod(builder, quest);
 
+            if (quest.GenerateHookScaffold)
+            {
+                _methodGenerator.GenerateOnSavedMethod(builder, quest);
+            }
+
             // WaitForNPCs coroutine if NPCs are required (for OnLoaded)
             if (quest.Objectives?.Any(obj => obj.HasLocation && obj.UseNpcLocation && !string.IsNullOrWhiteSpace(obj.NpcId)) == true)
             {
                 _methodGenerator.GenerateWaitForNPCsCoroutine(builder, quest);
             }
 
+            if (quest.Objectives?.Any(obj => obj.HasLocation && !obj.CreatePOI) == true)
+            {
+                _methodGenerator.GenerateDisableObjectivePoiMethod(builder);
+            }
+
             // Reward method if needed
             if (quest.QuestRewards && quest.QuestRewardsList != null && quest.QuestRewardsList.Count > 0)
             {
                 _methodGenerator.GenerateRewardMethod(builder, quest);
+            }
+
+            if (quest.CompletionGlobalStateSetters.Count > 0)
+            {
+                _methodGenerator.GenerateCompletionGlobalStateSetterMethod(builder, quest, rootNamespace);
+            }
+
+            if (quest.FailureGlobalStateSetters.Count > 0)
+            {
+                _methodGenerator.GenerateFailureGlobalStateSetterMethod(builder, quest, rootNamespace);
             }
 
             // Icon loading method if needed
@@ -130,6 +151,20 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
                 builder.AppendComment("🔧 Generated from: Quest.QuestRewards = true");
                 builder.AppendComment("Quest completion event handler for rewards");
                 builder.AppendLine("private System.Action? _onQuestCompletedHandler;");
+                builder.AppendLine();
+            }
+
+            if (quest.CompletionGlobalStateSetters.Count > 0)
+            {
+                builder.AppendComment("Generated from: Quest.CompletionGlobalStateSetters[]");
+                builder.AppendLine("private System.Action? _onQuestCompletedGlobalStateHandler;");
+                builder.AppendLine();
+            }
+
+            if (quest.FailureGlobalStateSetters.Count > 0)
+            {
+                builder.AppendComment("Generated from: Quest.FailureGlobalStateSetters[]");
+                builder.AppendLine("private System.Action? _onQuestFailedGlobalStateHandler;");
                 builder.AppendLine();
             }
 
@@ -267,6 +302,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             return $"new List<string> {{ {string.Join(", ", itemStrings)} }}";
         }
 
+        private static string GetRootNamespace(string targetNamespace)
+        {
+            const string questSuffix = ".Quests";
+            return targetNamespace.EndsWith(questSuffix, StringComparison.Ordinal)
+                ? targetNamespace[..^questSuffix.Length]
+                : targetNamespace;
+        }
+
         /// <summary>
         /// Generates quest property overrides (Title, Description, AutoBegin, etc.).
         /// </summary>
@@ -278,6 +321,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.AppendLine($"protected override string Description => \"{CodeFormatter.EscapeString(quest.QuestDescription)}\";");
             builder.AppendComment("🔧 Generated from: Quest.AutoBegin");
             builder.AppendLine($"protected override bool AutoBegin => {quest.AutoBegin.ToString().ToLowerInvariant()};");
+            builder.AppendComment("Generated from: Quest.LoadOrder");
+            builder.AppendLine($"public override SaveableLoadOrder LoadOrder => SaveableLoadOrder.{quest.LoadOrder};");
 
             if (quest.CustomIcon)
             {
@@ -327,6 +372,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Quest
             builder.AppendLine("partial void ConfigureGeneratedObjective(int objectiveIndex, QuestEntry entry);");
             builder.AppendLine("partial void OnAfterCreatedGenerated();");
             builder.AppendLine("partial void OnAfterLoadedGenerated();");
+            builder.AppendLine("partial void OnAfterSavedGenerated();");
             builder.AppendLine("partial void OnAfterTriggerSubscriptionsGenerated();");
             builder.AppendLine("partial void OnQuestCompletedGenerated();");
             builder.AppendLine("partial void OnQuestFailedGenerated();");

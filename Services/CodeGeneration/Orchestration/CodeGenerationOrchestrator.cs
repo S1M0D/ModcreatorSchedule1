@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.Services.CodeGeneration.Abstractions;
+using Schedule1ModdingTool.Services.CodeGeneration.GlobalState;
 using Schedule1ModdingTool.Services.CodeGeneration.Item;
 using Schedule1ModdingTool.Services.CodeGeneration.Quest;
 using Schedule1ModdingTool.Services.CodeGeneration.Npc;
@@ -19,6 +20,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
         private readonly ICodeGenerator<QuestBlueprint> _questGenerator;
         private readonly ICodeGenerator<NpcBlueprint> _npcGenerator;
         private readonly ICodeGenerator<ItemBlueprint> _itemGenerator;
+        private readonly ICodeGenerator<GlobalStateBlueprint> _globalStateGenerator;
         private readonly ICodeGenerator<PhoneCallBlueprint> _phoneCallGenerator;
         private readonly ICodeGenerator<PhoneAppBlueprint> _phoneAppGenerator;
 
@@ -26,7 +28,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
         /// Creates a new orchestrator with default generators.
         /// </summary>
         public CodeGenerationOrchestrator()
-            : this(null, null, null, null, null)
+            : this(null, null, null, null, null, null)
         {
         }
 
@@ -39,12 +41,14 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
             ICodeGenerator<QuestBlueprint>? questGenerator = null,
             ICodeGenerator<NpcBlueprint>? npcGenerator = null,
             ICodeGenerator<ItemBlueprint>? itemGenerator = null,
+            ICodeGenerator<GlobalStateBlueprint>? globalStateGenerator = null,
             ICodeGenerator<PhoneCallBlueprint>? phoneCallGenerator = null,
             ICodeGenerator<PhoneAppBlueprint>? phoneAppGenerator = null)
         {
             _questGenerator = questGenerator ?? new QuestCodeGenerator();
             _npcGenerator = npcGenerator ?? new NpcCodeGenerator();
             _itemGenerator = itemGenerator ?? new ItemCodeGenerator();
+            _globalStateGenerator = globalStateGenerator ?? new GlobalStateCodeGenerator();
             _phoneCallGenerator = phoneCallGenerator ?? new PhoneCallCodeGenerator();
             _phoneAppGenerator = phoneAppGenerator ?? new PhoneAppCodeGenerator();
         }
@@ -86,6 +90,17 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
                 throw new ArgumentNullException(nameof(item));
 
             return _itemGenerator.GenerateCode(item);
+        }
+
+        /// <summary>
+        /// Generates complete C# source code for a global saveable blueprint.
+        /// </summary>
+        public string GenerateGlobalStateCode(GlobalStateBlueprint globalState)
+        {
+            if (globalState == null)
+                throw new ArgumentNullException(nameof(globalState));
+
+            return _globalStateGenerator.GenerateCode(globalState);
         }
 
         /// <summary>
@@ -157,6 +172,21 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Orchestration
                 };
 
             return _itemGenerator.Validate(item);
+        }
+
+        /// <summary>
+        /// Validates a global saveable blueprint before generation.
+        /// </summary>
+        public CodeGenerationValidationResult ValidateGlobalState(GlobalStateBlueprint globalState)
+        {
+            if (globalState == null)
+                return new CodeGenerationValidationResult
+                {
+                    IsValid = false,
+                    Errors = { "Global saveable blueprint cannot be null" }
+                };
+
+            return _globalStateGenerator.Validate(globalState);
         }
 
         /// <summary>

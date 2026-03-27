@@ -350,6 +350,9 @@ namespace Schedule1ModdingTool.Views
             // Ctrl+Shift+C - New Custom Clothing
             InputBindings.Add(new KeyBinding(vm.NewCustomClothingCommand, Key.C, ModifierKeys.Control | ModifierKeys.Shift));
 
+            // Ctrl+Shift+G - New Global Save Variables
+            InputBindings.Add(new KeyBinding(vm.NewGlobalStateCommand, Key.G, ModifierKeys.Control | ModifierKeys.Shift));
+
             // Ctrl+Shift+P - New Phone Call
             InputBindings.Add(new KeyBinding(vm.NewPhoneCallCommand, Key.P, ModifierKeys.Control | ModifierKeys.Shift));
             
@@ -452,6 +455,14 @@ namespace Schedule1ModdingTool.Views
             if (DataContext is MainViewModel vm)
             {
                 vm.NewCustomClothingCommand.Execute(null);
+            }
+        }
+
+        private void AddGlobalStateMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.NewGlobalStateCommand.Execute(null);
             }
         }
 

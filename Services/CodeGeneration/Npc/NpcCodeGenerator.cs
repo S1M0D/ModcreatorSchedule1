@@ -19,6 +19,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             var builder = new CodeBuilder();
             var className = IdentifierSanitizer.MakeSafeIdentifier(npc.ClassName, "GeneratedNpc");
             var targetNamespace = NamespaceNormalizer.NormalizeForNpc(npc.Namespace);
+            var rootNamespace = GetRootNamespace(targetNamespace);
 
             _headerGenerator.Generate(builder, npc);
 
@@ -27,7 +28,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             usingsBuilder.GenerateUsings(builder);
 
             builder.OpenBlock($"namespace {targetNamespace}");
-            GenerateNpcClass(builder, npc, className);
+            GenerateNpcClass(builder, npc, className, rootNamespace);
             builder.CloseBlock();
             return builder.Build();
         }
@@ -83,7 +84,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             return result;
         }
 
-        private void GenerateNpcClass(ICodeBuilder builder, NpcBlueprint npc, string className)
+        private void GenerateNpcClass(ICodeBuilder builder, NpcBlueprint npc, string className, string rootNamespace)
         {
             builder.AppendBlockComment(
                 $"Auto-generated NPC blueprint for \"{CodeFormatter.EscapeString(npc.DisplayName)}\".",
@@ -106,9 +107,9 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             GenerateOnLoadedMethod(builder);
             GenerateOnResponseLoadedMethod(builder);
             GenerateRuntimeSettingsMethod(builder, npc);
-            GenerateDialogueConfigurationMethod(builder, npc);
-            GenerateRuntimeEventsMethod(builder, npc);
-            GenerateDialogueInjectionMethod(builder, npc);
+            GenerateDialogueConfigurationMethod(builder, npc, rootNamespace);
+            GenerateRuntimeEventsMethod(builder, npc, rootNamespace);
+            GenerateDialogueInjectionMethod(builder, npc, rootNamespace);
             GenerateActionHelpers(builder);
             GeneratePartialHookMembers(builder);
 
@@ -401,7 +402,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             builder.AppendLine();
         }
 
-        private void GenerateDialogueConfigurationMethod(ICodeBuilder builder, NpcBlueprint npc)
+        private void GenerateDialogueConfigurationMethod(ICodeBuilder builder, NpcBlueprint npc, string rootNamespace)
         {
             builder.OpenBlock("private void ConfigureGeneratedDialogue()");
             if (npc.DialogueDatabaseEntries.Count == 0 && npc.DialogueContainers.Count == 0 && npc.DialogueCallbacks.Count == 0)
@@ -477,7 +478,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                 {
                     case NpcDialogueCallbackType.ConversationStarted:
                         builder.OpenBlock("Dialogue.OnConversationStart(() =>");
-                        AppendGeneratedActionInvocation(builder, callback);
+                        AppendGeneratedActionInvocation(builder, callback, rootNamespace);
                         builder.CloseBlock();
                         builder.AppendLine(");");
                         break;
@@ -486,7 +487,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                         if (!string.IsNullOrWhiteSpace(callback.MatchKey))
                         {
                             builder.OpenBlock($"Dialogue.OnNodeDisplayed(\"{CodeFormatter.EscapeString(callback.MatchKey)}\", () =>");
-                            AppendGeneratedActionInvocation(builder, callback);
+                            AppendGeneratedActionInvocation(builder, callback, rootNamespace);
                             builder.CloseBlock();
                             builder.AppendLine(");");
                         }
@@ -496,7 +497,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                         if (!string.IsNullOrWhiteSpace(callback.MatchKey))
                         {
                             builder.OpenBlock($"Dialogue.OnChoiceSelected(\"{CodeFormatter.EscapeString(callback.MatchKey)}\", () =>");
-                            AppendGeneratedActionInvocation(builder, callback);
+                            AppendGeneratedActionInvocation(builder, callback, rootNamespace);
                             builder.CloseBlock();
                             builder.AppendLine(");");
                         }
@@ -507,7 +508,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             builder.CloseBlock();
             builder.AppendLine();
         }
-        private void GenerateRuntimeEventsMethod(ICodeBuilder builder, NpcBlueprint npc)
+        private void GenerateRuntimeEventsMethod(ICodeBuilder builder, NpcBlueprint npc, string rootNamespace)
         {
             builder.OpenBlock("private void RegisterGeneratedRuntimeEvents()");
             builder.OpenBlock("if (_generatedRuntimeEventsRegistered)");
@@ -524,7 +525,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                     NpcRuntimeEventType.CustomerUnlocked,
                     "Customer.OnUnlocked",
                     "()",
-                    "OnCustomerUnlockedGenerated()");
+                    "OnCustomerUnlockedGenerated()",
+                    rootNamespace);
 
                 AppendGeneratedRuntimeEventSubscription(
                     builder,
@@ -532,7 +534,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                     NpcRuntimeEventType.CustomerDealCompleted,
                     "Customer.OnDealCompleted",
                     "()",
-                    "OnCustomerDealCompletedGenerated()");
+                    "OnCustomerDealCompletedGenerated()",
+                    rootNamespace);
 
                 AppendGeneratedRuntimeEventSubscription(
                     builder,
@@ -540,7 +543,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                     NpcRuntimeEventType.CustomerContractAssigned,
                     "Customer.OnContractAssigned",
                     "(payment, quantity, startTime, endTime)",
-                    "OnCustomerContractAssignedGenerated(payment, quantity, startTime, endTime)");
+                    "OnCustomerContractAssignedGenerated(payment, quantity, startTime, endTime)",
+                    rootNamespace);
             }
 
             if (npc.IsDealer)
@@ -551,7 +555,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                     NpcRuntimeEventType.DealerRecruited,
                     "Dealer.OnRecruited",
                     "()",
-                    "OnDealerRecruitedGenerated()");
+                    "OnDealerRecruitedGenerated()",
+                    rootNamespace);
 
                 AppendGeneratedRuntimeEventSubscription(
                     builder,
@@ -559,7 +564,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                     NpcRuntimeEventType.DealerContractAccepted,
                     "Dealer.OnContractAccepted",
                     "()",
-                    "OnDealerContractAcceptedGenerated()");
+                    "OnDealerContractAcceptedGenerated()",
+                    rootNamespace);
 
                 AppendGeneratedRuntimeEventSubscription(
                     builder,
@@ -567,7 +573,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                     NpcRuntimeEventType.DealerRecommended,
                     "Dealer.OnRecommended",
                     "()",
-                    "OnDealerRecommendedGenerated()");
+                    "OnDealerRecommendedGenerated()",
+                    rootNamespace);
             }
 
             AppendGeneratedRuntimeEventSubscription(
@@ -576,7 +583,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                 NpcRuntimeEventType.RelationshipChanged,
                 "Relationship.OnChanged",
                 "delta",
-                "OnRelationshipChangedGenerated(delta)");
+                "OnRelationshipChangedGenerated(delta)",
+                rootNamespace);
 
             AppendGeneratedRuntimeEventSubscription(
                 builder,
@@ -584,7 +592,8 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                 NpcRuntimeEventType.RelationshipUnlocked,
                 "Relationship.OnUnlocked",
                 "(unlockType, alreadyUnlocked)",
-                "OnRelationshipUnlockedGenerated(unlockType, alreadyUnlocked)");
+                "OnRelationshipUnlockedGenerated(unlockType, alreadyUnlocked)",
+                rootNamespace);
 
             builder.CloseBlock();
             builder.AppendLine();
@@ -596,12 +605,13 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             NpcRuntimeEventType eventType,
             string eventPath,
             string lambdaSignature,
-            string generatedHookCall)
+            string generatedHookCall,
+            string rootNamespace)
         {
             builder.OpenBlock($"{eventPath} += {lambdaSignature} =>");
             foreach (var reaction in npc.EventReactions.Where(reaction => reaction.EventType == eventType))
             {
-                AppendGeneratedActionInvocation(builder, reaction);
+                AppendGeneratedActionInvocation(builder, reaction, rootNamespace);
             }
 
             builder.AppendLine($"{generatedHookCall};");
@@ -610,7 +620,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             builder.AppendLine();
         }
 
-        private void GenerateDialogueInjectionMethod(ICodeBuilder builder, NpcBlueprint npc)
+        private void GenerateDialogueInjectionMethod(ICodeBuilder builder, NpcBlueprint npc, string rootNamespace)
         {
             builder.OpenBlock("private void RegisterGeneratedDialogueInjections()");
             if (npc.DialogueInjections.Count == 0)
@@ -632,6 +642,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
                 var targetNpcId = string.IsNullOrWhiteSpace(injection.TargetNpcId) ? npc.NpcId : injection.TargetNpcId;
                 builder.OpenBlock($"DialogueInjector.Register(new DialogueInjection(\"{CodeFormatter.EscapeString(targetNpcId)}\", \"{CodeFormatter.EscapeString(injection.ContainerName)}\", \"{CodeFormatter.EscapeString(injection.FromNodeGuid)}\", \"{CodeFormatter.EscapeString(injection.ToNodeGuid)}\", \"{CodeFormatter.EscapeString(injection.ChoiceLabel)}\", \"{CodeFormatter.EscapeString(injection.ChoiceText)}\", () =>");
                 builder.AppendLine($"ExecuteGeneratedActionForNpcId(\"{CodeFormatter.EscapeString(targetNpcId)}\", \"{CodeFormatter.EscapeString(injection.MessageText)}\", \"{CodeFormatter.EscapeString(injection.JumpToContainerName)}\", \"{CodeFormatter.EscapeString(injection.JumpToNodeLabel)}\", {injection.StopDialogueOverride.ToString().ToLowerInvariant()});");
+                GlobalStateSetterWriter.AppendSetterInvocations(builder, injection.GlobalStateSetters, rootNamespace);
                 builder.CloseBlock();
                 builder.AppendLine("));");
             }
@@ -708,9 +719,18 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             return string.Join(", ", lines);
         }
 
-        private static void AppendGeneratedActionInvocation(ICodeBuilder builder, NpcGeneratedActionBlueprint action)
+        private static void AppendGeneratedActionInvocation(ICodeBuilder builder, NpcGeneratedActionBlueprint action, string rootNamespace)
         {
             builder.AppendLine($"ExecuteGeneratedAction(\"{CodeFormatter.EscapeString(action.MessageText)}\", \"{CodeFormatter.EscapeString(action.JumpToContainerName)}\", \"{CodeFormatter.EscapeString(action.JumpToNodeLabel)}\", {action.StopDialogueOverride.ToString().ToLowerInvariant()});");
+            GlobalStateSetterWriter.AppendSetterInvocations(builder, action.GlobalStateSetters, rootNamespace);
+        }
+
+        private static string GetRootNamespace(string targetNamespace)
+        {
+            const string npcSuffix = ".NPCs";
+            return targetNamespace.EndsWith(npcSuffix, StringComparison.Ordinal)
+                ? targetNamespace[..^npcSuffix.Length]
+                : targetNamespace;
         }
 
         private static bool ShouldGenerateRelationshipDefaults(NpcRelationshipDefaults relationshipDefaults)

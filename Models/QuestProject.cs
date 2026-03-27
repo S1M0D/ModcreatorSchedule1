@@ -19,6 +19,8 @@ namespace Schedule1ModdingTool.Models
         private readonly HashSet<QuestTrigger> _trackedTriggers = new HashSet<QuestTrigger>();
         private readonly HashSet<NpcBlueprint> _trackedNpcs = new HashSet<NpcBlueprint>();
         private readonly HashSet<ItemBlueprint> _trackedItems = new HashSet<ItemBlueprint>();
+        private readonly HashSet<GlobalStateBlueprint> _trackedGlobalStates = new HashSet<GlobalStateBlueprint>();
+        private readonly HashSet<GlobalStateFieldBlueprint> _trackedGlobalStateFields = new HashSet<GlobalStateFieldBlueprint>();
         private readonly HashSet<PhoneAppBlueprint> _trackedPhoneApps = new HashSet<PhoneAppBlueprint>();
         private readonly HashSet<PhoneCallBlueprint> _trackedPhoneCalls = new HashSet<PhoneCallBlueprint>();
         private readonly HashSet<ResourceAsset> _trackedResources = new HashSet<ResourceAsset>();
@@ -93,6 +95,9 @@ namespace Schedule1ModdingTool.Models
         [JsonProperty("items")]
         public ObservableCollection<ItemBlueprint> Items { get; } = new ObservableCollection<ItemBlueprint>();
 
+        [JsonProperty("globalStates")]
+        public ObservableCollection<GlobalStateBlueprint> GlobalStates { get; } = new ObservableCollection<GlobalStateBlueprint>();
+
         [JsonProperty("phoneApps")]
         public ObservableCollection<PhoneAppBlueprint> PhoneApps { get; } = new ObservableCollection<PhoneAppBlueprint>();
 
@@ -123,6 +128,7 @@ namespace Schedule1ModdingTool.Models
             Quests.CollectionChanged += OnQuestsCollectionChanged;
             Npcs.CollectionChanged += OnNpcsCollectionChanged;
             Items.CollectionChanged += OnItemsCollectionChanged;
+            GlobalStates.CollectionChanged += OnGlobalStatesCollectionChanged;
             PhoneApps.CollectionChanged += OnPhoneAppsCollectionChanged;
             PhoneCalls.CollectionChanged += OnPhoneCallsCollectionChanged;
             Folders.CollectionChanged += OnFoldersCollectionChanged;
@@ -159,6 +165,16 @@ namespace Schedule1ModdingTool.Models
         public void RemoveItem(ItemBlueprint item)
         {
             Items.Remove(item);
+        }
+
+        public void AddGlobalState(GlobalStateBlueprint globalState)
+        {
+            GlobalStates.Add(globalState);
+        }
+
+        public void RemoveGlobalState(GlobalStateBlueprint globalState)
+        {
+            GlobalStates.Remove(globalState);
         }
 
         public void AddPhoneApp(PhoneAppBlueprint phoneApp)
@@ -249,6 +265,7 @@ namespace Schedule1ModdingTool.Models
                 {
                     var firstNamespace = project.Quests.FirstOrDefault()?.Namespace
                         ?? project.Items.FirstOrDefault()?.Namespace
+                        ?? project.GlobalStates.FirstOrDefault()?.Namespace
                         ?? project.Npcs.FirstOrDefault()?.Namespace
                         ?? project.PhoneApps.FirstOrDefault()?.Namespace
                         ?? project.PhoneCalls.FirstOrDefault()?.Namespace;
@@ -269,6 +286,7 @@ namespace Schedule1ModdingTool.Models
                 project.AttachExistingQuestHandlers();
                 project.AttachExistingNpcHandlers();
                 project.AttachExistingItemHandlers();
+                project.AttachExistingGlobalStateHandlers();
                 project.AttachExistingPhoneAppHandlers();
                 project.AttachExistingPhoneCallHandlers();
                 project.AttachExistingFolderHandlers();
@@ -285,6 +303,7 @@ namespace Schedule1ModdingTool.Models
             if (namespaceValue.EndsWith(".Quests", StringComparison.Ordinal) ||
                 namespaceValue.EndsWith(".NPCs", StringComparison.Ordinal) ||
                 namespaceValue.EndsWith(".Items", StringComparison.Ordinal) ||
+                namespaceValue.EndsWith(".Saveables", StringComparison.Ordinal) ||
                 namespaceValue.EndsWith(".PhoneApps", StringComparison.Ordinal) ||
                 namespaceValue.EndsWith(".PhoneCalls", StringComparison.Ordinal))
             {
@@ -456,6 +475,20 @@ namespace Schedule1ModdingTool.Models
             item.PropertyChanged += ItemOnPropertyChanged;
         }
 
+        private void AttachGlobalStateHandlers(GlobalStateBlueprint globalState)
+        {
+            if (_trackedGlobalStates.Contains(globalState))
+                return;
+
+            _trackedGlobalStates.Add(globalState);
+            globalState.PropertyChanged += GlobalStateOnPropertyChanged;
+            globalState.Fields.CollectionChanged += OnGlobalStateFieldsCollectionChanged;
+            foreach (var field in globalState.Fields)
+            {
+                AttachGlobalStateFieldHandlers(field);
+            }
+        }
+
         private void AttachPhoneAppHandlers(PhoneAppBlueprint phoneApp)
         {
             if (_trackedPhoneApps.Contains(phoneApp))
@@ -595,6 +628,19 @@ namespace Schedule1ModdingTool.Models
                 return;
 
             item.PropertyChanged -= ItemOnPropertyChanged;
+        }
+
+        private void DetachGlobalStateHandlers(GlobalStateBlueprint globalState)
+        {
+            if (!_trackedGlobalStates.Remove(globalState))
+                return;
+
+            globalState.PropertyChanged -= GlobalStateOnPropertyChanged;
+            globalState.Fields.CollectionChanged -= OnGlobalStateFieldsCollectionChanged;
+            foreach (var field in globalState.Fields)
+            {
+                DetachGlobalStateFieldHandlers(field);
+            }
         }
 
         private void DetachPhoneAppHandlers(PhoneAppBlueprint phoneApp)
@@ -771,6 +817,35 @@ namespace Schedule1ModdingTool.Models
         {
             MarkAsModified();
             OnPropertyChanged(nameof(Items));
+        }
+
+        private void GlobalStateOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            MarkAsModified();
+            OnPropertyChanged(nameof(GlobalStates));
+        }
+
+        private void AttachGlobalStateFieldHandlers(GlobalStateFieldBlueprint field)
+        {
+            if (_trackedGlobalStateFields.Contains(field))
+                return;
+
+            _trackedGlobalStateFields.Add(field);
+            field.PropertyChanged += GlobalStateFieldOnPropertyChanged;
+        }
+
+        private void DetachGlobalStateFieldHandlers(GlobalStateFieldBlueprint field)
+        {
+            if (!_trackedGlobalStateFields.Remove(field))
+                return;
+
+            field.PropertyChanged -= GlobalStateFieldOnPropertyChanged;
+        }
+
+        private void GlobalStateFieldOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            MarkAsModified();
+            OnPropertyChanged(nameof(GlobalStates));
         }
 
         private void PhoneAppOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -1381,6 +1456,14 @@ namespace Schedule1ModdingTool.Models
             }
         }
 
+        internal void AttachExistingGlobalStateHandlers()
+        {
+            foreach (var globalState in GlobalStates)
+            {
+                AttachGlobalStateHandlers(globalState);
+            }
+        }
+
         internal void AttachExistingPhoneAppHandlers()
         {
             foreach (var phoneApp in PhoneApps)
@@ -1561,6 +1644,56 @@ namespace Schedule1ModdingTool.Models
             OnPropertyChanged(nameof(Items));
         }
 
+        private void OnGlobalStatesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    if (item is GlobalStateBlueprint blueprint)
+                    {
+                        AttachGlobalStateHandlers(blueprint);
+                    }
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    if (item is GlobalStateBlueprint blueprint)
+                    {
+                        DetachGlobalStateHandlers(blueprint);
+                    }
+                }
+            }
+
+            MarkAsModified();
+            OnPropertyChanged(nameof(GlobalStates));
+        }
+
+        private void OnGlobalStateFieldsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems.OfType<GlobalStateFieldBlueprint>())
+                {
+                    AttachGlobalStateFieldHandlers(item);
+                }
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems.OfType<GlobalStateFieldBlueprint>())
+                {
+                    DetachGlobalStateFieldHandlers(item);
+                }
+            }
+
+            MarkAsModified();
+            OnPropertyChanged(nameof(GlobalStates));
+        }
+
         private void OnPhoneAppsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
@@ -1627,6 +1760,8 @@ namespace Schedule1ModdingTool.Models
             Npcs.CollectionChanged += OnNpcsCollectionChanged;
             Items.CollectionChanged -= OnItemsCollectionChanged;
             Items.CollectionChanged += OnItemsCollectionChanged;
+            GlobalStates.CollectionChanged -= OnGlobalStatesCollectionChanged;
+            GlobalStates.CollectionChanged += OnGlobalStatesCollectionChanged;
             PhoneApps.CollectionChanged -= OnPhoneAppsCollectionChanged;
             PhoneApps.CollectionChanged += OnPhoneAppsCollectionChanged;
             PhoneCalls.CollectionChanged -= OnPhoneCallsCollectionChanged;
@@ -1643,6 +1778,7 @@ namespace Schedule1ModdingTool.Models
             AttachExistingQuestHandlers();
             AttachExistingNpcHandlers();
             AttachExistingItemHandlers();
+            AttachExistingGlobalStateHandlers();
             AttachExistingPhoneAppHandlers();
             AttachExistingPhoneCallHandlers();
             AttachExistingFolderHandlers();

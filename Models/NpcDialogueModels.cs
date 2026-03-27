@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using Newtonsoft.Json;
 
 namespace Schedule1ModdingTool.Models
@@ -31,10 +33,16 @@ namespace Schedule1ModdingTool.Models
 
     public abstract class NpcGeneratedActionBlueprint : ObservableObject
     {
+        private readonly HashSet<GlobalStateSetterBlueprint> _trackedGlobalStateSetters = new();
         private string _messageText = string.Empty;
         private string _jumpToContainerName = string.Empty;
         private string _jumpToNodeLabel = string.Empty;
         private bool _stopDialogueOverride;
+
+        protected NpcGeneratedActionBlueprint()
+        {
+            GlobalStateSetters.CollectionChanged += GlobalStateSettersOnCollectionChanged;
+        }
 
         [JsonProperty("messageText")]
         public string MessageText
@@ -64,12 +72,57 @@ namespace Schedule1ModdingTool.Models
             set => SetProperty(ref _stopDialogueOverride, value);
         }
 
+        [JsonProperty("globalStateSetters")]
+        public ObservableCollection<GlobalStateSetterBlueprint> GlobalStateSetters { get; } = new();
+
+        [JsonIgnore]
+        public virtual string DisplayName => GetType().Name;
+
         protected void CopyActionFieldsTo(NpcGeneratedActionBlueprint target)
         {
             target.MessageText = MessageText;
             target.JumpToContainerName = JumpToContainerName;
             target.JumpToNodeLabel = JumpToNodeLabel;
             target.StopDialogueOverride = StopDialogueOverride;
+            target.GlobalStateSetters.Clear();
+            foreach (var setter in GlobalStateSetters)
+            {
+                target.GlobalStateSetters.Add(setter.DeepCopy());
+            }
+        }
+
+        private void GlobalStateSettersOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+            {
+                foreach (var removed in e.OldItems.OfType<GlobalStateSetterBlueprint>())
+                {
+                    if (_trackedGlobalStateSetters.Remove(removed))
+                    {
+                        removed.PropertyChanged -= GlobalStateSetterOnPropertyChanged;
+                    }
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (var added in e.NewItems.OfType<GlobalStateSetterBlueprint>())
+                {
+                    if (_trackedGlobalStateSetters.Add(added))
+                    {
+                        added.PropertyChanged += GlobalStateSetterOnPropertyChanged;
+                    }
+                }
+            }
+
+            OnPropertyChanged(nameof(GlobalStateSetters));
+            OnPropertyChanged(nameof(DisplayName));
+        }
+
+        private void GlobalStateSetterOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(GlobalStateSetters));
+            OnPropertyChanged(nameof(DisplayName));
         }
     }
 
@@ -300,7 +353,7 @@ namespace Schedule1ModdingTool.Models
         }
 
         [JsonIgnore]
-        public string DisplayName => CallbackType == NpcDialogueCallbackType.ConversationStarted
+        public override string DisplayName => CallbackType == NpcDialogueCallbackType.ConversationStarted
             ? "Conversation Started"
             : $"{CallbackType}: {MatchKey}";
 
@@ -376,7 +429,7 @@ namespace Schedule1ModdingTool.Models
         }
 
         [JsonIgnore]
-        public string DisplayName => $"{TargetNpcId}: {ChoiceLabel}";
+        public override string DisplayName => $"{TargetNpcId}: {ChoiceLabel}";
 
         public NpcDialogueInjectionBlueprint DeepCopy()
         {
@@ -410,7 +463,7 @@ namespace Schedule1ModdingTool.Models
         }
 
         [JsonIgnore]
-        public string DisplayName => EventType.ToString();
+        public override string DisplayName => EventType.ToString();
 
         public NpcRuntimeEventReactionBlueprint DeepCopy()
         {

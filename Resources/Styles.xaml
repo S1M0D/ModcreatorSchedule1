@@ -844,6 +844,9 @@
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
         <Setter Property="Background" Value="{StaticResource DarkPanelBrush}"/>
         <Style.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+                <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
+            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{StaticResource DarkHoverBrush}"/>
             </Trigger>

@@ -62,11 +62,11 @@
 			<RowDefinition Height="Auto" />
 		</Grid.RowDefinitions>
 
-		<!-- Menu Bar -->
-		<Menu Grid.Row="0" Style="{StaticResource DarkMenuStyle}">
-			<MenuItem Header="_File" Style="{StaticResource DarkMenuItemStyle}">
+<!-- Menu Bar -->
+		<Menu Grid.Row="0" Background="{StaticResource DarkPanelBrush}" Foreground="{StaticResource LightTextBrush}">
+			<MenuItem Header="_File" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 				<MenuItem Header="_New Project" Command="{Binding NewProjectCommand}" InputGestureText="F1"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource NewProjectIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -74,7 +74,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<MenuItem Header="_Open Project..." Command="{Binding OpenProjectCommand}" InputGestureText="F2"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource FolderOpenIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -83,7 +83,7 @@
 				</MenuItem>
 				<Separator />
 				<MenuItem Header="_Save Project" Command="{Binding SaveProjectCommand}" InputGestureText="Ctrl+S"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource SaveIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -91,7 +91,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<MenuItem Header="Save Project _As..." Command="{Binding SaveProjectAsCommand}" InputGestureText="Ctrl+Shift+S"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource SaveAsIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -100,7 +100,7 @@
 				</MenuItem>
 				<Separator />
 				<MenuItem Header="_Undo" Command="{Binding UndoCommand}" InputGestureText="Ctrl+Z"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="Undo"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -108,7 +108,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<MenuItem Header="_Redo" Command="{Binding RedoCommand}" InputGestureText="Ctrl+Y"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="Redo"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -117,11 +117,11 @@
 				</MenuItem>
 				<Separator />
 				<MenuItem Header="E_xit" Command="{Binding ExitCommand}" InputGestureText="Alt+F4"
-				          Style="{StaticResource DarkMenuItemStyle}" />
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}" />
 			</MenuItem>
-			<MenuItem Header="_Build" Style="{StaticResource DarkMenuItemStyle}">
+			<MenuItem Header="_Build" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 				<MenuItem Header="_Export Mod Project" Command="{Binding ExportModProjectCommand}" InputGestureText="F5"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource ExportIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -129,7 +129,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<MenuItem Header="_Build Mod" Command="{Binding BuildModCommand}" InputGestureText="F6"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource BuildIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -137,7 +137,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<MenuItem Header="Build &amp; _Play" Command="{Binding BuildAndPlayCommand}" InputGestureText="F7"
-				          Style="{StaticResource DarkMenuItemStyle}">
+				          Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource PlayIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -145,9 +145,9 @@
 					</MenuItem.Icon>
 				</MenuItem>
 			</MenuItem>
-			<MenuItem Header="_View" Style="{StaticResource DarkMenuItemStyle}">
+			<MenuItem Header="_View" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 				<MenuItem Header="Toggle _Code View" Command="{Binding ToggleCodeViewCommand}" IsCheckable="True"
-				          IsChecked="{Binding IsCodeVisible, Mode=OneWay}" Style="{StaticResource DarkMenuItemStyle}">
+				          IsChecked="{Binding IsCodeVisible, Mode=OneWay}" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource EyeIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -155,7 +155,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<Separator />
-				<MenuItem Header="Visit _Wiki" Command="{Binding VisitWikiCommand}" Style="{StaticResource DarkMenuItemStyle}">
+				<MenuItem Header="Visit _Wiki" Command="{Binding VisitWikiCommand}" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="BookOpenVariant"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -163,8 +163,8 @@
 					</MenuItem.Icon>
 				</MenuItem>
 			</MenuItem>
-			<MenuItem Header="_Tools" Style="{StaticResource DarkMenuItemStyle}">
-				<MenuItem Header="_Settings" Command="{Binding OpenSettingsCommand}" Style="{StaticResource DarkMenuItemStyle}">
+			<MenuItem Header="_Tools" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
+				<MenuItem Header="_Settings" Command="{Binding OpenSettingsCommand}" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource SettingsIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -172,7 +172,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<Separator />
-				<MenuItem Header="Launch Schedule I with _Connector" Command="{Binding LaunchRuntimeCatalogCommand}" Style="{StaticResource DarkMenuItemStyle}">
+				<MenuItem Header="Launch Schedule I with _Connector" Command="{Binding LaunchRuntimeCatalogCommand}" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource PlayIcon}"
 						                         Foreground="{StaticResource LightTextBrush}"
@@ -180,7 +180,7 @@
 					</MenuItem.Icon>
 				</MenuItem>
 				<Separator />
-				<MenuItem Header="Check for _Updates" Command="{Binding CheckForUpdatesCommand}" Style="{StaticResource DarkMenuItemStyle}">
+				<MenuItem Header="Check for _Updates" Command="{Binding CheckForUpdatesCommand}" Foreground="{StaticResource LightTextBrush}" Background="{StaticResource DarkPanelBrush}">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="Update"
 						                         Foreground="{StaticResource LightTextBrush}"

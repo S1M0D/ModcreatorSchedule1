@@ -86,6 +86,21 @@
         </Style.Triggers>
     </Style>
 
+    <Style x:Key="ValidatedTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource BaseTextBoxStyle}">
+        <Setter Property="Padding" Value="6,4,28,4" />
+        <Style.Triggers>
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource AccentOrangeBrush}"/>
+                <Setter Property="Background" Value="{StaticResource DarkBackgroundBaseBrush}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#60000000" Direction="90" ShadowDepth="0.5" BlurRadius="1" Opacity="0.2"/>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style TargetType="ComboBox">
         <Setter Property="Background" Value="{StaticResource DarkBackgroundDeeperBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource LightTextBrush}"/>
@@ -1213,6 +1228,33 @@
                 </Trigger.EnterActions>
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+<Style TargetType="ScrollBar">
+        <Setter Property="Width" Value="6" />
+        <Setter Property="MinWidth" Value="6" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid>
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border Background="{StaticResource DarkHoverElevatedBrush}"
+                                                    CornerRadius="3"
+                                                    Margin="0,2" />
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

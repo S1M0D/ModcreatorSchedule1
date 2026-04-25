@@ -3,22 +3,63 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:Schedule1ModdingTool.Views.Controls"
              mc:Ignorable="d"
-             d:DesignHeight="50" d:DesignWidth="300">
-    <StackPanel>
-        <TextBox x:Name="InnerTextBox"
-                 Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
-                 Style="{StaticResource TextBoxStyle}"
-                 LostFocus="InnerTextBox_LostFocus"
-                 TextChanged="InnerTextBox_TextChanged"/>
-        <TextBlock x:Name="ErrorTextBlock"
-                   Text="{Binding ErrorMessage, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                   Foreground="{StaticResource ErrorBrush}"
-                   FontSize="11"
-                   Margin="4,2,0,0"
-                   Visibility="{Binding IsValid, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBooleanToVisibilityConverter}}"
-                   TextWrapping="Wrap"/>
-    </StackPanel>
-</UserControl>
+             d:DesignHeight="60" d:DesignWidth="300">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
+        <Grid Grid.Row="0">
+            <TextBox x:Name="InnerTextBox"
+                     Text="{Binding Text, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource ValidatedTextBoxStyle}"
+                     LostFocus="InnerTextBox_LostFocus"
+                     TextChanged="InnerTextBox_TextChanged" />
+
+            <materialDesign:PackIcon x:Name="ValidationIcon"
+                                     Width="16"
+                                     Height="16"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Right"
+                                     Margin="0,0,8,0"
+                                     Visibility="Collapsed">
+                <materialDesign:PackIcon.Style>
+                    <Style TargetType="materialDesign:PackIcon">
+                        <Setter Property="Kind" Value="CheckCircle" />
+                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsValid, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
+                                <Setter Property="Kind" Value="AlertCircle" />
+                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </materialDesign:PackIcon.Style>
+            </materialDesign:PackIcon>
+        </Grid>
+
+        <TextBlock x:Name="ErrorTextBlock"
+                   Grid.Row="1"
+                   Text="{Binding ErrorMessage, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   FontSize="11"
+                   Margin="4,4,0,0"
+                   TextWrapping="Wrap">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Setter Property="Opacity" Value="0.9" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsValid, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="False">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+    </Grid>
+</UserControl>

@@ -96,7 +96,7 @@ namespace ModCreatorConnector.Services
                 {
                     // Check current scene
                     var currentScene = SceneManager.GetActiveScene();
-                    var sceneName = currentScene != null ? currentScene.name : "Unknown";
+                    var sceneName = currentScene.IsValid() ? currentScene.name : "Unknown";
                     
                     // Wait for Menu scene before connecting
                     if (sceneName != "Menu")
@@ -368,4 +368,3 @@ namespace ModCreatorConnector.Services
         }
     }
 }
-

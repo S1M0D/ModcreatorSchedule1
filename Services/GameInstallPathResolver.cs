@@ -14,6 +14,8 @@ namespace Schedule1ModdingTool.Services
         {
             return TryResolve(configuredPath, out var resolvedPath)
                 ? resolvedPath
+                : TryResolveKnownInstall(out resolvedPath)
+                ? resolvedPath
                 : DefaultSteamInstallPath;
         }
 
@@ -67,6 +69,39 @@ namespace Schedule1ModdingTool.Services
             {
                 yield return alternateChild;
             }
+
+            var parentDirectory = Directory.GetParent(cleanedPath);
+            if (parentDirectory != null)
+            {
+                var siblingAlternate = Path.Combine(parentDirectory.FullName, "Schedule I_alternate");
+                if (seen.Add(siblingAlternate))
+                {
+                    yield return siblingAlternate;
+                }
+            }
+        }
+
+        private static bool TryResolveKnownInstall(out string resolvedPath)
+        {
+            foreach (var candidate in GetKnownInstallCandidates())
+            {
+                if (IsValidInstallDirectory(candidate))
+                {
+                    resolvedPath = candidate;
+                    return true;
+                }
+            }
+
+            resolvedPath = string.Empty;
+            return false;
+        }
+
+        private static IEnumerable<string> GetKnownInstallCandidates()
+        {
+            yield return DefaultSteamInstallPath;
+            yield return "D:\\SteamLibrary\\steamapps\\common\\Schedule I_alternate";
+            yield return "D:\\SteamLibrary\\steamapps\\common\\Schedule I";
+            yield return "D:\\SteamLibrary\\steamapps\\common\\Schedule I_public";
         }
 
         private static bool IsValidInstallDirectory(string candidatePath)

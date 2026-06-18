@@ -12,6 +12,7 @@ using S1API.Items;
 using S1API.Shops;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using StorableItemDefinition = S1API.Items.Storable.StorableItemDefinition;
 
 namespace ModCreatorConnector.Services
 {
@@ -220,7 +221,7 @@ namespace ModCreatorConnector.Services
             {
                 // Check if we're in Main scene
                 var currentScene = SceneManager.GetActiveScene();
-                if (currentScene == null || currentScene.name != "Main")
+                if (!currentScene.IsValid() || currentScene.name != "Main")
                 {
                     SendErrorResponse("Not in Main scene. Player position is only available in the Main scene.");
                     return;

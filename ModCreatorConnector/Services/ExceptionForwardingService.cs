@@ -251,7 +251,7 @@ namespace ModCreatorConnector.Services
         /// <summary>
         /// Handles unhandled exceptions.
         /// </summary>
-        private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+        private void OnUnhandledException(object? sender, UnhandledExceptionEventArgs e)
         {
             if (e.ExceptionObject is Exception exception)
             {
@@ -262,7 +262,7 @@ namespace ModCreatorConnector.Services
         /// <summary>
         /// Handles first-chance exceptions (throttled to avoid spam).
         /// </summary>
-        private void OnFirstChanceException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+        private void OnFirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
         {
             if (e.Exception == null)
                 return;

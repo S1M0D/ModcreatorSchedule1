@@ -25,13 +25,6 @@
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
   </ItemGroup>
 
-
-  <!-- Only reference ModCreatorConnector project, don't build it automatically -->
-  <!-- It will be built explicitly via GameLaunchService when needed -->
-  <ItemGroup>
-    <ProjectReference Include="ModCreatorConnector\ModCreatorConnector.csproj" ReferenceOutputAssembly="False" />
-  </ItemGroup>
-
   <!-- Exclude ModCreatorConnector folder from being included as content in this project -->
   <ItemGroup>
     <Compile Remove="ModCreatorConnector\**" />

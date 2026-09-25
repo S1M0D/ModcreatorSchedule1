@@ -1,0 +1,130 @@
+<UserControl x:Class="Schedule1ModdingTool.Views.ChemistryRecipesEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:Schedule1ModdingTool.Views">
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="360" MaxWidth="580">
+                            <StackPanel Margin="12">
+                                <DockPanel Margin="0,0,0,12">
+                                    <TextBlock Text="Production Recipes" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left" />
+                                    <Button Content="Add Recipe"
+                                            Click="AddChemistryRecipe_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            DockPanel.Dock="Right" />
+                                </DockPanel>
+
+                                <TextBlock Text="Produce this item at the Chemistry Station. Each group needs its quantity; items within a group are alternatives. Recipes with a stable ID can have different ingredients even when they produce the same quantity."
+                                           Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                                <ListBox x:Name="ChemistryRecipesListBox"
+                                         ItemsSource="{Binding ChemistryRecipes}"
+                                         DisplayMemberPath="DisplayName"
+                                         Height="120"
+                                         Background="{StaticResource DarkBackgroundBrush}"
+                                         Foreground="{StaticResource LightTextBrush}"
+                                         BorderBrush="{StaticResource DarkBorderBrush}" />
+
+                                <Button Content="Remove Selected Recipe"
+                                        Click="RemoveChemistryRecipe_Click"
+                                        Style="{StaticResource IconButtonStyle}"
+                                        Margin="0,8,0,0" />
+
+                                <StackPanel Margin="0,12,0,0"
+                                            DataContext="{Binding SelectedItem, ElementName=ChemistryRecipesListBox}">
+                                    <Label Content="Recipe Title" Style="{StaticResource LabelStyle}" />
+                                    <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Recipe ID (mod-id:recipe-id)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding RecipeId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                                    <TextBlock Text="Keep this ID stable after publishing so saved recipe unlocks remain linked."
+                                               Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+
+                                    <CheckBox Content="Visible from the start" IsChecked="{Binding IsDiscovered, UpdateSourceTrigger=PropertyChanged}"
+                                              Foreground="{StaticResource LightTextBrush}" Margin="0,10,0,0" />
+                                    <CheckBox Content="Unlocked from the start" IsChecked="{Binding IsUnlocked, UpdateSourceTrigger=PropertyChanged}"
+                                              Foreground="{StaticResource LightTextBrush}" Margin="0,5,0,0" />
+
+                                    <Label Content="Cook Time (Minutes)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding CookTimeMinutes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Product Quantity" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <TextBox Text="{Binding ProductQuantity, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                    <Label Content="Final Liquid Color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="RecipeColorTextBox"
+                                                 Grid.Column="0"
+                                                 Text="{Binding FinalLiquidColorHex, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource TextBoxStyle}"
+                                                 Margin="0,0,4,0" />
+                                        <Button Grid.Column="1"
+                                                Content="Pick"
+                                                Click="PickRecipeColor_Click"
+                                                Style="{StaticResource IconButtonStyle}" />
+                                    </Grid>
+
+                                    <DockPanel Margin="0,12,0,8">
+                                        <Label Content="Ingredient Groups" Style="{StaticResource LabelStyle}" DockPanel.Dock="Left" />
+                                        <Button Content="Add Group"
+                                                Click="AddChemistryIngredient_Click"
+                                                Style="{StaticResource IconButtonStyle}"
+                                                DockPanel.Dock="Right" />
+                                    </DockPanel>
+
+                                    <ListBox x:Name="RecipeIngredientsListBox"
+                                             ItemsSource="{Binding Ingredients}"
+                                             DisplayMemberPath="DisplayLabel"
+                                             Height="110"
+                                             Background="{StaticResource DarkBackgroundBrush}"
+                                             Foreground="{StaticResource LightTextBrush}"
+                                             BorderBrush="{StaticResource DarkBorderBrush}" />
+
+                                    <Button Content="Remove Selected Group"
+                                            Click="RemoveChemistryIngredient_Click"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Margin="0,8,0,0" />
+
+                                    <StackPanel Margin="0,12,0,0"
+                                                DataContext="{Binding SelectedItem, ElementName=RecipeIngredientsListBox}">
+                                        <Label Content="Group Quantity" Style="{StaticResource LabelStyle}" />
+                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+
+                                        <Label Content="Allowed Item IDs" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                                        <ListBox x:Name="IngredientItemIdsListBox"
+                                                 ItemsSource="{Binding ItemIds}"
+                                                 Height="90"
+                                                 Background="{StaticResource DarkBackgroundBrush}"
+                                                 Foreground="{StaticResource LightTextBrush}"
+                                                 BorderBrush="{StaticResource DarkBorderBrush}" />
+
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox x:Name="RecipeIngredientItemComboBox"
+                                                      Grid.Column="0"
+                                                      ItemsSource="{Binding DataContext.AvailableItemReferences, RelativeSource={RelativeSource AncestorType=views:ItemPropertiesControl}}"
+                                                      DisplayMemberPath="DisplayLabel"
+                                                      Style="{StaticResource ComboBoxStyle}"
+                                                      IsEditable="True"
+                                                      Margin="0,0,4,0" />
+                                            <Button Grid.Column="1"
+                                                    Content="Add Item"
+                                                    Click="AddIngredientItemOption_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Margin="0,0,4,0" />
+                                            <Button Grid.Column="2"
+                                                    Content="Remove"
+                                                    Click="RemoveIngredientItemOption_Click"
+                                                    Style="{StaticResource IconButtonStyle}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+</UserControl>

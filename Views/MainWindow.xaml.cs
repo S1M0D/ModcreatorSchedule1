@@ -9,6 +9,7 @@ using System.Windows.Media;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Rendering;
 using Schedule1ModdingTool.ViewModels;
+using Schedule1ModdingTool.Models;
 
 namespace Schedule1ModdingTool.Views
 {
@@ -453,6 +454,18 @@ namespace Schedule1ModdingTool.Views
             {
                 vm.NewCustomClothingCommand.Execute(null);
             }
+        }
+
+        private void AddWeedStrainMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+                vm.AddItemCommand.Execute(new ItemBlueprint { ItemType = ItemKindOption.WeedDrug });
+        }
+
+        private void AddCustomProductMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+                vm.AddItemCommand.Execute(new ItemBlueprint { ItemType = ItemKindOption.CustomDrug });
         }
 
         private void AddPhoneCallMenuItem_Click(object sender, RoutedEventArgs e)

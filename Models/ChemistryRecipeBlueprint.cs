@@ -9,9 +9,12 @@ namespace Schedule1ModdingTool.Models
     public class ChemistryRecipeBlueprint : ObservableObject
     {
         private string _title = "New Chemistry Recipe";
+        private string _recipeId = string.Empty;
         private int _cookTimeMinutes = 60;
         private string _finalLiquidColorHex = "#FF4BD7A8";
         private int _productQuantity = 1;
+        private bool _isDiscovered = true;
+        private bool _isUnlocked = true;
 
         public ChemistryRecipeBlueprint()
         {
@@ -24,6 +27,15 @@ namespace Schedule1ModdingTool.Models
             get => _title;
             set => SetProperty(ref _title, value ?? string.Empty);
         }
+
+        [JsonProperty("recipeId")]
+        public string RecipeId { get => _recipeId; set => SetProperty(ref _recipeId, value ?? string.Empty); }
+
+        [JsonProperty("isDiscovered")]
+        public bool IsDiscovered { get => _isDiscovered; set => SetProperty(ref _isDiscovered, value); }
+
+        [JsonProperty("isUnlocked")]
+        public bool IsUnlocked { get => _isUnlocked; set => SetProperty(ref _isUnlocked, value); }
 
         [JsonProperty("cookTimeMinutes")]
         public int CookTimeMinutes
@@ -58,9 +70,12 @@ namespace Schedule1ModdingTool.Models
                 throw new ArgumentNullException(nameof(source));
 
             Title = source.Title;
+            RecipeId = source.RecipeId;
             CookTimeMinutes = source.CookTimeMinutes;
             FinalLiquidColorHex = source.FinalLiquidColorHex;
             ProductQuantity = source.ProductQuantity;
+            IsDiscovered = source.IsDiscovered;
+            IsUnlocked = source.IsUnlocked;
 
             Ingredients.Clear();
             foreach (var ingredient in source.Ingredients)

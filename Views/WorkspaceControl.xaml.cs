@@ -72,6 +72,16 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void NewWeedStrain_Click(object sender, RoutedEventArgs e)
+        {
+            GetMainViewModel()?.AddItemCommand.Execute(new ItemBlueprint { ItemType = ItemKindOption.WeedDrug });
+        }
+
+        private void NewCustomProduct_Click(object sender, RoutedEventArgs e)
+        {
+            GetMainViewModel()?.AddItemCommand.Execute(new ItemBlueprint { ItemType = ItemKindOption.CustomDrug });
+        }
+
         private void NewPhoneCall_Click(object sender, RoutedEventArgs e)
         {
             var vm = GetMainViewModel();

@@ -15,7 +15,8 @@
     </UserControl.Resources>
 
     <Grid Margin="8" VerticalAlignment="Stretch">
-        <TabControl Style="{StaticResource EditorTabControlStyle}" VerticalAlignment="Stretch">
+        <TabControl x:Name="StandardItemEditor" Style="{StaticResource EditorTabControlStyle}" VerticalAlignment="Stretch"
+                    Visibility="{Binding DataContext.SelectedItemBlueprint.IsStandardItem, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}">
 
             <TabItem Header="Overview">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -382,7 +383,7 @@
                                         <StackPanel Margin="0,8,0,0"
                                                     Visibility="{Binding UsesAvatarBundleRegistration, Converter={StaticResource BoolToVisibilityConverter}}">
                                             <Label Content="Avatar Bundle Resource" Style="{StaticResource LabelStyle}" />
-                                            <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Resources, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Models, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       DisplayMemberPath="RelativePath"
                                                       Text="{Binding AvatarBundleResourcePath, UpdateSourceTrigger=PropertyChanged}"
                                                       Style="{StaticResource ComboBoxStyle}"
@@ -983,124 +984,193 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" MinWidth="360" MaxWidth="580"
-                                Visibility="{Binding SupportsChemistryRecipes, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <StackPanel Margin="12">
-                                <DockPanel Margin="0,0,0,12">
-                                    <TextBlock Text="Chemistry Recipes" Style="{StaticResource PanelHeaderStyle}" DockPanel.Dock="Left" />
-                                    <Button Content="Add Recipe"
-                                            Click="AddChemistryRecipe_Click"
-                                            Style="{StaticResource IconButtonStyle}"
-                                            DockPanel.Dock="Right" />
-                                </DockPanel>
-
-                                <ListBox x:Name="ChemistryRecipesListBox"
-                                         ItemsSource="{Binding ChemistryRecipes}"
-                                         DisplayMemberPath="DisplayName"
-                                         Height="120"
-                                         Background="{StaticResource DarkBackgroundBrush}"
-                                         Foreground="{StaticResource LightTextBrush}"
-                                         BorderBrush="{StaticResource DarkBorderBrush}" />
-
-                                <Button Content="Remove Selected Recipe"
-                                        Click="RemoveChemistryRecipe_Click"
-                                        Style="{StaticResource IconButtonStyle}"
-                                        Margin="0,8,0,0" />
-
-                                <StackPanel Margin="0,12,0,0"
-                                            DataContext="{Binding SelectedItem, ElementName=ChemistryRecipesListBox}">
-                                    <Label Content="Recipe Title" Style="{StaticResource LabelStyle}" />
-                                    <TextBox Text="{Binding Title, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
-
-                                    <Label Content="Cook Time (Minutes)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
-                                    <TextBox Text="{Binding CookTimeMinutes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
-
-                                    <Label Content="Product Quantity" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
-                                    <TextBox Text="{Binding ProductQuantity, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
-
-                                    <Label Content="Final Liquid Color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="RecipeColorTextBox"
-                                                 Grid.Column="0"
-                                                 Text="{Binding FinalLiquidColorHex, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource TextBoxStyle}"
-                                                 Margin="0,0,4,0" />
-                                        <Button Grid.Column="1"
-                                                Content="Pick"
-                                                Click="PickRecipeColor_Click"
-                                                Style="{StaticResource IconButtonStyle}" />
-                                    </Grid>
-
-                                    <DockPanel Margin="0,12,0,8">
-                                        <Label Content="Ingredient Groups" Style="{StaticResource LabelStyle}" DockPanel.Dock="Left" />
-                                        <Button Content="Add Group"
-                                                Click="AddChemistryIngredient_Click"
-                                                Style="{StaticResource IconButtonStyle}"
-                                                DockPanel.Dock="Right" />
-                                    </DockPanel>
-
-                                    <ListBox x:Name="RecipeIngredientsListBox"
-                                             ItemsSource="{Binding Ingredients}"
-                                             DisplayMemberPath="DisplayLabel"
-                                             Height="110"
-                                             Background="{StaticResource DarkBackgroundBrush}"
-                                             Foreground="{StaticResource LightTextBrush}"
-                                             BorderBrush="{StaticResource DarkBorderBrush}" />
-
-                                    <Button Content="Remove Selected Group"
-                                            Click="RemoveChemistryIngredient_Click"
-                                            Style="{StaticResource IconButtonStyle}"
-                                            Margin="0,8,0,0" />
-
-                                    <StackPanel Margin="0,12,0,0"
-                                                DataContext="{Binding SelectedItem, ElementName=RecipeIngredientsListBox}">
-                                        <Label Content="Group Quantity" Style="{StaticResource LabelStyle}" />
-                                        <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
-
-                                        <Label Content="Allowed Item IDs" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
-                                        <ListBox x:Name="IngredientItemIdsListBox"
-                                                 ItemsSource="{Binding ItemIds}"
-                                                 Height="90"
-                                                 Background="{StaticResource DarkBackgroundBrush}"
-                                                 Foreground="{StaticResource LightTextBrush}"
-                                                 BorderBrush="{StaticResource DarkBorderBrush}" />
-
-                                        <Grid Margin="0,8,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <ComboBox x:Name="RecipeIngredientItemComboBox"
-                                                      Grid.Column="0"
-                                                      ItemsSource="{Binding DataContext.AvailableItemReferences, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                      DisplayMemberPath="DisplayLabel"
-                                                      Style="{StaticResource ComboBoxStyle}"
-                                                      IsEditable="True"
-                                                      Margin="0,0,4,0" />
-                                            <Button Grid.Column="1"
-                                                    Content="Add Item"
-                                                    Click="AddIngredientItemOption_Click"
-                                                    Style="{StaticResource IconButtonStyle}"
-                                                    Margin="0,0,4,0" />
-                                            <Button Grid.Column="2"
-                                                    Content="Remove"
-                                                    Click="RemoveIngredientItemOption_Click"
-                                                    Style="{StaticResource IconButtonStyle}" />
-                                        </Grid>
-                                    </StackPanel>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                        <views:ChemistryRecipesEditor
+                            Visibility="{Binding SupportsChemistryRecipes, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                     </WrapPanel>
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="3D Model">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12" DataContext="{Binding SelectedItemBlueprint}" HorizontalAlignment="Left">
+                        <views:ItemModelPicker />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
+        <ScrollViewer x:Name="WeedDrugEditor" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding DataContext.SelectedItemBlueprint.IsWeedDrug, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"
+                      DataContext="{Binding SelectedItemBlueprint}">
+            <Border Style="{StaticResource PanelStyle}" Margin="12" Padding="16" MaxWidth="650" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <StackPanel>
+                    <TextBlock Text="Custom Weed Strain" Style="{StaticResource PanelHeaderStyle}" />
+                    <TextBlock Text="S1API creates this as a native weed product after the save loads. The game handles mixing, discovery, pricing, visuals, and save data. Use a stable namespaced ID; changing it later breaks references in existing saves."
+                               Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,8,0,12" />
+                    <Label Content="Item Type" Style="{StaticResource LabelStyle}" />
+                    <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ItemTypes}" SelectedItem="{Binding ItemType, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ComboBoxStyle}" />
+                    <Label Content="Class Name" Style="{StaticResource LabelStyle}" />
+                    <TextBox Text="{Binding ClassName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                    <Label Content="Namespace" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                    <TextBox Text="{Binding Namespace, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                    <Label Content="Product ID (mod-id:product-id)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                    <TextBox Text="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                    <Label Content="Strain Name" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                    <TextBox Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                    <TextBlock Text="Native weed strains use the game's weed visuals. S1API currently exposes color settings for these strains; use Custom Product for a fully custom 3D model."
+                               Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                    <Label Content="Effects (1 to 8, comma separated)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                    <TextBox Text="{Binding DrugEffects, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                    <TextBlock Text="Select an effect below to add it, or edit the list above directly."
+                               Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    <DockPanel Margin="0,8,0,0">
+                        <Button Content="Add Effect" Click="AddDrugEffect_Click" DockPanel.Dock="Right" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" />
+                        <ComboBox x:Name="DrugEffectComboBox" ItemsSource="{x:Static models:ItemBlueprintOptions.DrugEffectNames}" Style="{StaticResource ComboBoxStyle}" SelectedIndex="0" />
+                    </DockPanel>
+                    <CheckBox Content="Set weed colors manually" IsChecked="{Binding UseCustomWeedAppearance, UpdateSourceTrigger=PropertyChanged}"
+                              Foreground="{StaticResource LightTextBrush}" Margin="0,16,0,4" />
+                    <StackPanel Visibility="{Binding UseCustomWeedAppearance, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="These four colors replace S1API's property-generated appearance."
+                                   Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                        <Label Content="Main bud color" Style="{StaticResource LabelStyle}" />
+                        <DockPanel>
+                            <Button Content="Pick" Tag="Main" Click="PickWeedColor_Click" DockPanel.Dock="Right" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Background="{Binding WeedMainColor, Converter={StaticResource ColorHexToBrushConverter}}" />
+                            <TextBox Text="{Binding WeedMainColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        </DockPanel>
+                        <Label Content="Secondary bud color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <DockPanel>
+                            <Button Content="Pick" Tag="Secondary" Click="PickWeedColor_Click" DockPanel.Dock="Right" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Background="{Binding WeedSecondaryColor, Converter={StaticResource ColorHexToBrushConverter}}" />
+                            <TextBox Text="{Binding WeedSecondaryColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        </DockPanel>
+                        <Label Content="Leaf color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <DockPanel>
+                            <Button Content="Pick" Tag="Leaf" Click="PickWeedColor_Click" DockPanel.Dock="Right" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Background="{Binding WeedLeafColor, Converter={StaticResource ColorHexToBrushConverter}}" />
+                            <TextBox Text="{Binding WeedLeafColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        </DockPanel>
+                        <Label Content="Stem color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <DockPanel>
+                            <Button Content="Pick" Tag="Stem" Click="PickWeedColor_Click" DockPanel.Dock="Right" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Background="{Binding WeedStemColor, Converter={StaticResource ColorHexToBrushConverter}}" />
+                            <TextBox Text="{Binding WeedStemColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        </DockPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+        <ScrollViewer x:Name="CustomDrugEditor" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding DataContext.SelectedItemBlueprint.IsCustomDrug, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"
+                      DataContext="{Binding SelectedItemBlueprint}">
+            <WrapPanel Margin="12">
+                <views:ItemModelPicker />
+                <Border Style="{StaticResource PanelStyle}" Padding="16" MinWidth="340" MaxWidth="520" Margin="0,0,12,12">
+                    <StackPanel>
+                        <TextBlock Text="Custom Product" Style="{StaticResource PanelHeaderStyle}" />
+                        <TextBlock Text="A custom S1API product with its own identity and properties. It borrows a game product's interaction setup, and can opt into native mixing through a product-kind profile."
+                                   Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,8,0,12" />
+                        <Label Content="Item Type" Style="{StaticResource LabelStyle}" />
+                        <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ItemTypes}" SelectedItem="{Binding ItemType, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ComboBoxStyle}" />
+                        <Label Content="Class Name" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding ClassName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Namespace" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding Namespace, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Product ID (mod-id:product-id)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding ItemId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Display Name" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding ItemName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Description" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding ItemDescription, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" MinHeight="70" AcceptsReturn="True" TextWrapping="Wrap" />
+                        <Label Content="Product Kind ID (mod-id:kind-id)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding ProductKindId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Compatibility Drug Type" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.DrugCompatibilityTypes}" SelectedItem="{Binding CompatibilityDrugType, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ComboBoxStyle}" />
+                        <Label Content="Visual Template Product ID" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding RepresentationTemplateItemId, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <TextBlock Text="The template supplies the loose, held, stored, icon, and consumption visuals. ogkush is the default."
+                                   Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                        <Label Content="Console Give Alias (optional)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding ProductConsoleAlias, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <TextBlock Text="A short alias lets you test with give alias while saved items keep the permanent product ID."
+                                   Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource PanelStyle}" Padding="16" MinWidth="340" MaxWidth="520" Margin="0,0,12,12">
+                    <StackPanel>
+                        <TextBlock Text="Effects &amp; Value" Style="{StaticResource PanelHeaderStyle}" />
+                        <Label Content="Product Price (1 to 999)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding BasePurchasePrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Base Addictiveness (0 to 1)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding BaseAddictiveness, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Legal Status" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.LegalStatuses}" SelectedItem="{Binding LegalStatus, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ComboBoxStyle}" />
+                        <Label Content="Default Quality" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ProductQualities}" SelectedItem="{Binding DefaultProductQuality, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ComboBoxStyle}" />
+                        <Label Content="Player Effect Duration (seconds)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding PlayerEffectDurationSeconds, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="NPC Effect Duration (seconds)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding NpcEffectDurationSeconds, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <Label Content="Effects (up to 8, comma separated)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding DrugEffects, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <DockPanel Margin="0,8,0,0">
+                            <Button Content="Add Effect" Click="AddDrugEffect_Click" DockPanel.Dock="Right" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" />
+                            <ComboBox x:Name="CustomDrugEffectComboBox" ItemsSource="{x:Static models:ItemBlueprintOptions.DrugEffectNames}" Style="{StaticResource ComboBoxStyle}" SelectedIndex="0" />
+                        </DockPanel>
+                        <Label Content="Allowed Packaging IDs (comma separated)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding ProductPackagingIds, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                        <TextBlock Text="Examples: baggie, jar, brick. Leave empty for loose-only products."
+                                   Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource PanelStyle}" Padding="16" MinWidth="340" MaxWidth="520" Margin="0,0,12,12">
+                    <StackPanel>
+                        <TextBlock Text="Mixing" Style="{StaticResource PanelHeaderStyle}" />
+                        <CheckBox Content="Allow this product kind to be mixed" IsChecked="{Binding EnableCustomProductMixing, UpdateSourceTrigger=PropertyChanged}"
+                                  Foreground="{StaticResource LightTextBrush}" Margin="0,10,0,6" />
+                        <StackPanel Visibility="{Binding EnableCustomProductMixing, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Label Content="Native Mixer Map" Style="{StaticResource LabelStyle}" />
+                            <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ProductMixingMaps}"
+                                      SelectedItem="{Binding CustomProductMixingMap, UpdateSourceTrigger=PropertyChanged}"
+                                      Style="{StaticResource ComboBoxStyle}" />
+                            <TextBlock Text="The map chooses the game's mixing implementation. The output keeps this product kind and uses the mix name and source price."
+                                       Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,5,0,10" />
+                            <CheckBox Content="Color mixed outputs from their effects" IsChecked="{Binding UsePropertyColorMixing, UpdateSourceTrigger=PropertyChanged}"
+                                      Foreground="{StaticResource LightTextBrush}" />
+                            <TextBlock Text="These settings apply to every product with the same Product Kind ID. Products sharing that ID must use the same mixing options. Production station recipes are separate."
+                                       Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+                <views:ChemistryRecipesEditor />
+                <Border Style="{StaticResource PanelStyle}" Padding="16" MinWidth="340" MaxWidth="520" Margin="0,0,12,12">
+                    <StackPanel>
+                        <TextBlock Text="Discovery &amp; Product Manager" Style="{StaticResource PanelHeaderStyle}" />
+                        <CheckBox Content="Discover product when the save finishes loading" IsChecked="{Binding DiscoverCustomProduct, UpdateSourceTrigger=PropertyChanged}"
+                                  Foreground="{StaticResource LightTextBrush}" Margin="0,10,0,4" />
+                        <CheckBox Content="List discovered product for sale" IsChecked="{Binding ListCustomProduct, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEnabled="{Binding DiscoverCustomProduct}" Foreground="{StaticResource LightTextBrush}" Margin="0,4,0,10" />
+                        <Label Content="Shop Integration" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <ComboBox ItemsSource="{x:Static models:ItemBlueprintOptions.ShopIntegrationModes}" SelectedItem="{Binding ShopIntegrationMode, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ComboBoxStyle}" />
+                        <Label Content="Specific Shop Names (comma separated)" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                        <TextBox Text="{Binding CustomDrugShopNames, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" IsEnabled="{Binding UsesSpecificShops}" />
+                        <CheckBox Content="Use a custom shop price" IsChecked="{Binding UseCustomShopPrice, UpdateSourceTrigger=PropertyChanged}"
+                                  Foreground="{StaticResource LightTextBrush}" Margin="0,8,0,4" />
+                        <TextBox Text="{Binding CustomShopPrice, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" IsEnabled="{Binding UseCustomShopPrice}" />
+                        <TextBlock Text="Shop stock is separate from Product Manager listing. Specific shops are matched by name after the save loads."
+                                   Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,6,0,10" />
+                        <CheckBox Content="Show a custom Product Manager section" IsChecked="{Binding ShowCustomProductKindInManager, UpdateSourceTrigger=PropertyChanged}"
+                                  Foreground="{StaticResource LightTextBrush}" Margin="0,4,0,8" />
+                        <StackPanel Visibility="{Binding ShowCustomProductKindInManager, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Label Content="Kind Display Name" Style="{StaticResource LabelStyle}" />
+                            <TextBox Text="{Binding ProductKindName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                            <Label Content="Kind Color" Style="{StaticResource LabelStyle}" Margin="0,8,0,0" />
+                            <DockPanel>
+                                <Button Content="Pick" Click="PickProductKindColor_Click" DockPanel.Dock="Right" Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0" Background="{Binding ProductKindColor, Converter={StaticResource ColorHexToBrushConverter}}" />
+                                <TextBox Text="{Binding ProductKindColor, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+                            </DockPanel>
+                            <TextBlock Text="The section uses the visual template's icon. Discovery and listing remain separate choices."
+                                       Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

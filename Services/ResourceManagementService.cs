@@ -10,6 +10,82 @@ namespace Schedule1ModdingTool.Services
     /// </summary>
     public class ResourceManagementService
     {
+        public AddModelResult AddModels(QuestProject project, string projectDir)
+        {
+            var result = new AddModelResult();
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Unity AssetBundles (*.bundle;*.assetbundle;*.unity3d)|*.bundle;*.assetbundle;*.unity3d|All files (*.*)|*.*",
+                Title = "Import Unity prefab AssetBundles",
+                Multiselect = true,
+                CheckFileExists = true
+            };
+            if (dialog.ShowDialog() != true) return result;
+
+            var modelsDir = Path.Combine(projectDir, "Models");
+            Directory.CreateDirectory(modelsDir);
+            foreach (var file in dialog.FileNames)
+            {
+                try
+                {
+                    var extension = Path.GetExtension(file).ToLowerInvariant();
+                    if (extension != ".bundle" && extension != ".assetbundle" && extension != ".unity3d")
+                    {
+                        result.Failures.Add($"{Path.GetFileName(file)}: Import a Unity AssetBundle containing a GameObject prefab.");
+                        continue;
+                    }
+                    using (var stream = File.OpenRead(file))
+                    {
+                        var signature = new byte[Math.Min(8, (int)Math.Min(stream.Length, 8))];
+                        _ = stream.Read(signature, 0, signature.Length);
+                        var header = System.Text.Encoding.ASCII.GetString(signature);
+                        if (!header.StartsWith("UnityFS", StringComparison.Ordinal) &&
+                            !header.StartsWith("UnityRaw", StringComparison.Ordinal) &&
+                            !header.StartsWith("UnityWeb", StringComparison.Ordinal))
+                        {
+                            result.Failures.Add($"{Path.GetFileName(file)}: This file is not a Unity AssetBundle.");
+                            continue;
+                        }
+                    }
+                    var safeName = AppUtils.MakeSafeFilename(Path.GetFileNameWithoutExtension(file));
+                    var name = RetryingFileOperations.GenerateUniqueFileName(modelsDir, safeName + extension);
+                    var destination = Path.Combine(modelsDir, name);
+                    if (!RetryingFileOperations.TryCopyFile(file, destination, out var error))
+                    {
+                        result.Failures.Add($"{Path.GetFileName(file)} ({error})");
+                        continue;
+                    }
+                    var asset = new ModelAsset
+                    {
+                        DisplayName = safeName,
+                        RelativePath = Path.Combine("Models", name).Replace('\\', '/'),
+                        PrefabName = safeName
+                    };
+                    project.AddModel(asset);
+                    result.AddedAssets.Add(asset);
+                }
+                catch (Exception ex) { result.Failures.Add($"{Path.GetFileName(file)} ({ex.Message})"); }
+            }
+            return result;
+        }
+
+        public sealed class AddModelResult
+        {
+            public List<ModelAsset> AddedAssets { get; } = new();
+            public List<string> Failures { get; } = new();
+        }
+
+        public bool RemoveModel(QuestProject project, ModelAsset asset, string projectDir)
+        {
+            var relative = asset.RelativePath.Replace('/', Path.DirectorySeparatorChar);
+            var full = Path.GetFullPath(Path.Combine(projectDir, relative));
+            var root = Path.GetFullPath(Path.Combine(projectDir, "Models")) + Path.DirectorySeparatorChar;
+            if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return false;
+            if (File.Exists(full) && !RetryingFileOperations.TryDeleteFile(full, out var error))
+                throw new IOException($"Could not delete '{full}': {error}");
+            project.RemoveModel(asset);
+            return true;
+        }
         /// <summary>
         /// Result of an add resource operation.
         /// </summary>
@@ -150,7 +226,7 @@ namespace Schedule1ModdingTool.Services
         {
             try
             {
-                if (project == null || project.Resources.Count == 0)
+                if (project == null || (project.Resources.Count == 0 && project.Models.Count == 0))
                 {
                     Debug.WriteLine("[NormalizeProjectResources] No project/resources to normalize");
                     return;
@@ -161,9 +237,11 @@ namespace Schedule1ModdingTool.Services
                 var resourcesDirFull = NormalizeDirectoryPath(resourcesDir);
 
                 Debug.WriteLine($"[NormalizeProjectResources] Normalizing {project.Resources.Count} resource(s) into '{resourcesDirFull}'");
-                foreach (var asset in project.Resources.ToList())
+                foreach (var asset in project.Resources.Cast<ResourceAsset>().Concat(project.Models).ToList())
                 {
-                    EnsureResourceAssetLocal(asset, projectDir, resourcesDir, resourcesDirFull);
+                    var targetDir = asset is ModelAsset ? Path.Combine(projectDir, "Models") : resourcesDir;
+                    Directory.CreateDirectory(targetDir);
+                    EnsureResourceAssetLocal(asset, projectDir, targetDir, NormalizeDirectoryPath(targetDir));
                 }
             }
             catch (Exception ex)
@@ -182,10 +260,10 @@ namespace Schedule1ModdingTool.Services
         {
             var missingResources = new List<string>();
 
-            if (project == null || project.Resources.Count == 0)
+            if (project == null || (project.Resources.Count == 0 && project.Models.Count == 0))
                 return missingResources;
 
-            foreach (var asset in project.Resources)
+            foreach (var asset in project.Resources.Cast<ResourceAsset>().Concat(project.Models))
             {
                 if (string.IsNullOrWhiteSpace(asset.RelativePath))
                 {

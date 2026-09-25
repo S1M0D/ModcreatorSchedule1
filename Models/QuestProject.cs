@@ -102,6 +102,9 @@ namespace Schedule1ModdingTool.Models
         [JsonProperty("resources")]
         public ObservableCollection<ResourceAsset> Resources { get; } = new ObservableCollection<ResourceAsset>();
 
+        [JsonProperty("models")]
+        public ObservableCollection<ModelAsset> Models { get; } = new ObservableCollection<ModelAsset>();
+
         [JsonProperty("folders")]
         public ObservableCollection<ModFolder> Folders { get; } = new ObservableCollection<ModFolder>();
 
@@ -127,6 +130,7 @@ namespace Schedule1ModdingTool.Models
             PhoneCalls.CollectionChanged += OnPhoneCallsCollectionChanged;
             Folders.CollectionChanged += OnFoldersCollectionChanged;
             Resources.CollectionChanged += OnResourcesCollectionChanged;
+            Models.CollectionChanged += OnModelsCollectionChanged;
             EnsureRootFolder();
             _suppressNotifications = false;
         }
@@ -190,6 +194,10 @@ namespace Schedule1ModdingTool.Models
         {
             Resources.Remove(asset);
         }
+
+        public void AddModel(ModelAsset asset) => Models.Add(asset);
+
+        public void RemoveModel(ModelAsset asset) => Models.Remove(asset);
 
         public ModFolder CreateFolder(string name, string? parentId = null)
         {
@@ -1411,6 +1419,10 @@ namespace Schedule1ModdingTool.Models
             {
                 AttachResourceHandlers(asset);
             }
+            foreach (var asset in Models)
+            {
+                AttachResourceHandlers(asset);
+            }
         }
 
         private void ResetQuestTracking()
@@ -1635,6 +1647,8 @@ namespace Schedule1ModdingTool.Models
             Folders.CollectionChanged += OnFoldersCollectionChanged;
             Resources.CollectionChanged -= OnResourcesCollectionChanged;
             Resources.CollectionChanged += OnResourcesCollectionChanged;
+            Models.CollectionChanged -= OnModelsCollectionChanged;
+            Models.CollectionChanged += OnModelsCollectionChanged;
         }
 
         [OnDeserialized]
@@ -1698,6 +1712,16 @@ namespace Schedule1ModdingTool.Models
 
             MarkAsModified();
             OnPropertyChanged(nameof(Resources));
+        }
+
+        private void OnModelsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+                foreach (ModelAsset asset in e.NewItems) AttachResourceHandlers(asset);
+            if (e.OldItems != null)
+                foreach (ModelAsset asset in e.OldItems) DetachResourceHandlers(asset);
+            MarkAsModified();
+            OnPropertyChanged(nameof(Models));
         }
 
         private void AttachResourceHandlers(ResourceAsset asset)

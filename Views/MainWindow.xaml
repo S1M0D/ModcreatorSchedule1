@@ -250,6 +250,20 @@
 								                         Width="16" Height="16" />
 							</MenuItem.Icon>
 						</MenuItem>
+						<MenuItem Header="Weed Strain" Click="AddWeedStrainMenuItem_Click" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
+						<MenuItem Header="Custom Product" Click="AddCustomProductMenuItem_Click" Style="{StaticResource DarkMenuItemStyle}">
+							<MenuItem.Icon>
+								<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
+								                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+								                         Width="16" Height="16" />
+							</MenuItem.Icon>
+						</MenuItem>
 						<MenuItem Header="Phone Call" Click="AddPhoneCallMenuItem_Click" InputGestureText="Ctrl+Shift+P" Style="{StaticResource DarkMenuItemStyle}">
 							<MenuItem.Icon>
 								<materialDesign:PackIcon Kind="{StaticResource PhoneAppsIcon}"
@@ -347,9 +361,12 @@
 									<DataTrigger Binding="{Binding OpenTabs.Count}" Value="0">
 										<Setter Property="Visibility" Value="Collapsed" />
 									</DataTrigger>
-									<DataTrigger Binding="{Binding SelectedNavigationItem.Id}" Value="Resources">
+										<DataTrigger Binding="{Binding SelectedNavigationItem.Id}" Value="Resources">
 										<Setter Property="Visibility" Value="Collapsed" />
-									</DataTrigger>
+										</DataTrigger>
+										<DataTrigger Binding="{Binding SelectedNavigationItem.Id}" Value="Models">
+											<Setter Property="Visibility" Value="Collapsed" />
+										</DataTrigger>
 								</Style.Triggers>
 							</Style>
 						</Border.Style>
@@ -477,6 +494,10 @@
 												<views:ResourcesView />
 											</Setter.Value>
 										</Setter>
+									</DataTrigger>
+									<DataTrigger Binding="{Binding SelectedNavigationItem.Id}" Value="Models">
+										<Setter Property="Visibility" Value="Visible" />
+										<Setter Property="Content"><Setter.Value><views:ModelsView /></Setter.Value></Setter>
 									</DataTrigger>
 								</Style.Triggers>
 							</Style>

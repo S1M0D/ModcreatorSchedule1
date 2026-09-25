@@ -9,9 +9,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <Version>1.0.6-beta</Version>
-    <AssemblyVersion>1.0.6.0</AssemblyVersion>
-    <FileVersion>1.0.6.0</FileVersion>
+    <Version>1.0.7-beta</Version>
+    <AssemblyVersion>1.0.7.0</AssemblyVersion>
+    <FileVersion>1.0.7.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +32,14 @@
     <None Remove="ModCreatorConnector\**" />
     <Content Remove="ModCreatorConnector\**" />
     <EmbeddedResource Remove="ModCreatorConnector\**" />
+  </ItemGroup>
+
+  <!-- Local release payloads may contain connector source; never compile them into the editor. -->
+  <ItemGroup>
+    <Compile Remove="artifacts\**" />
+    <None Remove="artifacts\**" />
+    <Content Remove="artifacts\**" />
+    <EmbeddedResource Remove="artifacts\**" />
   </ItemGroup>
 
   <!-- Exclude bundled S1API source/docs from the WPF editor build -->

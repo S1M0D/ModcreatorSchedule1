@@ -495,6 +495,8 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _addFolderCommand;
         private ICommand? _addResourceCommand;
         private ICommand? _removeResourceCommand;
+        private ICommand? _addModelCommand;
+        private ICommand? _removeModelCommand;
         private ICommand? _duplicateQuestCommand;
         private ICommand? _duplicateNpcCommand;
         private ICommand? _duplicateItemCommand;
@@ -558,6 +560,8 @@ namespace Schedule1ModdingTool.ViewModels
         public ICommand AddFolderCommand => _addFolderCommand!;
         public ICommand AddResourceCommand => _addResourceCommand!;
         public ICommand RemoveResourceCommand => _removeResourceCommand!;
+        public ICommand AddModelCommand => _addModelCommand!;
+        public ICommand RemoveModelCommand => _removeModelCommand!;
         public ICommand DuplicateQuestCommand => _duplicateQuestCommand!;
         public ICommand DuplicateNpcCommand => _duplicateNpcCommand!;
         public ICommand DuplicateItemCommand => _duplicateItemCommand!;
@@ -751,6 +755,8 @@ namespace Schedule1ModdingTool.ViewModels
                 AddResource();
             });
             _removeResourceCommand = new RelayCommand<ResourceAsset>(resource => RemoveResource(resource));
+            _addModelCommand = new RelayCommand(AddModel);
+            _removeModelCommand = new RelayCommand<ModelAsset>(RemoveModel);
             _duplicateQuestCommand = new RelayCommand<QuestBlueprint>(DuplicateQuest);
             _duplicateNpcCommand = new RelayCommand<NpcBlueprint>(DuplicateNpc);
             _duplicateItemCommand = new RelayCommand<ItemBlueprint>(DuplicateItem);
@@ -1864,6 +1870,34 @@ namespace Schedule1ModdingTool.ViewModels
         #endregion
 
         #region Resource Operations (Delegated to ResourceManagementService)
+
+        private void AddModel()
+        {
+            if (!EnsureProjectDirectory(out var projectDir)) return;
+            try
+            {
+                var result = _resourceManagementService.AddModels(CurrentProject, projectDir);
+                if (result.Failures.Count > 0)
+                    AppUtils.ShowWarning(string.Join("\n", result.Failures), "3D Model Import");
+                UpdateProcessState();
+            }
+            catch (Exception ex) { AppUtils.ShowError(ex.Message, "3D Model Import"); }
+        }
+
+        private void RemoveModel(ModelAsset? asset)
+        {
+            if (asset == null || !TryGetProjectDirectory(out var projectDir)) return;
+            try
+            {
+                if (CurrentProject.Items.Any(item => string.Equals(item.ModelBundleResourcePath, asset.RelativePath, StringComparison.OrdinalIgnoreCase)))
+                {
+                    AppUtils.ShowWarning("This model is assigned to an item. Clear its model selection before removing the bundle.", "3D Models");
+                    return;
+                }
+                _resourceManagementService.RemoveModel(CurrentProject, asset, projectDir);
+            }
+            catch (Exception ex) { AppUtils.ShowError(ex.Message, "3D Models"); }
+        }
 
         private void AddResource()
         {

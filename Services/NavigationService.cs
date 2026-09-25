@@ -80,11 +80,20 @@ namespace Schedule1ModdingTool.Services
             _navigationItems.Add(new NavigationItem
             {
                 Id = "Resources",
-                DisplayName = "Resources",
+                DisplayName = "Icons",
                 IconKey = "FolderIcon",
                 IsEnabled = true,
                 IsSelected = false,
                 Tooltip = "Manage custom resources (icons, images, etc.)"
+            });
+
+            _navigationItems.Add(new NavigationItem
+            {
+                Id = "Models",
+                DisplayName = "3D Models",
+                IconKey = "CubeIcon",
+                IsEnabled = true,
+                Tooltip = "Import Unity prefab bundles for custom items and products"
             });
 
             SelectedNavigationItem = _navigationItems.First();
@@ -106,6 +115,7 @@ namespace Schedule1ModdingTool.Services
                 {
                     "ModElements" => "MOD ELEMENTS",
                     "Resources" => "RESOURCES",
+                    "Models" => "3D MODELS",
                     _ => "WORKSPACE"
                 };
             }

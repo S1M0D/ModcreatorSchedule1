@@ -43,10 +43,6 @@ namespace Schedule1ModdingTool.Views
 
         private ItemBlueprint? SelectedItem => ViewModel?.SelectedItemBlueprint;
 
-        private ChemistryRecipeBlueprint? SelectedRecipe => ChemistryRecipesListBox.SelectedItem as ChemistryRecipeBlueprint;
-
-        private ChemistryRecipeIngredientBlueprint? SelectedIngredient => RecipeIngredientsListBox.SelectedItem as ChemistryRecipeIngredientBlueprint;
-
         private ResourceAsset? SelectedStudioResource => ClothingStudioResourcesListBox.SelectedItem as ResourceAsset;
 
         private void AddSpecificShop_Click(object sender, RoutedEventArgs e)
@@ -236,89 +232,71 @@ namespace Schedule1ModdingTool.Views
             item.AvatarAnimationTrigger = preset.AvatarAnimationTrigger;
         }
 
-        private void AddChemistryRecipe_Click(object sender, RoutedEventArgs e)
+        private void AddDrugEffect_Click(object sender, RoutedEventArgs e)
+        {
+            var item = SelectedItem;
+            var selectedEffect = item?.ItemType == ItemKindOption.CustomDrug
+                ? CustomDrugEffectComboBox.SelectedItem
+                : DrugEffectComboBox.SelectedItem;
+            if (item == null || selectedEffect is not string effect)
+                return;
+
+            var effects = (item.DrugEffects ?? string.Empty)
+                .Split(new[] { ',', ';', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(value => value.Trim())
+                .Where(value => value.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (effects.Contains(effect, StringComparer.OrdinalIgnoreCase))
+                return;
+            if (effects.Count >= 8)
+            {
+                AppUtils.ShowError("S1API products support at most 8 effects.", "Product Effects");
+                return;
+            }
+
+            effects.Add(effect);
+            item.DrugEffects = string.Join(", ", effects);
+        }
+
+        private void PickWeedColor_Click(object sender, RoutedEventArgs e)
+        {
+            var item = SelectedItem;
+            if (item == null || sender is not Button button || button.Tag is not string channel)
+                return;
+
+            var current = channel switch
+            {
+                "Main" => item.WeedMainColor,
+                "Secondary" => item.WeedSecondaryColor,
+                "Leaf" => item.WeedLeafColor,
+                "Stem" => item.WeedStemColor,
+                _ => null
+            };
+            if (current == null)
+                return;
+
+            var picked = PickColor(current);
+            if (picked == null)
+                return;
+
+            switch (channel)
+            {
+                case "Main": item.WeedMainColor = picked; break;
+                case "Secondary": item.WeedSecondaryColor = picked; break;
+                case "Leaf": item.WeedLeafColor = picked; break;
+                case "Stem": item.WeedStemColor = picked; break;
+            }
+        }
+
+        private void PickProductKindColor_Click(object sender, RoutedEventArgs e)
         {
             var item = SelectedItem;
             if (item == null)
                 return;
-
-            var recipe = new ChemistryRecipeBlueprint();
-            recipe.Ingredients.Add(new ChemistryRecipeIngredientBlueprint());
-            item.ChemistryRecipes.Add(recipe);
-            ChemistryRecipesListBox.SelectedItem = recipe;
-        }
-
-        private void RemoveChemistryRecipe_Click(object sender, RoutedEventArgs e)
-        {
-            var item = SelectedItem;
-            var recipe = SelectedRecipe;
-            if (item == null || recipe == null)
-                return;
-
-            item.ChemistryRecipes.Remove(recipe);
-        }
-
-        private void AddChemistryIngredient_Click(object sender, RoutedEventArgs e)
-        {
-            var recipe = SelectedRecipe;
-            if (recipe == null)
-                return;
-
-            var ingredient = new ChemistryRecipeIngredientBlueprint();
-            recipe.Ingredients.Add(ingredient);
-            RecipeIngredientsListBox.SelectedItem = ingredient;
-        }
-
-        private void RemoveChemistryIngredient_Click(object sender, RoutedEventArgs e)
-        {
-            var recipe = SelectedRecipe;
-            var ingredient = SelectedIngredient;
-            if (recipe == null || ingredient == null)
-                return;
-
-            recipe.Ingredients.Remove(ingredient);
-        }
-
-        private void AddIngredientItemOption_Click(object sender, RoutedEventArgs e)
-        {
-            var ingredient = SelectedIngredient;
-            if (ingredient == null)
-                return;
-
-            var itemId = (RecipeIngredientItemComboBox.SelectedItem as ItemReferenceInfo)?.Id
-                ?? RecipeIngredientItemComboBox.Text?.Trim();
-
-            if (string.IsNullOrWhiteSpace(itemId))
-                return;
-
-            if (!ingredient.ItemIds.Any(existing => string.Equals(existing, itemId, StringComparison.OrdinalIgnoreCase)))
-            {
-                ingredient.ItemIds.Add(itemId);
-            }
-
-            RecipeIngredientItemComboBox.Text = string.Empty;
-        }
-
-        private void RemoveIngredientItemOption_Click(object sender, RoutedEventArgs e)
-        {
-            var ingredient = SelectedIngredient;
-            if (ingredient == null || IngredientItemIdsListBox.SelectedItem is not string itemId)
-                return;
-
-            ingredient.ItemIds.Remove(itemId);
-        }
-
-        private void PickRecipeColor_Click(object sender, RoutedEventArgs e)
-        {
-            var recipe = SelectedRecipe;
-            if (recipe == null)
-                return;
-
-            var pickedColor = PickColor(recipe.FinalLiquidColorHex);
-            if (!string.IsNullOrWhiteSpace(pickedColor))
-            {
-                recipe.FinalLiquidColorHex = pickedColor;
-            }
+            var picked = PickColor(item.ProductKindColor);
+            if (picked != null)
+                item.ProductKindColor = picked;
         }
 
         private static string? PickColor(string currentHex)

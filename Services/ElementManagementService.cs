@@ -187,7 +187,35 @@ namespace Schedule1ModdingTool.Services
                 : settings.DefaultModNamespace;
             var item = template?.DeepCopy() ?? new ItemBlueprint();
 
-            if (item.ItemType == ItemKindOption.Clothing)
+            if (item.ItemType == ItemKindOption.CustomDrug)
+            {
+                var drugIndex = project.Items.Count(existing => existing.ItemType == ItemKindOption.CustomDrug) + 1;
+                var modId = new string((project.ProjectName ?? "mymod").ToLowerInvariant()
+                    .Select(ch => char.IsLetterOrDigit(ch) && ch < 128 ? ch : '_').ToArray()).Trim('_');
+                var prefix = string.IsNullOrWhiteSpace(modId) ? "mymod" : modId;
+                item.ClassName = $"CustomProduct{drugIndex}";
+                item.ItemId = $"{prefix}:product_{drugIndex}";
+                item.ProductKindId = $"{prefix}:product_kind_{drugIndex}";
+                item.ProductKindName = "Custom Products";
+                item.ItemName = $"New Custom Product {drugIndex}";
+                item.ItemDescription = "A fixed custom product created with S1API.";
+                item.LegalStatus = ItemLegalStatusOption.Illegal;
+                item.BasePurchasePrice = 50f;
+                item.ShopIntegrationMode = ShopIntegrationModeOption.None;
+            }
+            else if (item.ItemType == ItemKindOption.WeedDrug)
+            {
+                var drugIndex = project.Items.Count(existing => existing.ItemType == ItemKindOption.WeedDrug) + 1;
+                var modId = new string((project.ProjectName ?? "mymod").ToLowerInvariant()
+                    .Select(ch => char.IsLetterOrDigit(ch) && ch < 128 ? ch : '_').ToArray()).Trim('_');
+                item.ClassName = $"WeedStrain{drugIndex}";
+                item.ItemId = $"{(string.IsNullOrWhiteSpace(modId) ? "mymod" : modId)}:weed_strain_{drugIndex}";
+                item.ItemName = $"New Weed Strain {drugIndex}";
+                item.ItemDescription = "A native weed strain created with S1API.";
+                item.DrugEffects = "Euphoric";
+                item.ShopIntegrationMode = ShopIntegrationModeOption.None;
+            }
+            else if (item.ItemType == ItemKindOption.Clothing)
             {
                 var clothingIndex = project.Items.Count(existing => existing.ItemType == ItemKindOption.Clothing) + 1;
                 item.ClassName = $"Clothing{clothingIndex}";

@@ -25,6 +25,8 @@ namespace Schedule1ModdingTool.Models
         private bool _useCustomShopPrice;
         private float _customShopPrice;
         private string _iconFileName = string.Empty;
+        private string _modelBundleResourcePath = string.Empty;
+        private string _modelPrefabName = string.Empty;
         private EquippableTypeOption _equippableType = EquippableTypeOption.None;
         private string _equippableName = string.Empty;
         private bool _equippableCanInteract = true;
@@ -60,6 +62,30 @@ namespace Schedule1ModdingTool.Models
         private float _yieldMultiplier = 1f;
         private float _instantGrowth;
         private bool _allowOnGrowContainers;
+        private string _drugEffects = string.Empty;
+        private bool _useCustomWeedAppearance;
+        private string _weedMainColor = "#FF689C52";
+        private string _weedSecondaryColor = "#FF996CBD";
+        private string _weedLeafColor = "#FF3F7C36";
+        private string _weedStemColor = "#FF604A30";
+        private string _productKindId = string.Empty;
+        private string _productKindName = "Custom Product";
+        private DrugCompatibilityOption _compatibilityDrugType = DrugCompatibilityOption.Marijuana;
+        private bool _enableCustomProductMixing;
+        private ProductMixingMapOption _customProductMixingMap = ProductMixingMapOption.Marijuana;
+        private bool _usePropertyColorMixing;
+        private string _representationTemplateItemId = "ogkush";
+        private float _baseAddictiveness = 0.2f;
+        private ProductQualityOption _defaultProductQuality = ProductQualityOption.Standard;
+        private int _playerEffectDurationSeconds = 120;
+        private int _npcEffectDurationSeconds = 180;
+        private string _productPackagingIds = "baggie";
+        private bool _discoverCustomProduct = true;
+        private bool _listCustomProduct;
+        private bool _showCustomProductKindInManager;
+        private string _productKindColor = "#FF7EC8A1";
+        private string _customDrugShopNames = string.Empty;
+        private string _productConsoleAlias = string.Empty;
         private bool _enableUseCallbackHook;
         private bool _generateHookScaffold;
         private bool _registerAvatarEquippableFromEmbeddedBundle;
@@ -88,6 +114,102 @@ namespace Schedule1ModdingTool.Models
 
             ChemistryRecipes.CollectionChanged += ChemistryRecipesOnCollectionChanged;
         }
+
+        [JsonProperty("drugEffects")]
+        public string DrugEffects
+        {
+            get => _drugEffects;
+            set => SetProperty(ref _drugEffects, value ?? string.Empty);
+        }
+
+        [JsonProperty("useCustomWeedAppearance")]
+        public bool UseCustomWeedAppearance
+        {
+            get => _useCustomWeedAppearance;
+            set => SetProperty(ref _useCustomWeedAppearance, value);
+        }
+
+        [JsonProperty("weedMainColor")]
+        public string WeedMainColor
+        {
+            get => _weedMainColor;
+            set => SetProperty(ref _weedMainColor, value ?? string.Empty);
+        }
+
+        [JsonProperty("weedSecondaryColor")]
+        public string WeedSecondaryColor
+        {
+            get => _weedSecondaryColor;
+            set => SetProperty(ref _weedSecondaryColor, value ?? string.Empty);
+        }
+
+        [JsonProperty("weedLeafColor")]
+        public string WeedLeafColor
+        {
+            get => _weedLeafColor;
+            set => SetProperty(ref _weedLeafColor, value ?? string.Empty);
+        }
+
+        [JsonProperty("weedStemColor")]
+        public string WeedStemColor
+        {
+            get => _weedStemColor;
+            set => SetProperty(ref _weedStemColor, value ?? string.Empty);
+        }
+
+        [JsonProperty("productKindId")]
+        public string ProductKindId { get => _productKindId; set => SetProperty(ref _productKindId, value ?? string.Empty); }
+
+        [JsonProperty("productKindName")]
+        public string ProductKindName { get => _productKindName; set => SetProperty(ref _productKindName, value ?? string.Empty); }
+
+        [JsonProperty("compatibilityDrugType")]
+        public DrugCompatibilityOption CompatibilityDrugType { get => _compatibilityDrugType; set => SetProperty(ref _compatibilityDrugType, value); }
+
+        [JsonProperty("enableCustomProductMixing")]
+        public bool EnableCustomProductMixing { get => _enableCustomProductMixing; set => SetProperty(ref _enableCustomProductMixing, value); }
+
+        [JsonProperty("customProductMixingMap")]
+        public ProductMixingMapOption CustomProductMixingMap { get => _customProductMixingMap; set => SetProperty(ref _customProductMixingMap, value); }
+
+        [JsonProperty("usePropertyColorMixing")]
+        public bool UsePropertyColorMixing { get => _usePropertyColorMixing; set => SetProperty(ref _usePropertyColorMixing, value); }
+
+        [JsonProperty("representationTemplateItemId")]
+        public string RepresentationTemplateItemId { get => _representationTemplateItemId; set => SetProperty(ref _representationTemplateItemId, value ?? string.Empty); }
+
+        [JsonProperty("baseAddictiveness")]
+        public float BaseAddictiveness { get => _baseAddictiveness; set => SetProperty(ref _baseAddictiveness, value); }
+
+        [JsonProperty("defaultProductQuality")]
+        public ProductQualityOption DefaultProductQuality { get => _defaultProductQuality; set => SetProperty(ref _defaultProductQuality, value); }
+
+        [JsonProperty("playerEffectDurationSeconds")]
+        public int PlayerEffectDurationSeconds { get => _playerEffectDurationSeconds; set => SetProperty(ref _playerEffectDurationSeconds, value); }
+
+        [JsonProperty("npcEffectDurationSeconds")]
+        public int NpcEffectDurationSeconds { get => _npcEffectDurationSeconds; set => SetProperty(ref _npcEffectDurationSeconds, value); }
+
+        [JsonProperty("productPackagingIds")]
+        public string ProductPackagingIds { get => _productPackagingIds; set => SetProperty(ref _productPackagingIds, value ?? string.Empty); }
+
+        [JsonProperty("discoverCustomProduct")]
+        public bool DiscoverCustomProduct { get => _discoverCustomProduct; set => SetProperty(ref _discoverCustomProduct, value); }
+
+        [JsonProperty("listCustomProduct")]
+        public bool ListCustomProduct { get => _listCustomProduct; set => SetProperty(ref _listCustomProduct, value); }
+
+        [JsonProperty("showCustomProductKindInManager")]
+        public bool ShowCustomProductKindInManager { get => _showCustomProductKindInManager; set => SetProperty(ref _showCustomProductKindInManager, value); }
+
+        [JsonProperty("productKindColor")]
+        public string ProductKindColor { get => _productKindColor; set => SetProperty(ref _productKindColor, value ?? string.Empty); }
+
+        [JsonProperty("customDrugShopNames")]
+        public string CustomDrugShopNames { get => _customDrugShopNames; set => SetProperty(ref _customDrugShopNames, value ?? string.Empty); }
+
+        [JsonProperty("productConsoleAlias")]
+        public string ProductConsoleAlias { get => _productConsoleAlias; set => SetProperty(ref _productConsoleAlias, value ?? string.Empty); }
 
         [JsonProperty("className")]
         public string ClassName
@@ -148,6 +270,24 @@ namespace Schedule1ModdingTool.Models
                     if (value == ItemKindOption.Clothing)
                     {
                         Category = ItemCategoryOption.Clothing;
+                    }
+                    else if (value == ItemKindOption.WeedDrug || value == ItemKindOption.CustomDrug)
+                    {
+                        var modId = new string((ModName ?? "mymod").ToLowerInvariant()
+                            .Select(ch => ch < 128 && char.IsLetterOrDigit(ch) ? ch : '_').ToArray()).Trim('_');
+                        var prefix = string.IsNullOrWhiteSpace(modId) ? "mymod" : modId;
+                        if (!ItemId.Contains(':'))
+                            ItemId = $"{prefix}:{ItemId}";
+                        if (value == ItemKindOption.WeedDrug && string.IsNullOrWhiteSpace(DrugEffects))
+                            DrugEffects = "Euphoric";
+                        if (value == ItemKindOption.WeedDrug)
+                        {
+                            ModelBundleResourcePath = string.Empty;
+                            ModelPrefabName = string.Empty;
+                        }
+                        if (value == ItemKindOption.CustomDrug && string.IsNullOrWhiteSpace(ProductKindId))
+                            ProductKindId = $"{prefix}:products";
+                        ShopIntegrationMode = ShopIntegrationModeOption.None;
                     }
 
                     OnPropertyChanged(nameof(EffectiveCategory));
@@ -272,6 +412,20 @@ namespace Schedule1ModdingTool.Models
         {
             get => _iconFileName;
             set => SetProperty(ref _iconFileName, value ?? string.Empty);
+        }
+
+        [JsonProperty("modelBundleResourcePath")]
+        public string ModelBundleResourcePath
+        {
+            get => _modelBundleResourcePath;
+            set => SetProperty(ref _modelBundleResourcePath, value ?? string.Empty);
+        }
+
+        [JsonProperty("modelPrefabName")]
+        public string ModelPrefabName
+        {
+            get => _modelPrefabName;
+            set => SetProperty(ref _modelPrefabName, value ?? string.Empty);
         }
 
         [JsonProperty("equippableType")]
@@ -670,6 +824,15 @@ namespace Schedule1ModdingTool.Models
         private bool IsAdditiveItem => ItemType == ItemKindOption.Additive;
 
         [JsonIgnore]
+        public bool IsWeedDrug => ItemType == ItemKindOption.WeedDrug;
+
+        [JsonIgnore]
+        public bool IsCustomDrug => ItemType == ItemKindOption.CustomDrug;
+
+        [JsonIgnore]
+        public bool IsStandardItem => !IsWeedDrug && !IsCustomDrug;
+
+        [JsonIgnore]
         public string WorkspaceSubtitle => ItemType == ItemKindOption.Clothing
             ? $"Clothing · {ItemId}"
             : ItemId;
@@ -678,10 +841,10 @@ namespace Schedule1ModdingTool.Models
         public ItemCategoryOption EffectiveCategory => IsClothingItem ? ItemCategoryOption.Clothing : Category;
 
         [JsonIgnore]
-        public bool SupportsCloneSource => !IsGenericItem;
+        public bool SupportsCloneSource => !IsGenericItem && !IsWeedDrug && !IsCustomDrug;
 
         [JsonIgnore]
-        public bool SupportsCategory => !IsClothingItem;
+        public bool SupportsCategory => !IsClothingItem && !IsWeedDrug && !IsCustomDrug;
 
         [JsonIgnore]
         public bool SupportsStackLimit => IsGenericItem || IsBuildableItem || IsAdditiveItem || IsClothingItem;
@@ -723,7 +886,7 @@ namespace Schedule1ModdingTool.Models
         public bool SupportsGrowContainerIntegration => IsAdditiveItem;
 
         [JsonIgnore]
-        public bool SupportsChemistryRecipes => !IsClothingItem;
+        public bool SupportsChemistryRecipes => !IsClothingItem && !IsWeedDrug;
 
         [JsonIgnore]
         public bool SupportsRuntimeEditor => !IsClothingItem;
@@ -813,6 +976,8 @@ namespace Schedule1ModdingTool.Models
             }
 
             IconFileName = source.IconFileName;
+            ModelBundleResourcePath = source.ModelBundleResourcePath;
+            ModelPrefabName = source.ModelPrefabName;
             EquippableType = source.EquippableType;
             EquippableName = source.EquippableName;
             EquippableCanInteract = source.EquippableCanInteract;
@@ -855,6 +1020,30 @@ namespace Schedule1ModdingTool.Models
             YieldMultiplier = source.YieldMultiplier;
             InstantGrowth = source.InstantGrowth;
             AllowOnGrowContainers = source.AllowOnGrowContainers;
+            DrugEffects = source.DrugEffects;
+            UseCustomWeedAppearance = source.UseCustomWeedAppearance;
+            WeedMainColor = source.WeedMainColor;
+            WeedSecondaryColor = source.WeedSecondaryColor;
+            WeedLeafColor = source.WeedLeafColor;
+            WeedStemColor = source.WeedStemColor;
+            ProductKindId = source.ProductKindId;
+            ProductKindName = source.ProductKindName;
+            CompatibilityDrugType = source.CompatibilityDrugType;
+            EnableCustomProductMixing = source.EnableCustomProductMixing;
+            CustomProductMixingMap = source.CustomProductMixingMap;
+            UsePropertyColorMixing = source.UsePropertyColorMixing;
+            RepresentationTemplateItemId = source.RepresentationTemplateItemId;
+            BaseAddictiveness = source.BaseAddictiveness;
+            DefaultProductQuality = source.DefaultProductQuality;
+            PlayerEffectDurationSeconds = source.PlayerEffectDurationSeconds;
+            NpcEffectDurationSeconds = source.NpcEffectDurationSeconds;
+            ProductPackagingIds = source.ProductPackagingIds;
+            DiscoverCustomProduct = source.DiscoverCustomProduct;
+            ListCustomProduct = source.ListCustomProduct;
+            ShowCustomProductKindInManager = source.ShowCustomProductKindInManager;
+            ProductKindColor = source.ProductKindColor;
+            CustomDrugShopNames = source.CustomDrugShopNames;
+            ProductConsoleAlias = source.ProductConsoleAlias;
             EnableUseCallbackHook = source.EnableUseCallbackHook;
             GenerateHookScaffold = source.GenerateHookScaffold;
             RegisterAvatarEquippableFromEmbeddedBundle = source.RegisterAvatarEquippableFromEmbeddedBundle;
@@ -885,6 +1074,9 @@ namespace Schedule1ModdingTool.Models
         private void RaiseItemTypeCapabilityProperties()
         {
             OnPropertyChanged(nameof(SupportsCloneSource));
+            OnPropertyChanged(nameof(IsWeedDrug));
+            OnPropertyChanged(nameof(IsCustomDrug));
+            OnPropertyChanged(nameof(IsStandardItem));
             OnPropertyChanged(nameof(SupportsCategory));
             OnPropertyChanged(nameof(SupportsStackLimit));
             OnPropertyChanged(nameof(SupportsLegalStatus));
@@ -969,7 +1161,34 @@ namespace Schedule1ModdingTool.Models
         Generic,
         Buildable,
         Clothing,
-        Additive
+        Additive,
+        WeedDrug,
+        CustomDrug
+    }
+
+    public enum DrugCompatibilityOption
+    {
+        Marijuana,
+        Methamphetamine,
+        Cocaine,
+        Shrooms
+    }
+
+    public enum ProductMixingMapOption
+    {
+        Marijuana,
+        Methamphetamine,
+        Cocaine,
+        Shrooms
+    }
+
+    public enum ProductQualityOption
+    {
+        Trash,
+        Poor,
+        Standard,
+        Premium,
+        Heavenly
     }
 
     /// <summary>
@@ -1106,6 +1325,25 @@ namespace Schedule1ModdingTool.Models
     /// </summary>
     public static class ItemBlueprintOptions
     {
+        public static IReadOnlyList<string> DrugEffectNames { get; } = new[]
+        {
+            "AntiGravity", "Athletic", "Balding", "BrightEyed", "Calming", "CalorieDense",
+            "Cyclopean", "Disorienting", "Electrifying", "Energizing", "Euphoric",
+            "Explosive", "Focused", "Foggy", "Gingeritis", "Glowie", "Jennerising", "Laxative", "Lethal",
+            "LongFaced", "Munchies", "Paranoia", "Refreshing", "Schizophrenic",
+            "Sedating", "Seizure", "Shrinking", "Slippery", "Smelly", "Sneaky",
+            "Spicy", "ThoughtProvoking", "Toxic", "TropicThunder", "Zombifying"
+        };
+
+        public static IReadOnlyList<DrugCompatibilityOption> DrugCompatibilityTypes { get; } =
+            Enum.GetValues(typeof(DrugCompatibilityOption)).Cast<DrugCompatibilityOption>().ToArray();
+
+        public static IReadOnlyList<ProductMixingMapOption> ProductMixingMaps { get; } =
+            Enum.GetValues(typeof(ProductMixingMapOption)).Cast<ProductMixingMapOption>().ToArray();
+
+        public static IReadOnlyList<ProductQualityOption> ProductQualities { get; } =
+            Enum.GetValues(typeof(ProductQualityOption)).Cast<ProductQualityOption>().ToArray();
+
         public static IReadOnlyList<ItemKindOption> ItemTypes { get; } =
             Enum.GetValues(typeof(ItemKindOption)).Cast<ItemKindOption>().ToArray();
 

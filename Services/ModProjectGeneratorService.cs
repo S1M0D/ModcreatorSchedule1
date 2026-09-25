@@ -28,6 +28,34 @@ namespace Schedule1ModdingTool.Services
             if (string.IsNullOrWhiteSpace(outputDirectory)) throw new ArgumentException("Output directory cannot be empty", nameof(outputDirectory));
 
             var result = new ModProjectGenerationResult();
+            foreach (var kindGroup in project.Items.Where(item => item.ItemType == ItemKindOption.CustomDrug)
+                         .GroupBy(item => item.ProductKindId, StringComparer.OrdinalIgnoreCase))
+            {
+                var settingsCount = kindGroup.Select(item => (
+                        item.EnableCustomProductMixing,
+                        Map: item.EnableCustomProductMixing ? item.CustomProductMixingMap : default,
+                        Color: item.EnableCustomProductMixing && item.UsePropertyColorMixing))
+                    .Distinct().Count();
+                if (settingsCount > 1)
+                {
+                    result.ErrorMessage = $"Custom products using kind '{kindGroup.Key}' have different mixing settings. Give them separate Product Kind IDs or make their mixing settings match.";
+                    result.Errors.Add(result.ErrorMessage);
+                    return result;
+                }
+            }
+            var duplicateRecipeId = project.Items
+                .Where(item => item.SupportsChemistryRecipes)
+                .SelectMany(item => item.ChemistryRecipes)
+                .Select(recipe => recipe.RecipeId?.Trim())
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .GroupBy(id => id!, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault(group => group.Count() > 1);
+            if (duplicateRecipeId != null)
+            {
+                result.ErrorMessage = $"Production recipe ID '{duplicateRecipeId.Key}' is used more than once. Give each recipe its own stable ID.";
+                result.Errors.Add(result.ErrorMessage);
+                return result;
+            }
             var modName = MakeSafeIdentifier(project.ProjectName, "GeneratedMod");
             // Use outputDirectory directly - it's already the mod folder created by the wizard
             var modPath = outputDirectory;
@@ -42,6 +70,7 @@ namespace Schedule1ModdingTool.Services
                 Directory.CreateDirectory(Path.Combine(modPath, "PhoneCalls"));
                 Directory.CreateDirectory(Path.Combine(modPath, "Utils"));
                 Directory.CreateDirectory(Path.Combine(modPath, "Resources"));
+                Directory.CreateDirectory(Path.Combine(modPath, "Models"));
 
                 // Get mod metadata from the first available authored element or defaults
                 var firstQuest = project.Quests.FirstOrDefault();
@@ -80,7 +109,7 @@ namespace Schedule1ModdingTool.Services
                 var gameName = firstQuest?.GameName ?? firstItem?.GameName ?? firstNpc?.GameName ?? firstPhoneCall?.GameName ?? firstPhoneApp?.GameName ?? "Schedule I";
 
                 // Generate .csproj file
-                GenerateCsprojFile(modPath, modName, project.Resources, result, settings, includePhoneCalls: hasPhoneCalls, includePhoneApps: hasPhoneApps);
+                GenerateCsprojFile(modPath, modName, project.Resources.Cast<ResourceAsset>().Concat(project.Models), result, settings, includePhoneCalls: hasPhoneCalls, includePhoneApps: hasPhoneApps);
 
                 // Generate .sln file
                 GenerateSolutionFile(modPath, modName, result);
@@ -362,6 +391,9 @@ namespace Schedule1ModdingTool.Services
             var phoneCalls = project.PhoneCalls ?? Enumerable.Empty<PhoneCallBlueprint>();
             var hasQuests = project.Quests != null && project.Quests.Any();
             var hasItems = project.Items != null && project.Items.Any();
+            var hasWeedDrugs = project.Items != null && project.Items.Any(item => item.ItemType == ItemKindOption.WeedDrug);
+            var hasCustomDrugs = project.Items != null && project.Items.Any(item => item.ItemType == ItemKindOption.CustomDrug);
+            var hasStandardItems = project.Items != null && project.Items.Any(item => item.ItemType != ItemKindOption.WeedDrug && item.ItemType != ItemKindOption.CustomDrug);
             var hasPhoneCalls = phoneCalls.Any();
             var hasPlayerSpawnPhoneCalls = phoneCalls.Any(call => call.QueueMode == PhoneCallQueueMode.OnLocalPlayerSpawned);
             var hasMainScenePhoneCalls = phoneCalls.Any(call => call.QueueMode == PhoneCallQueueMode.OnMainSceneLoaded);
@@ -383,6 +415,10 @@ namespace Schedule1ModdingTool.Services
             if (hasItems)
             {
                 sb.AppendLine("using S1API.Items;");
+            }
+            if (hasWeedDrugs || hasCustomDrugs)
+            {
+                sb.AppendLine("using S1API.Lifecycle;");
             }
             sb.AppendLine("using S1API.Entities;");
             sb.AppendLine("using S1API.GameTime;");
@@ -434,6 +470,20 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("        public override void OnLateInitializeMelon()");
             sb.AppendLine("        {");
             sb.AppendLine("            Instance = this;");
+            if (hasWeedDrugs)
+            {
+                sb.AppendLine("            GameLifecycle.OnLoadComplete += RegisterWeedDrugs;");
+            }
+            if (hasCustomDrugs)
+            {
+                foreach (var item in (project.Items ?? Enumerable.Empty<ItemBlueprint>()).Where(item => item.ItemType == ItemKindOption.CustomDrug))
+                {
+                    var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+                    sb.AppendLine($"            {className}.RegisterProvider();");
+                }
+                sb.AppendLine("            GameLifecycle.OnPreLoad += RegisterCustomDrugs;");
+                sb.AppendLine("            GameLifecycle.OnLoadComplete += DiscoverCustomDrugs;");
+            }
             if (hasQuests || hasPlayerSpawnPhoneCalls)
             {
                 sb.AppendLine("            Player.LocalPlayerSpawned += HandleLocalPlayerSpawned;");
@@ -441,11 +491,11 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("        }");
             sb.AppendLine();
 
-            if (hasItems)
+            if (hasStandardItems)
             {
                 sb.AppendLine("        private void RegisterItems()");
                 sb.AppendLine("        {");
-                foreach (var item in project.Items ?? Enumerable.Empty<ItemBlueprint>())
+                foreach (var item in (project.Items ?? Enumerable.Empty<ItemBlueprint>()).Where(item => item.ItemType != ItemKindOption.WeedDrug && item.ItemType != ItemKindOption.CustomDrug))
                 {
                     var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
                     sb.AppendLine("            try");
@@ -462,13 +512,69 @@ namespace Schedule1ModdingTool.Services
                 sb.AppendLine();
             }
 
+            if (hasWeedDrugs)
+            {
+                sb.AppendLine("        private void RegisterWeedDrugs()");
+                sb.AppendLine("        {");
+                foreach (var item in (project.Items ?? Enumerable.Empty<ItemBlueprint>()).Where(item => item.ItemType == ItemKindOption.WeedDrug))
+                {
+                    var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+                    sb.AppendLine("            try");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                {className}.Register();");
+                    sb.AppendLine("            }");
+                    sb.AppendLine("            catch (Exception ex)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                MelonLogger.Error($\"Failed to register weed drug {className}: {{ex.Message}}\");");
+                    sb.AppendLine("            }");
+                }
+                sb.AppendLine("        }");
+                sb.AppendLine();
+            }
+
+            if (hasCustomDrugs)
+            {
+                sb.AppendLine("        private void RegisterCustomDrugs()");
+                sb.AppendLine("        {");
+                foreach (var item in (project.Items ?? Enumerable.Empty<ItemBlueprint>()).Where(item => item.ItemType == ItemKindOption.CustomDrug))
+                {
+                    var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+                    sb.AppendLine("            try");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                {className}.Register();");
+                    sb.AppendLine("            }");
+                    sb.AppendLine("            catch (Exception ex)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                MelonLogger.Error($\"Failed to register custom product {className}: {{ex.Message}}\");");
+                    sb.AppendLine("            }");
+                }
+                sb.AppendLine("        }");
+                sb.AppendLine();
+                sb.AppendLine("        private void DiscoverCustomDrugs()");
+                sb.AppendLine("        {");
+                foreach (var item in (project.Items ?? Enumerable.Empty<ItemBlueprint>()).Where(item => item.ItemType == ItemKindOption.CustomDrug))
+                {
+                    var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
+                    sb.AppendLine("            try");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                {className}.Discover();");
+                    sb.AppendLine("            }");
+                    sb.AppendLine("            catch (Exception ex)");
+                    sb.AppendLine("            {");
+                    sb.AppendLine($"                MelonLogger.Error($\"Failed to discover custom product {className}: {{ex.Message}}\");");
+                    sb.AppendLine("            }");
+                }
+                sb.AppendLine("        }");
+                sb.AppendLine();
+            }
+
             if (hasItems || hasQuests || hasMainScenePhoneCalls)
             {
                 sb.AppendLine("        public override void OnSceneWasInitialized(int buildIndex, string sceneName)");
                 sb.AppendLine("        {");
                 sb.AppendLine("            if (string.Equals(sceneName, \"Main\", StringComparison.OrdinalIgnoreCase))");
                 sb.AppendLine("            {");
-                if (hasItems)
+                if (hasStandardItems)
                 {
                     sb.AppendLine("                RegisterItems();");
                 }
@@ -855,7 +961,7 @@ namespace Schedule1ModdingTool.Services
 
         private void GenerateItemHookFile(string modPath, ItemBlueprint item, ModProjectGenerationResult result)
         {
-            if (!item.GenerateHookScaffold)
+            if (!item.GenerateHookScaffold || item.ItemType == ItemKindOption.WeedDrug || item.ItemType == ItemKindOption.CustomDrug)
             {
                 return;
             }
@@ -1161,7 +1267,7 @@ namespace Schedule1ModdingTool.Services
                 {
                     var className = MakeSafeIdentifier(item.ClassName, "GeneratedItem");
                     expectedItemFiles.Add($"{className}.cs");
-                    if (item.GenerateHookScaffold)
+                    if (item.GenerateHookScaffold && item.ItemType != ItemKindOption.WeedDrug && item.ItemType != ItemKindOption.CustomDrug)
                     {
                         expectedItemFiles.Add($"{className}.Hooks.cs");
                     }
@@ -1229,7 +1335,13 @@ namespace Schedule1ModdingTool.Services
 
         private void ValidateAndCopyResources(QuestProject project, string modPath, ModProjectGenerationResult result)
         {
-            if (project.Resources == null || project.Resources.Count == 0)
+            foreach (var item in project.Items)
+            {
+                if (!string.IsNullOrWhiteSpace(item.ModelBundleResourcePath) &&
+                    !project.Models.Any(model => string.Equals(model.RelativePath, item.ModelBundleResourcePath, StringComparison.OrdinalIgnoreCase)))
+                    result.Errors.Add($"Item '{item.ItemName}' selects model bundle '{item.ModelBundleResourcePath}', which is not in the 3D Models library.");
+            }
+            if (project.Resources.Count == 0 && project.Models.Count == 0)
             {
                 Debug.WriteLine("[ModProjectGenerator] No resources to copy");
                 return;
@@ -1254,7 +1366,7 @@ namespace Schedule1ModdingTool.Services
             var missingResources = new List<string>();
             var validResources = new List<ResourceAsset>();
 
-            foreach (var asset in project.Resources)
+            foreach (var asset in project.Resources.Cast<ResourceAsset>().Concat(project.Models))
             {
                 var relative = asset.RelativePath;
                 Debug.WriteLine($"[ModProjectGenerator] Validating resource '{asset.DisplayName}' ({relative ?? "null"})");

@@ -510,6 +510,20 @@
 						                         Width="16" Height="16" />
 					</MenuItem.Icon>
 				</MenuItem>
+				<MenuItem Header="Weed Strain" Click="NewWeedStrain_Click">
+					<MenuItem.Icon>
+						<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
+						                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+						                         Width="16" Height="16" />
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="Custom Product" Click="NewCustomProduct_Click">
+					<MenuItem.Icon>
+						<materialDesign:PackIcon Kind="{StaticResource ItemsIcon}"
+						                         Foreground="{Binding RelativeSource={RelativeSource AncestorType=MenuItem}, Path=Foreground}"
+						                         Width="16" Height="16" />
+					</MenuItem.Icon>
+				</MenuItem>
 				<MenuItem Header="Phone Call" Click="NewPhoneCall_Click">
 					<MenuItem.Icon>
 						<materialDesign:PackIcon Kind="{StaticResource PhoneAppsIcon}"

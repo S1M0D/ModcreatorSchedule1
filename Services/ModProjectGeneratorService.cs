@@ -166,7 +166,7 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("    <Nullable>enable</Nullable>");
             sb.AppendLine("  </PropertyGroup>");
             sb.AppendLine();
-            sb.AppendLine("  <!-- CrossCompat configuration (default for S1API.Forked) -->");
+            sb.AppendLine("  <!-- CrossCompat configuration -->");
             sb.AppendLine("  <PropertyGroup Condition=\"'$(Configuration)'=='CrossCompat'\">");
             sb.AppendLine("    <DefineConstants>CROSS_COMPAT</DefineConstants>");
             sb.AppendLine($"    <AssemblyName>{modName}</AssemblyName>");
@@ -194,9 +194,8 @@ namespace Schedule1ModdingTool.Services
             }
             else
             {
-                sb.AppendLine("    <PackageReference Include=\"S1API.Forked\" Version=\"*\" />");
+                sb.AppendLine("    <PackageReference Include=\"S1API.Forked\" Version=\"3.2.0\" />");
             }
-            sb.AppendLine("    <PackageReference Include=\"LavaGang.MelonLoader\" Version=\"0.7.0\" />");
             sb.AppendLine("  </ItemGroup>");
             sb.AppendLine();
             sb.AppendLine("  <!-- CrossCompat Unity references (Mono without Assembly-CSharp) -->");
@@ -867,6 +866,7 @@ namespace Schedule1ModdingTool.Services
             var sb = new StringBuilder();
 
             sb.AppendLine("using S1API.Items;");
+            sb.AppendLine("using StorableItemDefinition = S1API.Items.Storable.StorableItemDefinition;");
             sb.AppendLine();
             sb.AppendLine($"namespace {targetNamespace}");
             sb.AppendLine("{");
@@ -970,6 +970,9 @@ namespace Schedule1ModdingTool.Services
             var customButtons = CollectPhoneAppButtonNodes(phoneApp.UiNodes);
             var sb = new StringBuilder();
 
+            sb.AppendLine("using S1API.PhoneApp;");
+            sb.AppendLine("using S1API.UI;");
+            sb.AppendLine("using S1API.Utils;");
             sb.AppendLine("using ScheduleOne.DevUtilities;");
             sb.AppendLine("using UnityEngine;");
             sb.AppendLine();

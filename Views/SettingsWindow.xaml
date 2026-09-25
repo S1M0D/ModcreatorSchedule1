@@ -76,7 +76,7 @@
 							        Padding="10,0" />
 						</Grid>
 						<TextBlock Margin="0,8,0,0"
-						           Text="Leave blank to continue using the latest S1API.Forked NuGet package."
+						           Text="Leave blank to use S1API.Forked 3.2.0 from NuGet."
 						           TextWrapping="Wrap"
 						           Foreground="{StaticResource DimTextBrush}"
 						           FontSize="11" />

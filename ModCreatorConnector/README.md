@@ -11,7 +11,7 @@ This template provides a ready-to-use foundation for developing mods for Schedul
 - **Cross-Platform Compatibility**: Build configurations for Mono, IL2CPP, and Cross-Compat modes
 - **Automatic Deployment**: Post-build script that copies your mod to the Mods folder and launches the game
 - **Harmony Integration**: Boilerplate Harmony patches class
-- **S1API Integration**: Uses the latest S1API.Forked package for enhanced compatibility
+- **S1API Integration**: CrossCompat and ConnectorLocal use the configured local S1API DLL when available; ConnectorNuGet uses S1API.Forked 3.2.0
 
 ## Prerequisites
 
@@ -54,14 +54,12 @@ S1APITemplate/
 
 1. **Clone or Download** this template repository
 
-2. **Configure Game Paths** (in `S1APITemplate.csproj`):
+2. **Configure Game Paths** (in `ModCreatorConnector.csproj`):
    ```xml
-   <!-- For Mono/CrossCompat -->
-   <GamePath>D:\SteamLibrary\steamapps\common\Schedule I_alternate</GamePath>
-
-   <!-- For IL2CPP -->
-   <GamePath>D:\SteamLibrary\steamapps\common\Schedule I_main</GamePath>
+   <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
    ```
+   The default points to the local Mono installation. For another install, pass `-p:GamePath="path to game"` to `dotnet build`. IL2CPP builds require an IL2CPP installation with generated assemblies.
+   CrossCompat and ConnectorLocal use `C:\Users\ksuti\Downloads\S1API.dll` (version 3.2.0) by default. Pass `-p:S1ApiLocalDllPath="path to S1API.dll"` to use another copy.
 
 3. **Update Assembly Name** (optional):
    Replace `$safeprojectname$` in the project file with your desired mod name
@@ -109,7 +107,7 @@ By default, the Mono configuration uses the regular `Assembly-CSharp.dll`. For e
 2. **Publicize the Assembly**:
    ```bash
    # Navigate to your Mono game's Managed folder
-   cd "D:\SteamLibrary\steamapps\common\Schedule I_alternate\Schedule I_Data\Managed"
+   cd "C:\Program Files (x86)\Steam\steamapps\common\Schedule I\Schedule I_Data\Managed"
 
    # Publicize Assembly-CSharp.dll
    assembly-publicizer Assembly-CSharp.dll

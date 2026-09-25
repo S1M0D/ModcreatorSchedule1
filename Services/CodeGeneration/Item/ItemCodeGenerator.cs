@@ -245,10 +245,9 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
         private void GenerateBuildableDefinition(ICodeBuilder builder, ItemBlueprint item)
         {
             builder.AppendLine($"var itemBuilder = {GetCloneCapableBuilderExpression("BuildableItemCreator", item.CloneSourceItemId)};");
-            builder.AppendLine($"itemBuilder.WithBasicInfo(\"{CodeFormatter.EscapeString(item.ItemId)}\", \"{CodeFormatter.EscapeString(item.ItemName)}\", \"{CodeFormatter.EscapeString(item.ItemDescription)}\");");
+            builder.AppendLine($"itemBuilder.WithBasicInfo(\"{CodeFormatter.EscapeString(item.ItemId)}\", \"{CodeFormatter.EscapeString(item.ItemName)}\", \"{CodeFormatter.EscapeString(item.ItemDescription)}\", ItemCategory.{item.EffectiveCategory});");
             builder.AppendLine($"itemBuilder.WithBuildSound(BuildSoundType.{item.BuildSoundType});");
             builder.AppendLine($"itemBuilder.WithPricing({CodeFormatter.FormatFloat(item.BasePurchasePrice)}f, {CodeFormatter.FormatFloat(item.ResellMultiplier)}f);");
-            builder.AppendLine($"itemBuilder.WithCategory(ItemCategory.{item.EffectiveCategory});");
             builder.AppendLine($"itemBuilder.WithStackLimit({item.StackLimit});");
             builder.AppendLine($"itemBuilder.WithLegalStatus(LegalStatus.{item.LegalStatus});");
             builder.AppendLine();
@@ -259,7 +258,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
         private void GenerateClothingDefinition(ICodeBuilder builder, ItemBlueprint item)
         {
             builder.AppendLine($"var itemBuilder = {GetCloneCapableBuilderExpression("ClothingItemCreator", item.CloneSourceItemId)};");
-            builder.AppendLine($"itemBuilder.WithBasicInfo(\"{CodeFormatter.EscapeString(item.ItemId)}\", \"{CodeFormatter.EscapeString(item.ItemName)}\", \"{CodeFormatter.EscapeString(item.ItemDescription)}\");");
+            builder.AppendLine($"itemBuilder.WithBasicInfo(\"{CodeFormatter.EscapeString(item.ItemId)}\", \"{CodeFormatter.EscapeString(item.ItemName)}\", \"{CodeFormatter.EscapeString(item.ItemDescription)}\", ItemCategory.{item.EffectiveCategory});");
             builder.AppendLine($"itemBuilder.WithSlot(ClothingSlot.{item.ClothingSlot});");
             builder.AppendLine($"itemBuilder.WithApplicationType(ClothingApplicationType.{item.ClothingApplicationType});");
             if (!string.IsNullOrWhiteSpace(item.ClothingAssetPath))
@@ -623,6 +622,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
             builder.OpenBlock("catch (Exception ex)");
             builder.AppendLine("MelonLogger.Warning($\"Failed to load embedded {label} '{relativePath}': {ex.Message}\");");
             builder.AppendLine("return null;");
+            builder.CloseBlock();
             builder.CloseBlock();
             builder.AppendLine();
 

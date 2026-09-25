@@ -37,7 +37,7 @@ That means the output is still real generated C# and a real buildable mod, not a
 
 ## Current Highlights
 
-- S1API 3.x-oriented quest and trigger generation
+- S1API 3.2.0-oriented quest and trigger generation
 - Expanded NPC dialogue and runtime authoring
 - Broader item support with shop routing and advanced item options
 - Clothing Studio with texture helpers and game-data texture extraction

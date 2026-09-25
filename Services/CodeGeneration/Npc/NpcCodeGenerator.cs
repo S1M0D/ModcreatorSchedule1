@@ -96,6 +96,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
             builder.AppendLine("private static bool _generatedDialogueInjectionsRegistered;");
             builder.AppendLine();
             builder.AppendLine($"public override bool IsPhysical => {npc.IsPhysical.ToString().ToLowerInvariant()};");
+            builder.AppendLine($"public override bool IsCustomer => {npc.EnableCustomer.ToString().ToLowerInvariant()};");
             if (npc.IsDealer)
                 builder.AppendLine("public override bool IsDealer => true;");
             builder.AppendLine();
@@ -126,7 +127,6 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Npc
 
             if (npc.EnableCustomer)
             {
-                builder.AppendLine(".EnsureCustomer()");
                 GenerateCustomerDefaults(builder, npc.CustomerDefaults);
             }
 

@@ -10,14 +10,14 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Configurations>ConnectorNuGet;ConnectorLocal;CrossCompat;Mono;Il2cpp</Configurations>
-    <S1ApiPackageVersion Condition="'$(S1ApiPackageVersion)' == ''">3.0.5</S1ApiPackageVersion>
-    <S1ApiLocalDllPath Condition="'$(S1ApiLocalDllPath)' == ''">..\..\S1API\S1API\bin\MonoMelon\netstandard2.1\S1API.dll</S1ApiLocalDllPath>
+    <S1ApiPackageVersion Condition="'$(S1ApiPackageVersion)' == ''">3.2.0</S1ApiPackageVersion>
+    <S1ApiLocalDllPath Condition="'$(S1ApiLocalDllPath)' == ''">C:\Users\ksuti\Downloads\S1API.dll</S1ApiLocalDllPath>
     <S1ApiIl2CppDllPath Condition="'$(S1ApiIl2CppDllPath)' == ''">..\..\S1API\S1API\bin\Il2CppMelon\net6.0\S1API.dll</S1ApiIl2CppDllPath>
     <UsePublicized Condition="'$(UsePublicized)' == ''">false</UsePublicized>
+    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'ConnectorNuGet' or '$(Configuration)' == 'ConnectorLocal' or '$(Configuration)' == 'CrossCompat'">
-    <GamePath Condition="'$(GamePath)' == ''">D:\SteamLibrary\steamapps\common\Schedule I_alternate</GamePath>
     <ManagedPath Condition="'$(ManagedPath)' == ''">$(GamePath)\Schedule I_Data\Managed</ManagedPath>
     <MelonLoaderPath Condition="'$(MelonLoaderPath)' == ''">$(GamePath)\MelonLoader\net35</MelonLoaderPath>
     <ModsPath Condition="'$(ModsPath)' == ''">$(GamePath)\Mods</ModsPath>
@@ -26,7 +26,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Mono'">
-    <GamePath Condition="'$(GamePath)' == ''">D:\SteamLibrary\steamapps\common\Schedule I_alternate</GamePath>
     <ManagedPath Condition="'$(ManagedPath)' == ''">$(GamePath)\Schedule I_Data\Managed</ManagedPath>
     <MelonLoaderPath Condition="'$(MelonLoaderPath)' == ''">$(GamePath)\MelonLoader\net35</MelonLoaderPath>
     <ModsPath Condition="'$(ModsPath)' == ''">$(GamePath)\Mods</ModsPath>
@@ -35,7 +34,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Il2cpp'">
-    <GamePath Condition="'$(GamePath)' == ''">D:\SteamLibrary\steamapps\common\Schedule I_public</GamePath>
     <ManagedPath Condition="'$(ManagedPath)' == ''">$(GamePath)\MelonLoader\Il2CppAssemblies</ManagedPath>
     <MelonLoaderPath Condition="'$(MelonLoaderPath)' == ''">$(GamePath)\MelonLoader\net6</MelonLoaderPath>
     <ModsPath Condition="'$(ModsPath)' == ''">$(GamePath)\Mods</ModsPath>
@@ -138,18 +136,18 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'ConnectorNuGet' or '$(Configuration)' == 'CrossCompat'">
+  <ItemGroup Condition="'$(Configuration)' == 'ConnectorNuGet'">
     <PackageReference Include="S1API.Forked" Version="$(S1ApiPackageVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'ConnectorLocal' and Exists('$(S1ApiLocalDllPath)')">
+  <ItemGroup Condition="('$(Configuration)' == 'ConnectorLocal' or '$(Configuration)' == 'CrossCompat') and Exists('$(S1ApiLocalDllPath)')">
     <Reference Include="S1API">
       <HintPath>$(S1ApiLocalDllPath)</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'ConnectorLocal' and !Exists('$(S1ApiLocalDllPath)')">
+  <ItemGroup Condition="('$(Configuration)' == 'ConnectorLocal' or '$(Configuration)' == 'CrossCompat') and !Exists('$(S1ApiLocalDllPath)')">
     <PackageReference Include="S1API.Forked" Version="$(S1ApiPackageVersion)" />
   </ItemGroup>
 

@@ -11,10 +11,10 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Configurations>ConnectorNuGet;ConnectorLocal;CrossCompat;Mono;Il2cpp</Configurations>
     <S1ApiPackageVersion Condition="'$(S1ApiPackageVersion)' == ''">3.2.0</S1ApiPackageVersion>
-    <S1ApiLocalDllPath Condition="'$(S1ApiLocalDllPath)' == ''">C:\Users\ksuti\Downloads\S1API.dll</S1ApiLocalDllPath>
+    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
+    <S1ApiLocalDllPath Condition="'$(S1ApiLocalDllPath)' == ''">$(GamePath)\Mods\S1API.Mono.MelonLoader.dll</S1ApiLocalDllPath>
     <S1ApiIl2CppDllPath Condition="'$(S1ApiIl2CppDllPath)' == ''">..\..\S1API\S1API\bin\Il2CppMelon\net6.0\S1API.dll</S1ApiIl2CppDllPath>
     <UsePublicized Condition="'$(UsePublicized)' == ''">false</UsePublicized>
-    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'ConnectorNuGet' or '$(Configuration)' == 'ConnectorLocal' or '$(Configuration)' == 'CrossCompat'">

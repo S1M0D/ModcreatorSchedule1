@@ -51,7 +51,7 @@ namespace Schedule1ModdingTool.Services
                 if (string.IsNullOrEmpty(solutionPath))
                 {
                     result.Success = false;
-                    result.ErrorMessage = "Could not locate solution directory. ModCreatorConnector project not found.";
+                    result.ErrorMessage = "Could not locate the ModCreatorConnector project beside the app.";
                     return result;
                 }
 
@@ -67,7 +67,7 @@ namespace Schedule1ModdingTool.Services
 
                 // Build ModCreatorConnector
                 var config = useLocalDll ? "ConnectorLocal" : "ConnectorNuGet";
-                result.BuildOutput = BuildConnectorMod(connectorCsproj, config, out var buildSuccess, out var buildError);
+                result.BuildOutput = BuildConnectorMod(connectorCsproj, config, resolvedGamePath, settings.S1ApiDllPath, out var buildSuccess, out var buildError);
 
                 if (!buildSuccess)
                 {
@@ -151,7 +151,7 @@ namespace Schedule1ModdingTool.Services
 
         private string GetSolutionPath()
         {
-            // Try multiple approaches to find the solution directory
+            // The connector project is bundled beside published builds and lives in the repository during development.
             
             // Approach 1: Walk up from current executable directory
             var currentDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -159,8 +159,8 @@ namespace Schedule1ModdingTool.Services
 
             while (directory != null)
             {
-                var solutionFile = Path.Combine(directory.FullName, "Schedule1ModdingTool.sln");
-                if (File.Exists(solutionFile))
+                var connectorProject = Path.Combine(directory.FullName, "ModCreatorConnector", "ModCreatorConnector.csproj");
+                if (File.Exists(connectorProject))
                 {
                     return directory.FullName;
                 }
@@ -178,8 +178,8 @@ namespace Schedule1ModdingTool.Services
             foreach (var relativePath in relativePaths)
             {
                 var testPath = Path.GetFullPath(Path.Combine(currentDir, relativePath));
-                var solutionFile = Path.Combine(testPath, "Schedule1ModdingTool.sln");
-                if (File.Exists(solutionFile))
+                var connectorProject = Path.Combine(testPath, "ModCreatorConnector", "ModCreatorConnector.csproj");
+                if (File.Exists(connectorProject))
                 {
                     return testPath;
                 }
@@ -188,7 +188,7 @@ namespace Schedule1ModdingTool.Services
             return string.Empty;
         }
 
-        private string BuildConnectorMod(string csprojPath, string configuration, out bool success, out string error)
+        private string BuildConnectorMod(string csprojPath, string configuration, string gamePath, string? s1ApiDllPath, out bool success, out string error)
         {
             success = false;
             error = string.Empty;
@@ -200,13 +200,21 @@ namespace Schedule1ModdingTool.Services
                 var processStartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = $"build \"{csprojPath}\" -c {configuration} --verbosity minimal",
                     WorkingDirectory = Path.GetDirectoryName(csprojPath),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
+                processStartInfo.ArgumentList.Add("build");
+                processStartInfo.ArgumentList.Add(csprojPath);
+                processStartInfo.ArgumentList.Add("-c");
+                processStartInfo.ArgumentList.Add(configuration);
+                processStartInfo.ArgumentList.Add("--verbosity");
+                processStartInfo.ArgumentList.Add("minimal");
+                processStartInfo.ArgumentList.Add($"-p:GamePath={gamePath}");
+                if (configuration == "ConnectorLocal" && !string.IsNullOrWhiteSpace(s1ApiDllPath))
+                    processStartInfo.ArgumentList.Add($"-p:S1ApiLocalDllPath={s1ApiDllPath}");
 
                 using (var process = Process.Start(processStartInfo))
                 {

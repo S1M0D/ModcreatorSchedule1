@@ -59,7 +59,7 @@ S1APITemplate/
    <GamePath Condition="'$(GamePath)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Schedule I</GamePath>
    ```
    The default points to the local Mono installation. For another install, pass `-p:GamePath="path to game"` to `dotnet build`. IL2CPP builds require an IL2CPP installation with generated assemblies.
-   CrossCompat and ConnectorLocal use `C:\Users\ksuti\Downloads\S1API.dll` (version 3.2.0) by default. Pass `-p:S1ApiLocalDllPath="path to S1API.dll"` to use another copy.
+   CrossCompat and ConnectorLocal use `$(GamePath)\Mods\S1API.Mono.MelonLoader.dll` when present. Pass `-p:S1ApiLocalDllPath="path to S1API.dll"` to use another copy; otherwise the project falls back to S1API.Forked 3.2.0 from NuGet.
 
 3. **Update Assembly Name** (optional):
    Replace `$safeprojectname$` in the project file with your desired mod name

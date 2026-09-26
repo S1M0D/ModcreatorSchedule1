@@ -50,6 +50,12 @@ jobs:
     - name: Publish Release
       run: dotnet publish Schedule1ModdingTool.csproj -c Release -p:Version=$env:VERSION -o ./publish --self-contained false
 
+    - name: Include preview connector
+      run: |
+        if (!(Test-Path "ModCreatorConnector/ModCreatorConnector.dll")) { throw "Compiled preview connector is missing" }
+        New-Item -ItemType Directory -Path "publish/ModCreatorConnector" -Force | Out-Null
+        Copy-Item "ModCreatorConnector/ModCreatorConnector.dll" "publish/ModCreatorConnector/ModCreatorConnector.dll"
+
     - name: Create release archive
       run: |
         $archiveName = "Schedule1ModdingTool-$env:VERSION-stable.zip"

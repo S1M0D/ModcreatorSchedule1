@@ -46,39 +46,30 @@ namespace Schedule1ModdingTool.Services
 
             try
             {
-                // Get ModCreatorConnector project path
-                var solutionPath = GetSolutionPath();
-                if (string.IsNullOrEmpty(solutionPath))
+                var connectorProjectPath = FindConnectorFolder(settings.ConnectorFolderPath);
+                if (connectorProjectPath == null)
                 {
                     result.Success = false;
-                    result.ErrorMessage = "Could not locate the ModCreatorConnector project beside the app.";
+                    result.ErrorMessage = "Could not locate ModCreatorConnector.dll. Place the ModCreatorConnector folder beside the app or select it in Settings.";
                     return result;
                 }
 
-                var connectorProjectPath = Path.Combine(solutionPath, "ModCreatorConnector");
                 var connectorCsproj = Path.Combine(connectorProjectPath, "ModCreatorConnector.csproj");
-
-                if (!File.Exists(connectorCsproj))
+                var dllPath = Path.Combine(connectorProjectPath, "ModCreatorConnector.dll");
+                // Published releases ship the compiled connector. Developers can still build from source
+                // when no compiled connector is available.
+                if (!File.Exists(dllPath) && File.Exists(connectorCsproj))
                 {
-                    result.Success = false;
-                    result.ErrorMessage = $"ModCreatorConnector project not found at: {connectorCsproj}";
-                    return result;
+                    var config = useLocalDll ? "ConnectorLocal" : "ConnectorNuGet";
+                    result.BuildOutput = BuildConnectorMod(connectorCsproj, config, resolvedGamePath, settings.S1ApiDllPath, out var buildSuccess, out var buildError);
+                    if (!buildSuccess)
+                    {
+                        result.Success = false;
+                        result.ErrorMessage = $"Failed to build ModCreatorConnector: {buildError}";
+                        return result;
+                    }
+                    dllPath = Path.Combine(connectorProjectPath, "bin", config, "netstandard2.1", "ModCreatorConnector.dll");
                 }
-
-                // Build ModCreatorConnector
-                var config = useLocalDll ? "ConnectorLocal" : "ConnectorNuGet";
-                result.BuildOutput = BuildConnectorMod(connectorCsproj, config, resolvedGamePath, settings.S1ApiDllPath, out var buildSuccess, out var buildError);
-
-                if (!buildSuccess)
-                {
-                    result.Success = false;
-                    result.ErrorMessage = $"Failed to build ModCreatorConnector: {buildError}";
-                    return result;
-                }
-
-                // Find the built DLL
-                var binPath = Path.Combine(connectorProjectPath, "bin", config, "netstandard2.1");
-                var dllPath = Path.Combine(binPath, "ModCreatorConnector.dll");
 
                 if (!File.Exists(dllPath))
                 {
@@ -96,8 +87,10 @@ namespace Schedule1ModdingTool.Services
 
                 var targetDllPath = Path.Combine(modsPath, "ModCreatorConnector.dll");
                 
-                // Only copy if DLL is newer or doesn't exist
-                if (!File.Exists(targetDllPath) || File.GetLastWriteTime(dllPath) > File.GetLastWriteTime(targetDllPath))
+                // Compare content so an older preview DLL is replaced regardless of extracted timestamps.
+                if (!File.Exists(targetDllPath) ||
+                    !System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(dllPath)).AsSpan()
+                        .SequenceEqual(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(targetDllPath))))
                 {
                     File.Copy(dllPath, targetDllPath, overwrite: true);
                     result.DllCopied = true;
@@ -149,43 +142,29 @@ namespace Schedule1ModdingTool.Services
             return result;
         }
 
-        private string GetSolutionPath()
+        internal static string? FindConnectorFolder(string? configuredPath, string? appDirectory = null)
         {
-            // The connector project is bundled beside published builds and lives in the repository during development.
-            
-            // Approach 1: Walk up from current executable directory
-            var currentDir = AppDomain.CurrentDomain.BaseDirectory;
-            var directory = new DirectoryInfo(currentDir);
+            static string? Check(string? path)
+            {
+                if (string.IsNullOrWhiteSpace(path)) return null;
+                var folder = path.Trim().Trim('"');
+                if (File.Exists(folder)) folder = Path.GetDirectoryName(folder)!;
+                var child = Path.Combine(folder, "ModCreatorConnector");
+                if (Directory.Exists(child)) folder = child;
+                return File.Exists(Path.Combine(folder, "ModCreatorConnector.dll")) ||
+                       File.Exists(Path.Combine(folder, "ModCreatorConnector.csproj")) ? folder : null;
+            }
 
+            var explicitFolder = Check(configuredPath);
+            if (explicitFolder != null) return explicitFolder;
+            var directory = new DirectoryInfo(appDirectory ?? AppContext.BaseDirectory);
             while (directory != null)
             {
-                var connectorProject = Path.Combine(directory.FullName, "ModCreatorConnector", "ModCreatorConnector.csproj");
-                if (File.Exists(connectorProject))
-                {
-                    return directory.FullName;
-                }
+                var found = Check(directory.FullName);
+                if (found != null) return found;
                 directory = directory.Parent;
             }
-
-            // Approach 2: Try relative path from common locations
-            var relativePaths = new[]
-            {
-                Path.Combine("..", "..", ".."), // From bin/Debug/net8.0-windows
-                Path.Combine("..", ".."),       // From bin/Debug
-                ".."                            // From bin
-            };
-
-            foreach (var relativePath in relativePaths)
-            {
-                var testPath = Path.GetFullPath(Path.Combine(currentDir, relativePath));
-                var connectorProject = Path.Combine(testPath, "ModCreatorConnector", "ModCreatorConnector.csproj");
-                if (File.Exists(connectorProject))
-                {
-                    return testPath;
-                }
-            }
-
-            return string.Empty;
+            return null;
         }
 
         private string BuildConnectorMod(string csprojPath, string configuration, string gamePath, string? s1ApiDllPath, out bool success, out string error)

@@ -181,18 +181,36 @@ namespace Schedule1ModdingTool.Services
             var defaultGamePath = GameInstallPathResolver.ResolveOrDefault(settings?.GameInstallPath);
             // Escape backslashes for XML
             var escapedGamePath = defaultGamePath.Replace("\\", "\\\\");
+            var managedPath = GameInstallPathResolver.TryResolveManagedAssembliesPath(settings?.ManagedAssembliesPath, defaultGamePath, out var resolvedManagedPath)
+                ? resolvedManagedPath
+                : null;
+            var il2CppPath = GameInstallPathResolver.TryResolveIl2CppAssembliesPath(settings?.Il2CppAssembliesPath, defaultGamePath, out var resolvedIl2CppPath)
+                ? resolvedIl2CppPath
+                : null;
 
             sb.AppendLine("<Project Sdk=\"Microsoft.NET.Sdk\">");
             sb.AppendLine("  <PropertyGroup>");
-            sb.AppendLine("    <TargetFramework>netstandard2.1</TargetFramework>");
+            sb.AppendLine("    <TargetFramework Condition=\"'$(Configuration)'=='Il2cpp'\">net6.0</TargetFramework>");
+            sb.AppendLine("    <TargetFramework Condition=\"'$(TargetFramework)'==''\">netstandard2.1</TargetFramework>");
             sb.AppendLine("    <ImplicitUsings>enable</ImplicitUsings>");
             sb.AppendLine($"    <RootNamespace>{modName}</RootNamespace>");
             sb.AppendLine("    <LangVersion>default</LangVersion>");
             sb.AppendLine("    <NeutralLanguage>en-US</NeutralLanguage>");
             sb.AppendLine("    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>");
             sb.AppendLine("    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>");
-            sb.AppendLine("    <Configurations>CrossCompat</Configurations>");
+            sb.AppendLine("    <Configurations>CrossCompat;Il2cpp</Configurations>");
             sb.AppendLine("    <Nullable>enable</Nullable>");
+            sb.AppendLine("  </PropertyGroup>");
+            sb.AppendLine();
+            sb.AppendLine("  <!-- IL2CPP build uses only generated IL2CPP assemblies and MelonLoader net6. -->");
+            sb.AppendLine("  <PropertyGroup Condition=\"'$(Configuration)'=='Il2cpp'\">");
+            sb.AppendLine("    <DefineConstants>IL2CPP</DefineConstants>");
+            sb.AppendLine($"    <AssemblyName>{modName}</AssemblyName>");
+            sb.AppendLine($"    <GamePath Condition=\"'$(GamePath)'==''\">{System.Security.SecurityElement.Escape(defaultGamePath)}</GamePath>");
+            sb.AppendLine(il2CppPath != null
+                ? $"    <ManagedPath Condition=\"'$(ManagedPath)'==''\">{System.Security.SecurityElement.Escape(il2CppPath)}</ManagedPath>"
+                : "    <ManagedPath Condition=\"'$(ManagedPath)'==''\">$(GamePath)\\MelonLoader\\Il2CppAssemblies</ManagedPath>");
+            sb.AppendLine("    <MelonLoaderPath Condition=\"'$(MelonLoaderPath)'==''\">$(GamePath)\\MelonLoader\\net6</MelonLoaderPath>");
             sb.AppendLine("  </PropertyGroup>");
             sb.AppendLine();
             sb.AppendLine("  <!-- CrossCompat configuration -->");
@@ -201,7 +219,9 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine($"    <AssemblyName>{modName}</AssemblyName>");
             sb.AppendLine("    <!-- Configure these paths to point to your Schedule One Mono installation -->");
             sb.AppendLine($"    <GamePath Condition=\"'$(GamePath)'==''\">{escapedGamePath}</GamePath>");
-            sb.AppendLine("    <ManagedPath Condition=\"'$(ManagedPath)'==''\">$(GamePath)\\Schedule I_Data\\Managed</ManagedPath>");
+            sb.AppendLine(managedPath != null
+                ? $"    <ManagedPath Condition=\"'$(ManagedPath)'==''\">{System.Security.SecurityElement.Escape(managedPath)}</ManagedPath>"
+                : "    <ManagedPath Condition=\"'$(ManagedPath)'==''\">$(GamePath)\\Schedule I_Data\\Managed</ManagedPath>");
             sb.AppendLine("    <MelonLoaderPath Condition=\"'$(MelonLoaderPath)'==''\">$(GamePath)\\MelonLoader\\net35</MelonLoaderPath>");
             sb.AppendLine("  </PropertyGroup>");
             sb.AppendLine();
@@ -212,7 +232,7 @@ namespace Schedule1ModdingTool.Services
                 customS1ApiPath = customS1ApiPath!.Replace("\\", "\\\\");
             }
 
-            sb.AppendLine("  <ItemGroup>");
+            sb.AppendLine("  <ItemGroup Condition=\"'$(Configuration)'!='Il2cpp'\">");
             if (useCustomS1Api)
             {
                 sb.AppendLine("    <!-- Using manually supplied S1API.dll -->");
@@ -226,10 +246,14 @@ namespace Schedule1ModdingTool.Services
                 sb.AppendLine("    <PackageReference Include=\"S1API.Forked\" Version=\"3.2.0\" />");
             }
             sb.AppendLine("  </ItemGroup>");
+            sb.AppendLine("  <ItemGroup Condition=\"'$(Configuration)'=='Il2cpp'\">");
+            sb.AppendLine("    <PackageReference Include=\"S1API.Forked\" Version=\"3.2.0\" />");
+            sb.AppendLine("    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.4\" />");
+            sb.AppendLine("  </ItemGroup>");
             sb.AppendLine();
-            sb.AppendLine("  <!-- CrossCompat Unity references (Mono without Assembly-CSharp) -->");
-            sb.AppendLine("  <ItemGroup Condition=\"'$(Configuration)'=='CrossCompat'\">");
-            sb.AppendLine("    <Reference Include=\"Newtonsoft.Json\">");
+            sb.AppendLine("  <!-- Each configuration resolves these names from its own assembly folder. -->");
+            sb.AppendLine("  <ItemGroup Condition=\"'$(Configuration)'=='CrossCompat' or '$(Configuration)'=='Il2cpp'\">");
+            sb.AppendLine("    <Reference Include=\"Newtonsoft.Json\" Condition=\"'$(Configuration)'=='CrossCompat'\">");
             sb.AppendLine("      <HintPath>$(ManagedPath)\\Newtonsoft.Json.dll</HintPath>");
             sb.AppendLine("    </Reference>");
             sb.AppendLine("    <Reference Include=\"Unity.TextMeshPro\">");
@@ -267,10 +291,15 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("    </Reference>");
             if (includePhoneApps)
             {
-                sb.AppendLine("    <Reference Include=\"Assembly-CSharp\">");
+                sb.AppendLine("    <Reference Include=\"Assembly-CSharp\" Condition=\"'$(Configuration)'=='CrossCompat'\">");
                 sb.AppendLine("      <HintPath>$(ManagedPath)\\Assembly-CSharp.dll</HintPath>");
                 sb.AppendLine("    </Reference>");
             }
+            sb.AppendLine("  </ItemGroup>");
+            sb.AppendLine("  <ItemGroup Condition=\"'$(Configuration)'=='Il2cpp'\">");
+            sb.AppendLine("    <Reference Include=\"Assembly-CSharp\"><HintPath>$(ManagedPath)\\Assembly-CSharp.dll</HintPath></Reference>");
+            sb.AppendLine("    <Reference Include=\"Il2Cppmscorlib\"><HintPath>$(ManagedPath)\\Il2Cppmscorlib.dll</HintPath></Reference>");
+            sb.AppendLine("    <Reference Include=\"Il2CppInterop.Runtime\"><HintPath>$(MelonLoaderPath)\\Il2CppInterop.Runtime.dll</HintPath></Reference>");
             sb.AppendLine("  </ItemGroup>");
             sb.AppendLine();
             sb.AppendLine("  <ItemGroup>");
@@ -324,10 +353,13 @@ namespace Schedule1ModdingTool.Services
             sb.AppendLine("Global");
             sb.AppendLine("    GlobalSection(SolutionConfigurationPlatforms) = preSolution");
             sb.AppendLine("        CrossCompat|Any CPU = CrossCompat|Any CPU");
+            sb.AppendLine("        Il2cpp|Any CPU = Il2cpp|Any CPU");
             sb.AppendLine("    EndGlobalSection");
             sb.AppendLine("    GlobalSection(ProjectConfigurationPlatforms) = postSolution");
             sb.AppendLine($"        {projectGuid}.CrossCompat|Any CPU.ActiveCfg = CrossCompat|Any CPU");
             sb.AppendLine($"        {projectGuid}.CrossCompat|Any CPU.Build.0 = CrossCompat|Any CPU");
+            sb.AppendLine($"        {projectGuid}.Il2cpp|Any CPU.ActiveCfg = Il2cpp|Any CPU");
+            sb.AppendLine($"        {projectGuid}.Il2cpp|Any CPU.Build.0 = Il2cpp|Any CPU");
             sb.AppendLine("    EndGlobalSection");
             sb.AppendLine($"    GlobalSection(SolutionProperties) = preSolution");
             sb.AppendLine("        HideSolutionNode = FALSE");

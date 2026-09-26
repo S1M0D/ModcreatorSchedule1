@@ -22,12 +22,18 @@ namespace Schedule1ModdingTool.ViewModels
         private ICommand? _browseGamePathCommand;
         private ICommand? _browseWorkspacePathCommand;
         private ICommand? _browseS1ApiDllCommand;
+        private ICommand? _browseManagedAssembliesPathCommand;
+        private ICommand? _browseIl2CppAssembliesPathCommand;
+        private ICommand? _browseConnectorFolderPathCommand;
 
         public ICommand SaveCommand => _saveCommand!;
         public ICommand CancelCommand => _cancelCommand!;
         public ICommand BrowseGamePathCommand => _browseGamePathCommand!;
         public ICommand BrowseWorkspacePathCommand => _browseWorkspacePathCommand!;
         public ICommand BrowseS1ApiDllCommand => _browseS1ApiDllCommand!;
+        public ICommand BrowseManagedAssembliesPathCommand => _browseManagedAssembliesPathCommand!;
+        public ICommand BrowseIl2CppAssembliesPathCommand => _browseIl2CppAssembliesPathCommand!;
+        public ICommand BrowseConnectorFolderPathCommand => _browseConnectorFolderPathCommand!;
 
         public SettingsViewModel()
         {
@@ -42,6 +48,9 @@ namespace Schedule1ModdingTool.ViewModels
             _browseGamePathCommand = new RelayCommand(BrowseGamePath);
             _browseWorkspacePathCommand = new RelayCommand(BrowseWorkspacePath);
             _browseS1ApiDllCommand = new RelayCommand(BrowseS1ApiDllPath);
+            _browseManagedAssembliesPathCommand = new RelayCommand(() => BrowseFolder("Select the Mono game's Schedule I_Data\\Managed folder", path => Settings.ManagedAssembliesPath = path));
+            _browseIl2CppAssembliesPathCommand = new RelayCommand(() => BrowseFolder("Select MelonLoader\\Il2CppAssemblies", path => Settings.Il2CppAssembliesPath = path));
+            _browseConnectorFolderPathCommand = new RelayCommand(() => BrowseFolder("Select the folder containing ModCreatorConnector.dll", path => Settings.ConnectorFolderPath = path));
         }
 
         private void SaveSettings()
@@ -98,6 +107,17 @@ namespace Schedule1ModdingTool.ViewModels
             {
                 Settings.S1ApiDllPath = dialog.FileName;
             }
+        }
+
+        private static void BrowseFolder(string description, System.Action<string> setPath)
+        {
+            using var dialog = new System.Windows.Forms.FolderBrowserDialog
+            {
+                Description = description,
+                ShowNewFolderButton = false
+            };
+            if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                setPath(dialog.SelectedPath);
         }
 
         public event System.Action? CloseRequested;

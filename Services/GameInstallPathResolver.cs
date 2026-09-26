@@ -10,6 +10,74 @@ namespace Schedule1ModdingTool.Services
     {
         public const string DefaultSteamInstallPath = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Schedule I";
 
+        private static readonly string[] RequiredMonoAssemblies =
+        {
+            "Unity.TextMeshPro.dll", "UnityEngine.AssetBundleModule.dll", "UnityEngine.CoreModule.dll",
+            "UnityEngine.dll", "UnityEngine.JSONSerializeModule.dll", "UnityEngine.TextRenderingModule.dll",
+            "UnityEngine.UI.dll", "UnityEngine.UIElementsModule.dll", "UnityEngine.UIModule.dll"
+        };
+
+        public static bool TryResolveManagedAssembliesPath(string? configuredPath, string? gameInstallPath, out string managedPath)
+        {
+            var candidates = new List<string>();
+            if (!string.IsNullOrWhiteSpace(configuredPath))
+                candidates.Add(configuredPath.Trim().Trim('"'));
+            if (!string.IsNullOrWhiteSpace(gameInstallPath))
+            {
+                var gamePath = gameInstallPath.Trim().Trim('"');
+                candidates.Add(gamePath);
+                var parent = Directory.GetParent(gamePath);
+                if (parent != null)
+                {
+                    candidates.Add(Path.Combine(parent.FullName, "Schedule I"));
+                    candidates.Add(Path.Combine(parent.FullName, "Schedule I_alternate"));
+                    candidates.Add(Path.Combine(parent.FullName, "Schedule I_public"));
+                }
+            }
+            candidates.AddRange(GetKnownInstallCandidates());
+
+            foreach (var candidate in candidates)
+            {
+                var path = candidate.EndsWith("Managed", StringComparison.OrdinalIgnoreCase)
+                    ? candidate
+                    : Path.Combine(candidate, "Schedule I_Data", "Managed");
+                if (IsValidManagedAssembliesPath(path))
+                {
+                    managedPath = Path.GetFullPath(path);
+                    return true;
+                }
+            }
+            managedPath = string.Empty;
+            return false;
+        }
+
+        public static bool IsValidManagedAssembliesPath(string? path) =>
+            !string.IsNullOrWhiteSpace(path) && Directory.Exists(path) &&
+            RequiredMonoAssemblies.All(name => File.Exists(Path.Combine(path, name)));
+
+        public static bool TryResolveIl2CppAssembliesPath(string? configuredPath, string? gameInstallPath, out string assembliesPath)
+        {
+            var candidates = new List<string>();
+            if (!string.IsNullOrWhiteSpace(configuredPath))
+                candidates.Add(configuredPath.Trim().Trim('"'));
+            if (!string.IsNullOrWhiteSpace(gameInstallPath))
+                candidates.Add(Path.Combine(gameInstallPath, "MelonLoader", "Il2CppAssemblies"));
+            foreach (var install in GetKnownInstallCandidates())
+                candidates.Add(Path.Combine(install, "MelonLoader", "Il2CppAssemblies"));
+            foreach (var path in candidates)
+            {
+                if (Directory.Exists(path) && File.Exists(Path.Combine(path, "Assembly-CSharp.dll")) &&
+                    File.Exists(Path.Combine(path, "UnityEngine.CoreModule.dll")) &&
+                    File.Exists(Path.Combine(path, "Il2Cppmscorlib.dll")))
+                {
+                    assembliesPath = Path.GetFullPath(path);
+                    return true;
+                }
+            }
+            assembliesPath = string.Empty;
+            return false;
+        }
+
         public static string ResolveOrDefault(string? configuredPath)
         {
             return TryResolve(configuredPath, out var resolvedPath)

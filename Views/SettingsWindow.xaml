@@ -46,7 +46,7 @@
 
 				<GroupBox Header="Game Installation" Margin="0,0,0,8">
 					<StackPanel Margin="5">
-						<TextBlock Text="Game Install Path (optional, for auto-deploy):" Margin="0,0,0,5" />
+						<TextBlock Text="Schedule I game folder (launch and deploy):" Margin="0,0,0,5" />
 						<Grid>
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="*" />
@@ -56,6 +56,35 @@
 							         Margin="0,0,5,0" />
 							<Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseGamePathCommand}" Padding="10,0" />
 						</Grid>
+						<TextBlock Text="Mono game assemblies (for generated mod builds):" Margin="0,10,0,5" />
+						<DockPanel>
+							<Button DockPanel.Dock="Right" Content="Browse..." Command="{Binding BrowseManagedAssembliesPathCommand}" Padding="10,0" Margin="5,0,0,0" />
+							<TextBox Text="{Binding Settings.ManagedAssembliesPath, UpdateSourceTrigger=PropertyChanged}" />
+						</DockPanel>
+						<TextBlock Text="Select Schedule I_Data\Managed from a Mono install if the selected game folder has no Unity DLLs. Leave blank to search automatically."
+						           TextWrapping="Wrap" Foreground="{StaticResource DimTextBrush}" FontSize="11" Margin="0,5,0,0" />
+						<TextBlock Text="IL2CPP game assemblies (for IL2CPP builds):" Margin="0,10,0,5" />
+						<DockPanel>
+							<Button DockPanel.Dock="Right" Content="Browse..." Command="{Binding BrowseIl2CppAssembliesPathCommand}" Padding="10,0" Margin="5,0,0,0" />
+							<TextBox Text="{Binding Settings.Il2CppAssembliesPath, UpdateSourceTrigger=PropertyChanged}" />
+						</DockPanel>
+						<TextBlock Text="Select MelonLoader\Il2CppAssemblies from an IL2CPP install. Leave blank to search the selected game folder."
+						           TextWrapping="Wrap" Foreground="{StaticResource DimTextBrush}" FontSize="11" Margin="0,5,0,0" />
+						<TextBlock Text="Build target:" Margin="0,12,0,5" />
+						<StackPanel Orientation="Horizontal">
+							<RadioButton Content="Mono" GroupName="BuildTarget" Margin="0,0,16,0" IsChecked="{Binding Settings.BuildTarget, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Mono}" />
+							<RadioButton Content="IL2CPP" GroupName="BuildTarget" Margin="0,0,16,0" IsChecked="{Binding Settings.BuildTarget, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Il2Cpp}" />
+							<RadioButton Content="Mono + IL2CPP" GroupName="BuildTarget" IsChecked="{Binding Settings.BuildTarget, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Both}" />
+						</StackPanel>
+						<TextBlock Text="Mono builds use only Mono references; IL2CPP builds use only IL2CPP references. Both creates separate DLLs."
+						           TextWrapping="Wrap" Foreground="{StaticResource DimTextBrush}" FontSize="11" Margin="0,5,0,0" />
+						<TextBlock Text="Preview connector folder (optional):" Margin="0,10,0,5" />
+						<DockPanel>
+							<Button DockPanel.Dock="Right" Content="Browse..." Command="{Binding BrowseConnectorFolderPathCommand}" Padding="10,0" Margin="5,0,0,0" />
+							<TextBox Text="{Binding Settings.ConnectorFolderPath, UpdateSourceTrigger=PropertyChanged}" />
+						</DockPanel>
+						<TextBlock Text="Select the folder containing ModCreatorConnector.dll if preview cannot find its bundled connector."
+						           TextWrapping="Wrap" Foreground="{StaticResource DimTextBrush}" FontSize="11" Margin="0,5,0,0" />
 					</StackPanel>
 				</GroupBox>
 

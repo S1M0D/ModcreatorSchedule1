@@ -1677,9 +1677,7 @@ namespace Schedule1ModdingTool.ViewModels
                 if (!string.IsNullOrWhiteSpace(exportPath) && Directory.Exists(exportPath))
                 {
                     UpdateProcessStateAsync("Checking if build is needed...");
-                    var modDllPath = await Task.Run(() => GetModDllPath(exportPath));
-                    var needsBuild = modDllPath == null || !File.Exists(modDllPath) || 
-                                     await Task.Run(() => IsProjectNewerThanDll(exportPath, modDllPath));
+                    var needsBuild = await Task.Run(() => NeedsModBuild(exportPath));
 
                     if (needsBuild)
                     {
@@ -2358,9 +2356,7 @@ namespace Schedule1ModdingTool.ViewModels
                 if (!string.IsNullOrWhiteSpace(exportPath) && Directory.Exists(exportPath))
                 {
                     UpdateProcessStateAsync("Checking if build is needed...");
-                    var modDllPath = await Task.Run(() => GetModDllPath(exportPath));
-                    var needsBuild = modDllPath == null || !File.Exists(modDllPath) || 
-                                     await Task.Run(() => IsProjectNewerThanDll(exportPath, modDllPath));
+                    var needsBuild = await Task.Run(() => NeedsModBuild(exportPath));
 
                     if (needsBuild)
                     {
@@ -2421,24 +2417,23 @@ namespace Schedule1ModdingTool.ViewModels
             }
         }
 
-        private string? GetModDllPath(string projectPath)
+        private bool NeedsModBuild(string projectPath)
         {
-            var binPath = Path.Combine(projectPath, "bin", "CrossCompat", "netstandard2.1");
-            if (!Directory.Exists(binPath))
-            {
-                binPath = Path.Combine(projectPath, "bin", "Release", "netstandard2.1");
-            }
-
-            if (!Directory.Exists(binPath))
-                return null;
-
             var csprojFile = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
             if (csprojFile == null)
-                return null;
-
+                return true;
             var modName = Path.GetFileNameWithoutExtension(csprojFile);
-            var dllPath = Path.Combine(binPath, $"{modName}.dll");
-            return File.Exists(dllPath) ? dllPath : null;
+            var configurations = _modSettings.BuildTarget switch
+            {
+                ModBuildTarget.Il2Cpp => new[] { ("Il2cpp", "net6.0") },
+                ModBuildTarget.Both => new[] { ("CrossCompat", "netstandard2.1"), ("Il2cpp", "net6.0") },
+                _ => new[] { ("CrossCompat", "netstandard2.1") }
+            };
+            return configurations.Any(target =>
+            {
+                var dllPath = Path.Combine(projectPath, "bin", target.Item1, target.Item2, modName + ".dll");
+                return !File.Exists(dllPath) || IsProjectNewerThanDll(projectPath, dllPath);
+            });
         }
 
         private bool IsProjectNewerThanDll(string projectPath, string? dllPath)
@@ -2468,7 +2463,10 @@ namespace Schedule1ModdingTool.ViewModels
         {
             if (buildResult.Success)
             {
-                var message = $"Mod built successfully!\n\nOutput: {buildResult.OutputDllPath}";
+                var outputs = buildResult.OutputDllPaths.Count > 0
+                    ? string.Join("\n", buildResult.OutputDllPaths.Select(pair => $"{pair.Key}: {pair.Value}"))
+                    : buildResult.OutputDllPath;
+                var message = $"Mod built successfully!\n\nOutput: {outputs}";
                 if (buildResult.DeployedToModsFolder)
                 {
                     message += $"\n\nDeployed to: {buildResult.DeployedDllPath}";

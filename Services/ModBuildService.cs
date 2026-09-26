@@ -44,140 +44,89 @@ namespace Schedule1ModdingTool.Services
                 var resolvedGamePath = settings != null && GameInstallPathResolver.TryResolve(settings.GameInstallPath, out var gameInstallPath)
                     ? gameInstallPath
                     : null;
-                var gamePathArgument = !string.IsNullOrWhiteSpace(resolvedGamePath)
-                    ? $" /p:GamePath=\"{resolvedGamePath}\""
-                    : string.Empty;
-
-                var processStartInfo = new ProcessStartInfo
+                var buildTarget = settings?.BuildTarget ?? ModBuildTarget.Mono;
+                var configurations = buildTarget switch
                 {
-                    FileName = "dotnet",
-                    Arguments = $"build \"{csprojFile}\" -c CrossCompat --verbosity normal{gamePathArgument}",
-                    WorkingDirectory = projectPath,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
+                    ModBuildTarget.Il2Cpp => new[] { "Il2cpp" },
+                    ModBuildTarget.Both => new[] { "CrossCompat", "Il2cpp" },
+                    _ => new[] { "CrossCompat" }
                 };
+                var allOutput = new StringBuilder();
+                var allErrors = new StringBuilder();
 
-                var outputBuilder = new StringBuilder();
-                var errorBuilder = new StringBuilder();
-
-                using (var process = Process.Start(processStartInfo))
+                foreach (var configuration in configurations)
                 {
-                    if (process == null)
+                    var il2Cpp = configuration == "Il2cpp";
+                    var hasAssemblies = il2Cpp
+                        ? GameInstallPathResolver.TryResolveIl2CppAssembliesPath(settings?.Il2CppAssembliesPath, resolvedGamePath, out var assembliesPath)
+                        : GameInstallPathResolver.TryResolveManagedAssembliesPath(settings?.ManagedAssembliesPath, resolvedGamePath, out assembliesPath);
+                    if (il2Cpp && !hasAssemblies)
                     {
-                        result.Success = false;
-                        result.ErrorMessage = "Failed to start dotnet build process";
+                        result.ErrorMessage = "IL2CPP assemblies were not found. In Settings, select MelonLoader\\Il2CppAssemblies from an IL2CPP game install.";
+                        return result;
+                    }
+                    if (il2Cpp && (resolvedGamePath == null || !File.Exists(Path.Combine(resolvedGamePath, "MelonLoader", "net6", "Il2CppInterop.Runtime.dll"))))
+                    {
+                        result.ErrorMessage = "IL2CPP builds also need MelonLoader\\net6 in the selected game folder.";
                         return result;
                     }
 
-                    process.OutputDataReceived += (sender, e) =>
+                    var startInfo = new ProcessStartInfo
                     {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            outputBuilder.AppendLine(e.Data);
-                        }
+                        FileName = "dotnet", WorkingDirectory = projectPath, UseShellExecute = false,
+                        RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true
                     };
+                    foreach (var argument in new[] { "build", csprojFile, "-c", configuration, "--verbosity", "normal" })
+                        startInfo.ArgumentList.Add(argument);
+                    if (resolvedGamePath != null)
+                        startInfo.ArgumentList.Add($"/p:GamePath={resolvedGamePath}");
+                    if (hasAssemblies)
+                        startInfo.ArgumentList.Add($"/p:ManagedPath={assembliesPath}");
 
-                    process.ErrorDataReceived += (sender, e) =>
+                    var output = new StringBuilder();
+                    var errors = new StringBuilder();
+                    using var process = Process.Start(startInfo);
+                    if (process == null)
                     {
-                        if (!string.IsNullOrEmpty(e.Data))
-                        {
-                            errorBuilder.AppendLine(e.Data);
-                        }
-                    };
-
+                        result.ErrorMessage = "Failed to start dotnet build process";
+                        return result;
+                    }
+                    process.OutputDataReceived += (_, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+                    process.ErrorDataReceived += (_, e) => { if (e.Data != null) errors.AppendLine(e.Data); };
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
-
                     process.WaitForExit();
-
+                    allOutput.AppendLine($"=== {configuration} Build Output ===").Append(output);
+                    allErrors.Append(errors);
                     result.ExitCode = process.ExitCode;
-                    result.Output = outputBuilder.ToString();
-                    result.ErrorOutput = errorBuilder.ToString();
-                    result.Success = process.ExitCode == 0;
-
-                    if (result.Success)
+                    result.Output = allOutput.ToString();
+                    result.ErrorOutput = allErrors.ToString();
+                    if (process.ExitCode != 0)
                     {
-                        // Find the output DLL (CrossCompat builds to bin/CrossCompat/netstandard2.1)
-                        var binPath = Path.Combine(projectPath, "bin", "CrossCompat", "netstandard2.1");
-                        if (!Directory.Exists(binPath))
-                        {
-                            // Fallback to Release if CrossCompat doesn't exist
-                            binPath = Path.Combine(projectPath, "bin", "Release", "netstandard2.1");
-                        }
-
-                        if (Directory.Exists(binPath))
-                        {
-                            // Get the mod name from the .csproj file
-                            var modName = Path.GetFileNameWithoutExtension(csprojFile);
-                            
-                            // Known dependency DLLs to exclude
-                            var dependencyDlls = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                            {
-                                "0Harmony",
-                                "MelonLoader",
-                                "Newtonsoft.Json",
-                                "Unity.TextMeshPro",
-                                "UnityEngine.AssetBundleModule",
-                                "UnityEngine.CoreModule",
-                                "UnityEngine.JSONSerializeModule",
-                                "UnityEngine.TextRenderingModule",
-                                "UnityEngine.UI",
-                                "UnityEngine.UIElementsModule",
-                                "UnityEngine.UIModule",
-                                "S1API",
-                                "S1API.Forked"
-                            };
-
-                            // Find the mod DLL (should match the mod name, not dependencies)
-                            var dllFiles = Directory.GetFiles(binPath, "*.dll");
-                            var modDll = dllFiles.FirstOrDefault(dll =>
-                            {
-                                var dllName = Path.GetFileNameWithoutExtension(dll);
-                                return dllName.Equals(modName, StringComparison.OrdinalIgnoreCase) &&
-                                       !dependencyDlls.Contains(dllName);
-                            });
-
-                            // If exact match not found, try to find DLL that's not a known dependency
-                            if (modDll == null)
-                            {
-                                modDll = dllFiles.FirstOrDefault(dll =>
-                                {
-                                    var dllName = Path.GetFileNameWithoutExtension(dll);
-                                    return !dependencyDlls.Contains(dllName);
-                                });
-                            }
-
-                            // Fallback to first DLL if still not found
-                            result.OutputDllPath = modDll ?? dllFiles.FirstOrDefault();
-                        }
-
-                        // Optionally copy to game Mods folder if path is configured
-                        if (result.Success && !string.IsNullOrEmpty(result.OutputDllPath) && settings != null && !string.IsNullOrEmpty(settings.GameInstallPath))
-                        {
-                            var deployGamePath = resolvedGamePath ?? settings.GameInstallPath;
-                            TryCopyToModsFolder(result.OutputDllPath, deployGamePath, result);
-                        }
+                        result.ErrorMessage = $"{configuration} build failed with exit code {process.ExitCode}" +
+                            (!hasAssemblies ? ". If Unity types are missing, set 'Mono game assemblies' in Settings." : "");
+                        result.Output += errors;
+                        return result;
                     }
-                    else
+
+                    var framework = il2Cpp ? "net6.0" : "netstandard2.1";
+                    var dll = Path.Combine(projectPath, "bin", configuration, framework, Path.GetFileNameWithoutExtension(csprojFile) + ".dll");
+                    if (!File.Exists(dll))
                     {
-                        result.ErrorMessage = $"Build failed with exit code {process.ExitCode}";
-                        // Combine output and error output for full log
-                        var fullOutput = new StringBuilder();
-                        if (outputBuilder.Length > 0)
-                        {
-                            fullOutput.AppendLine("=== Build Output ===");
-                            fullOutput.AppendLine(outputBuilder.ToString());
-                        }
-                        if (errorBuilder.Length > 0)
-                        {
-                            fullOutput.AppendLine("=== Build Errors ===");
-                            fullOutput.AppendLine(errorBuilder.ToString());
-                        }
-                        result.Output = fullOutput.ToString();
+                        result.ErrorMessage = $"Build reported success but mod DLL was not found at: {dll}";
+                        return result;
                     }
+                    result.OutputDllPaths[configuration] = dll;
+                    allOutput.AppendLine($"Output DLL: {dll}");
                 }
+
+                result.Success = true;
+                result.Output = allOutput.ToString();
+                var deployIl2Cpp = buildTarget == ModBuildTarget.Il2Cpp ||
+                    (buildTarget == ModBuildTarget.Both && resolvedGamePath != null && File.Exists(Path.Combine(resolvedGamePath, "GameAssembly.dll")));
+                result.OutputDllPath = result.OutputDllPaths[deployIl2Cpp ? "Il2cpp" : "CrossCompat"];
+                if (settings != null && resolvedGamePath != null)
+                    TryCopyToModsFolder(result.OutputDllPath, resolvedGamePath, result);
             }
             catch (Exception ex)
             {
@@ -249,6 +198,7 @@ namespace Schedule1ModdingTool.Services
         public string? ErrorOutput { get; set; }
         public int ExitCode { get; set; }
         public string? OutputDllPath { get; set; }
+        public Dictionary<string, string> OutputDllPaths { get; } = new(StringComparer.OrdinalIgnoreCase);
         public bool DeployedToModsFolder { get; set; }
         public string? DeployedDllPath { get; set; }
         public List<string> Warnings { get; } = new List<string>();

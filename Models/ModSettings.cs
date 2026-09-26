@@ -22,6 +22,13 @@ namespace Schedule1ModdingTool.Models
         Beta
     }
 
+    public enum ModBuildTarget
+    {
+        Mono,
+        Il2Cpp,
+        Both
+    }
+
     /// <summary>
     /// Stores user configuration for mod generation and build settings
     /// </summary>
@@ -38,6 +45,10 @@ namespace Schedule1ModdingTool.Models
         private string _defaultModVersion = "1.0.0";
         private string _workspacePath = "";
         private string _s1ApiDllPath = "";
+        private string _managedAssembliesPath = "";
+        private string _il2CppAssembliesPath = "";
+        private ModBuildTarget _buildTarget = ModBuildTarget.Mono;
+        private string _connectorFolderPath = "";
         private ExperienceLevel _experienceLevel = ExperienceLevel.SomeCoding;
         private bool _isFirstStartComplete = false;
         private int _undoHistorySize = 5;
@@ -92,6 +103,34 @@ namespace Schedule1ModdingTool.Models
         {
             get => _s1ApiDllPath;
             set => SetProperty(ref _s1ApiDllPath, value);
+        }
+
+        [JsonProperty("managedAssembliesPath")]
+        public string ManagedAssembliesPath
+        {
+            get => _managedAssembliesPath;
+            set => SetProperty(ref _managedAssembliesPath, value);
+        }
+
+        [JsonProperty("il2CppAssembliesPath")]
+        public string Il2CppAssembliesPath
+        {
+            get => _il2CppAssembliesPath;
+            set => SetProperty(ref _il2CppAssembliesPath, value);
+        }
+
+        [JsonProperty("buildTarget")]
+        public ModBuildTarget BuildTarget
+        {
+            get => _buildTarget;
+            set => SetProperty(ref _buildTarget, value);
+        }
+
+        [JsonProperty("connectorFolderPath")]
+        public string ConnectorFolderPath
+        {
+            get => _connectorFolderPath;
+            set => SetProperty(ref _connectorFolderPath, value);
         }
 
         [JsonProperty("isFirstStartComplete")]

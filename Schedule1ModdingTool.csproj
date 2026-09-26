@@ -15,6 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
     <PackageReference Include="AssetsTools.NET" Version="3.0.0" />
     <PackageReference Include="AssetsTools.NET.Texture" Version="3.0.2" />
     <PackageReference Include="AutoUpdater.NET.Official" Version="1.9.2" />
@@ -73,4 +74,18 @@
     <Resource Include="Resources\Contributors\SirTidez.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Schedule1ModdingTool.Tests\**" />
+    <EmbeddedResource Remove="Schedule1ModdingTool.Tests\**" />
+    <None Remove="Schedule1ModdingTool.Tests\**" />
+    <Content Include="ModelPreview\index.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="ModelPreview\dist\viewer.js" Link="ModelPreview\viewer.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="ModelPreview\THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="BuildModelPreview" BeforeTargets="PrepareForBuild"
+          Inputs="ModelPreview\viewer.js;ModelPreview\package.json;ModelPreview\bun.lock"
+          Outputs="ModelPreview\dist\viewer.js">
+    <Exec WorkingDirectory="ModelPreview" Command="bun install --frozen-lockfile" />
+    <Exec WorkingDirectory="ModelPreview" Command="bun run build" />
+  </Target>
 </Project>

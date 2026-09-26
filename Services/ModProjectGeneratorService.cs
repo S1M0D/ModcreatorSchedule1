@@ -109,7 +109,7 @@ namespace Schedule1ModdingTool.Services
                 var gameName = firstQuest?.GameName ?? firstItem?.GameName ?? firstNpc?.GameName ?? firstPhoneCall?.GameName ?? firstPhoneApp?.GameName ?? "Schedule I";
 
                 // Generate .csproj file
-                GenerateCsprojFile(modPath, modName, project.Resources.Cast<ResourceAsset>().Concat(project.Models), result, settings, includePhoneCalls: hasPhoneCalls, includePhoneApps: hasPhoneApps);
+                GenerateCsprojFile(modPath, modName, project.Resources.Cast<ResourceAsset>().Concat(project.Models), result, settings, includePhoneCalls: hasPhoneCalls, includePhoneApps: hasPhoneApps, includeGlbModels: project.Items.Any(item => item.IsGlbModel));
 
                 // Generate .sln file
                 GenerateSolutionFile(modPath, modName, result);
@@ -159,7 +159,8 @@ namespace Schedule1ModdingTool.Services
                 // Validate and copy resources
                 ValidateAndCopyResources(project, modPath, result);
 
-                result.Success = true;
+                result.Success = result.Errors.Count == 0;
+                if (!result.Success) result.ErrorMessage = string.Join(Environment.NewLine, result.Errors);
                 result.OutputPath = modPath;
             }
             catch (Exception ex)
@@ -171,7 +172,7 @@ namespace Schedule1ModdingTool.Services
             return result;
         }
 
-        private void GenerateCsprojFile(string modPath, string modName, IEnumerable<ResourceAsset> resources, ModProjectGenerationResult result, ModSettings? settings = null, bool includePhoneCalls = false, bool includePhoneApps = false)
+        private void GenerateCsprojFile(string modPath, string modName, IEnumerable<ResourceAsset> resources, ModProjectGenerationResult result, ModSettings? settings = null, bool includePhoneCalls = false, bool includePhoneApps = false, bool includeGlbModels = false)
         {
             var csprojPath = Path.Combine(modPath, $"{modName}.csproj");
             var sb = new StringBuilder();
@@ -329,6 +330,24 @@ namespace Schedule1ModdingTool.Services
                     sb.AppendLine($"    <EmbeddedResource Include=\"{relative}\" />");
                 }
                 sb.AppendLine("  </ItemGroup>");
+            }
+            if (includeGlbModels)
+            {
+                sb.AppendLine("  <PropertyGroup>");
+                sb.AppendLine("    <S1MapiAssemblyName Condition=\"'$(Configuration)' == 'Il2cpp'\">S1MAPI_Il2cpp</S1MapiAssemblyName>");
+                sb.AppendLine("    <S1MapiAssemblyName Condition=\"'$(S1MapiAssemblyName)' == ''\">S1MAPI_Mono</S1MapiAssemblyName>");
+                sb.AppendLine("    <S1MapiPath Condition=\"'$(S1MapiPath)' == '' and Exists('$(ManagedPath)\\..\\..\\UserLibs\\$(S1MapiAssemblyName).dll')\">$(ManagedPath)\\..\\..\\UserLibs\\$(S1MapiAssemblyName).dll</S1MapiPath>");
+                sb.AppendLine("    <S1MapiPath Condition=\"'$(S1MapiPath)' == ''\">$(GamePath)\\UserLibs\\$(S1MapiAssemblyName).dll</S1MapiPath>");
+                sb.AppendLine("  </PropertyGroup>");
+                sb.AppendLine("  <ItemGroup>");
+                sb.AppendLine("    <Reference Include=\"$(S1MapiAssemblyName)\"><HintPath>$(S1MapiPath)</HintPath><Private>true</Private></Reference>");
+                sb.AppendLine("  </ItemGroup>");
+                sb.AppendLine("  <Target Name=\"ValidateGlbDependency\" BeforeTargets=\"ResolveAssemblyReferences\">");
+                sb.AppendLine("    <Error Condition=\"!Exists('$(S1MapiPath)')\" Text=\"GLB models require $(S1MapiAssemblyName).dll. Install S1MAPI 2.0.1 or a compatible newer version in the game's UserLibs folder, or set S1MapiPath to the matching runtime DLL.\" />");
+                sb.AppendLine("  </Target>");
+                var dependencyReadme = Path.Combine(modPath, "GLB-DEPENDENCY.md");
+                File.WriteAllText(dependencyReadme, "GLB models require S1MAPI 2.0.1 or a compatible newer version.\n\nInstall S1MAPI_Mono.dll for Mono or S1MAPI_Il2cpp.dll for IL2CPP in the game's UserLibs folder. The generated project first checks UserLibs beside the selected runtime assemblies, then $(GamePath)/UserLibs; advanced builds may override S1MapiPath. The matching dependency is also copied to the build output. Distribute the mod DLL for Mods and the MAPI DLL for UserLibs, with MAPI's license and attribution. Do not distribute Unity or game assemblies.\n\nSource and releases: https://github.com/ifBars/S1MAPI\n");
+                result.GeneratedFiles.Add(dependencyReadme);
             }
             sb.AppendLine("</Project>");
 
@@ -1416,6 +1435,15 @@ namespace Schedule1ModdingTool.Services
                 }
                 else
                 {
+                    if (asset is ModelAsset { IsGlb: true })
+                    {
+                        try { GlbValidationService.ValidateFile(Path.Combine(projectDir, relative)); }
+                        catch (Exception ex)
+                        {
+                            result.Errors.Add($"GLB model '{asset.DisplayName}': {ex.Message}");
+                            continue;
+                        }
+                    }
                     validResources.Add(asset);
                 }
             }

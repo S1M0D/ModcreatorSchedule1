@@ -8,6 +8,12 @@ namespace Schedule1ModdingTool.Views
     {
         public ModelsView() => InitializeComponent();
 
+        private void PreviewModel_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { DataContext: ModelAsset model } && DataContext is MainViewModel viewModel)
+                GlbPreviewWindow.ShowModel(Window.GetWindow(this), viewModel.CurrentProject, model.RelativePath);
+        }
+
         private void PrefabName_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is not TextBox { DataContext: ModelAsset model } || DataContext is not MainViewModel viewModel)

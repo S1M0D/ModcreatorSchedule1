@@ -1,0 +1,25 @@
+name: Validate editor
+
+on:
+  pull_request:
+    branches: [main, beta]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  editor:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.5
+      - name: Build editor and offline model viewer
+        run: dotnet build Schedule1ModdingTool.csproj -c Release
+      - name: Test model validation and export
+        run: dotnet test Schedule1ModdingTool.Tests/Schedule1ModdingTool.Tests.csproj -c Release

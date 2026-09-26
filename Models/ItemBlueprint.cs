@@ -418,7 +418,70 @@ namespace Schedule1ModdingTool.Models
         public string ModelBundleResourcePath
         {
             get => _modelBundleResourcePath;
-            set => SetProperty(ref _modelBundleResourcePath, value ?? string.Empty);
+            set
+            {
+                if (SetProperty(ref _modelBundleResourcePath, value ?? string.Empty))
+                    OnPropertyChanged(nameof(IsGlbModel));
+            }
+        }
+
+        [JsonIgnore]
+        public bool IsGlbModel => ModelBundleResourcePath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase);
+
+        private float _modelScale = 1f;
+        [JsonProperty("modelScale")]
+        public float ModelScale
+        {
+            get => _modelScale;
+            set => SetProperty(ref _modelScale, value);
+        }
+
+        private float _modelRotationX = 0f;
+        [JsonProperty("modelRotationX")]
+        public float ModelRotationX
+        {
+            get => _modelRotationX;
+            set => SetProperty(ref _modelRotationX, value);
+        }
+
+        private float _modelRotationY = 0f;
+        [JsonProperty("modelRotationY")]
+        public float ModelRotationY
+        {
+            get => _modelRotationY;
+            set => SetProperty(ref _modelRotationY, value);
+        }
+
+        private float _modelRotationZ = 0f;
+        [JsonProperty("modelRotationZ")]
+        public float ModelRotationZ
+        {
+            get => _modelRotationZ;
+            set => SetProperty(ref _modelRotationZ, value);
+        }
+
+        private float _modelOffsetX = 0f;
+        [JsonProperty("modelOffsetX")]
+        public float ModelOffsetX
+        {
+            get => _modelOffsetX;
+            set => SetProperty(ref _modelOffsetX, value);
+        }
+
+        private float _modelOffsetY = 0f;
+        [JsonProperty("modelOffsetY")]
+        public float ModelOffsetY
+        {
+            get => _modelOffsetY;
+            set => SetProperty(ref _modelOffsetY, value);
+        }
+
+        private float _modelOffsetZ = 0f;
+        [JsonProperty("modelOffsetZ")]
+        public float ModelOffsetZ
+        {
+            get => _modelOffsetZ;
+            set => SetProperty(ref _modelOffsetZ, value);
         }
 
         [JsonProperty("modelPrefabName")]
@@ -978,6 +1041,13 @@ namespace Schedule1ModdingTool.Models
             IconFileName = source.IconFileName;
             ModelBundleResourcePath = source.ModelBundleResourcePath;
             ModelPrefabName = source.ModelPrefabName;
+            ModelScale = source.ModelScale;
+            ModelRotationX = source.ModelRotationX;
+            ModelRotationY = source.ModelRotationY;
+            ModelRotationZ = source.ModelRotationZ;
+            ModelOffsetX = source.ModelOffsetX;
+            ModelOffsetY = source.ModelOffsetY;
+            ModelOffsetZ = source.ModelOffsetZ;
             EquippableType = source.EquippableType;
             EquippableName = source.EquippableName;
             EquippableCanInteract = source.EquippableCanInteract;

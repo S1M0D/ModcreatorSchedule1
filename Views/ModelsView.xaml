@@ -9,8 +9,8 @@
             <StackPanel Margin="20" MaxWidth="850" HorizontalAlignment="Left">
                 <TextBlock Text="3D Models" Style="{StaticResource PanelHeaderStyle}" FontSize="20" />
                 <TextBlock Margin="0,8,0,12" Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap"
-                           Text="Import a Unity AssetBundle containing a GameObject prefab. Set its exact asset name, then choose it in an item editor. Build the bundle for the game's platform and Unity version. Raw OBJ, FBX and GLB files need to be made into a Unity prefab bundle first." />
-                <Button Content="Import AssetBundle" Command="{Binding AddModelCommand}" Style="{StaticResource IconButtonStyle}"
+                           Text="Import a GLB for custom products and furniture, or a Unity AssetBundle for game-specific prefabs. GLBs must contain static indexed triangle meshes with embedded PNG or JPEG textures. Select a model in an item editor to use it in your mod." />
+                <Button Content="Import model" Command="{Binding AddModelCommand}" Style="{StaticResource IconButtonStyle}"
                         Background="{StaticResource AccentOrangeBrush}" Foreground="White" Padding="12,7" HorizontalAlignment="Left" />
                 <ItemsControl ItemsSource="{Binding CurrentProject.Models}" Margin="0,16,0,0">
                     <ItemsControl.ItemTemplate>
@@ -19,8 +19,15 @@
                                 <StackPanel>
                                     <TextBlock Text="{Binding DisplayName}" Foreground="{StaticResource LightTextBrush}" FontWeight="SemiBold" FontSize="15" />
                                     <TextBlock Text="{Binding RelativePath}" Foreground="{StaticResource DimTextBrush}" Margin="0,3,0,10" />
+                                    <TextBlock Text="{Binding FormatLabel}" Foreground="{StaticResource DimTextBrush}" Margin="0,0,0,8" />
+                                    <StackPanel>
+                                        <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding IsGlb}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
                                     <Label Content="Prefab asset name inside bundle" Style="{StaticResource LabelStyle}" />
                                     <TextBox Text="{Binding PrefabName, UpdateSourceTrigger=PropertyChanged}" LostFocus="PrefabName_LostFocus" Style="{StaticResource TextBoxStyle}" />
+                                    </StackPanel>
+                                    <Button Content="Preview GLB" Click="PreviewModel_Click" HorizontalAlignment="Left" Padding="12,7">
+                                        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource IconButtonStyle}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsGlb}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                    </Button>
                                     <Button Content="Remove" Margin="0,12,0,0" HorizontalAlignment="Left" Style="{StaticResource IconButtonStyle}"
                                             Command="{Binding DataContext.RemoveModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
                                 </StackPanel>

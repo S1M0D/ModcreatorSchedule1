@@ -17,6 +17,13 @@ namespace Schedule1ModdingTool.Views
             }
         }
 
+        private void PreviewModel_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            var owner = System.Windows.Window.GetWindow(this);
+            if (DataContext is ItemBlueprint item && owner?.DataContext is Schedule1ModdingTool.ViewModels.MainViewModel viewModel)
+                GlbPreviewWindow.ShowModel(owner, viewModel.CurrentProject, item.ModelBundleResourcePath, item);
+        }
+
         private void ClearModel_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             if (DataContext is not ItemBlueprint item) return;

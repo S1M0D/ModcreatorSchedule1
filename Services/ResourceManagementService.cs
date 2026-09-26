@@ -15,8 +15,8 @@ namespace Schedule1ModdingTool.Services
             var result = new AddModelResult();
             var dialog = new OpenFileDialog
             {
-                Filter = "Unity AssetBundles (*.bundle;*.assetbundle;*.unity3d)|*.bundle;*.assetbundle;*.unity3d|All files (*.*)|*.*",
-                Title = "Import Unity prefab AssetBundles",
+                Filter = "3D models (*.glb;*.bundle;*.assetbundle;*.unity3d)|*.glb;*.bundle;*.assetbundle;*.unity3d|GLB models (*.glb)|*.glb|Unity AssetBundles (*.bundle;*.assetbundle;*.unity3d)|*.bundle;*.assetbundle;*.unity3d",
+                Title = "Import 3D models",
                 Multiselect = true,
                 CheckFileExists = true
             };
@@ -29,12 +29,14 @@ namespace Schedule1ModdingTool.Services
                 try
                 {
                     var extension = Path.GetExtension(file).ToLowerInvariant();
-                    if (extension != ".bundle" && extension != ".assetbundle" && extension != ".unity3d")
+                    if (extension != ".glb" && extension != ".bundle" && extension != ".assetbundle" && extension != ".unity3d")
                     {
-                        result.Failures.Add($"{Path.GetFileName(file)}: Import a Unity AssetBundle containing a GameObject prefab.");
+                        result.Failures.Add($"{Path.GetFileName(file)}: Import a GLB model or a Unity AssetBundle containing a GameObject prefab.");
                         continue;
                     }
-                    using (var stream = File.OpenRead(file))
+                    if (extension == ".glb")
+                        GlbValidationService.ValidateFile(file);
+                    else using (var stream = File.OpenRead(file))
                     {
                         var signature = new byte[Math.Min(8, (int)Math.Min(stream.Length, 8))];
                         _ = stream.Read(signature, 0, signature.Length);
@@ -59,7 +61,7 @@ namespace Schedule1ModdingTool.Services
                     {
                         DisplayName = safeName,
                         RelativePath = Path.Combine("Models", name).Replace('\\', '/'),
-                        PrefabName = safeName
+                        PrefabName = extension == ".glb" ? string.Empty : safeName
                     };
                     project.AddModel(asset);
                     result.AddedAssets.Add(asset);

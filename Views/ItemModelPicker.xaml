@@ -4,15 +4,23 @@
     <Border Style="{StaticResource PanelStyle}" Margin="0,0,12,12" Padding="14" MinWidth="320" MaxWidth="500">
         <StackPanel>
             <TextBlock Text="3D Model" Style="{StaticResource PanelHeaderStyle}" />
-            <TextBlock Text="Choose a prefab bundle from the 3D Models library. The prefab is embedded into the exported mod."
+            <TextBlock Text="Choose a model from the 3D Models library. The model is embedded into the exported mod."
                        Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,6,0,12" />
-            <Label Content="Model bundle" Style="{StaticResource LabelStyle}" />
+            <Label Content="Model" Style="{StaticResource LabelStyle}" />
             <ComboBox ItemsSource="{Binding DataContext.CurrentProject.Models, RelativeSource={RelativeSource AncestorType={x:Type UserControl}, AncestorLevel=2}}"
                       DisplayMemberPath="DisplayName" SelectedValuePath="RelativePath"
                       SelectedValue="{Binding ModelBundleResourcePath, UpdateSourceTrigger=PropertyChanged}"
                       SelectionChanged="ModelSelectionChanged" Style="{StaticResource ComboBoxStyle}" />
+            <StackPanel>
+                <StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding IsGlbModel}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
             <Label Content="Prefab name in bundle" Style="{StaticResource LabelStyle}" Margin="0,9,0,0" />
             <TextBox Text="{Binding ModelPrefabName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource TextBoxStyle}" />
+            </StackPanel>
+            <StackPanel>
+                <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsGlbModel}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+                <Button Content="Preview and adjust GLB" Click="PreviewModel_Click" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                <TextBlock Text="GLB models support Custom Products and Furniture. Install the matching S1MAPI runtime in the game's UserLibs folder before building." Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+            </StackPanel>
             <Button Content="Clear model" Click="ClearModel_Click" Style="{StaticResource IconButtonStyle}"
                     HorizontalAlignment="Left" Margin="0,12,0,0" />
             <TextBlock Text="For ordinary items and clothing inventory visuals, the prefab needs a StoredItem component. Worn clothing also needs the game's matching clothing component and rig. Furniture and custom products accept a mesh prefab."

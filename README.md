@@ -23,7 +23,7 @@ The tool currently focuses on these authoring workflows:
 - Project resources
   - embedded assets, icons, textures, and generated mod resource packaging
 - 3D Models
-  - project library for Unity AssetBundles, with model selection for custom products, furniture, clothing, additives, and ordinary items
+  - project library for GLB models and Unity AssetBundles; offline interactive GLB preview with placement controls
 - Live helper workflows
   - connector-assisted game launch, runtime catalog access, and in-editor help via `?` explanations on complex fields
 
@@ -55,7 +55,27 @@ Open an ordinary item or custom product and use **Production Recipes** to add a 
 
 Open **3D Models** in the sidebar, import a Unity AssetBundle containing a `GameObject` prefab, and enter the prefab's exact asset name. Select that model in an item editor's **3D Model** section. The editor copies the bundle into the project and embeds it in the generated mod.
 
-Custom products use S1API presentation profiles for loose, held, stored, station, and generated icon visuals. Non-brick packaging also uses the selected model as its contents. Furniture uses S1API's furniture builder for the placed object and placement ghost. Ordinary items, additives, and clothing use the prefab as a stored-item visual; these prefabs must contain a `StoredItem` component. Worn clothing also needs a compatible clothing component and rig. Native weed strains currently support custom colors but do not have a S1API custom-model hook. Raw OBJ, FBX, and GLB files must first be converted into a Unity prefab AssetBundle.
+Custom products use S1API presentation profiles for loose, held, stored, station, and generated icon visuals. Non-brick packaging also uses the selected model as its contents. Furniture uses S1API's furniture builder for the placed object and placement ghost. Ordinary items, additives, and clothing use the prefab as a stored-item visual; these prefabs must contain a `StoredItem` component. Worn clothing also needs a compatible clothing component and rig. Native weed strains currently support custom colors but do not have a S1API custom-model hook. Raw OBJ and FBX files must first be converted into GLB or a Unity prefab AssetBundle.
+
+For **Custom Products** and **Furniture**, you can import a `.glb` directly. Use **Preview GLB** in the model library to inspect it, or **Preview and adjust GLB** in an item's model picker to edit uniform scale, XYZ rotation (degrees), and XYZ offset (metres). The viewer supports orbit, zoom, pan, framing, and wireframe. Placement changes are saved with the item and applied inside a model wrapper by the generated mod. Preview lighting approximates materials; game lighting can differ.
+
+The preview runs locally using bundled Three.js and requires [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/). No model uploads or CDN downloads are used. A missing preview runtime does not prevent import or export. AssetBundle previews are not included.
+
+GLB imports currently require glTF 2.0, a maximum 64 MB file, one scene with all model nodes, one embedded binary buffer, indexed triangle meshes, dense float positions/normals/tangents/one UV set, consistent attributes across a mesh's material slots, explicit materials, and embedded PNG/JPEG images. The editor checks these requirements again during export. Animation, skinning, morph targets, sparse or quantized attributes, vertex colours, compressed geometry/textures, external files, and extensions other than `KHR_materials_emissive_strength` are rejected. This conservative profile targets the existing MAPI 2.0.1 loader; it does not yet enable unreleased importer changes.
+
+Generated GLB mods require [S1MAPI](https://github.com/ifBars/S1MAPI) 2.0.1 or a compatible newer version in addition to S1API. Install `S1MAPI_Mono.dll` for Mono or `S1MAPI_Il2cpp.dll` for IL2CPP in the game's `UserLibs` folder before building. The generated project first checks the `UserLibs` folder belonging to the selected runtime assembly directory, then the selected game folder, and copies the dependency into its build output; an advanced command-line build can override `S1MapiPath`. Only projects with items using GLB models gain this dependency. See the generated `GLB-DEPENDENCY.md` for distribution instructions. Existing bundle projects retain their loading path and saved fields.
+
+### Building and testing the GLB viewer
+
+Install .NET 8 and Bun 1.3.5 or later. The editor build restores the pinned viewer dependencies with Bun and bundles the viewer locally; no Node package manager is required. Release workflows also install Bun. Run:
+
+```powershell
+dotnet build Schedule1ModdingTool.csproj -c Release
+dotnet test Schedule1ModdingTool.Tests/Schedule1ModdingTool.Tests.csproj -c Release
+```
+
+For runtime acceptance, export a textured GLB as both a custom product and furniture, compile each runtime, and inspect mesh/material loading, placement transforms, generated icons, and scene reloads in each game backend. Editor tests and generated-project compilation do not establish loaded-save or multiplayer behavior.
+
 
 ## Current Highlights
 

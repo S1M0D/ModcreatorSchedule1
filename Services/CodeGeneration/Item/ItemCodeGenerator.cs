@@ -12,6 +12,12 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
         {
             ArgumentNullException.ThrowIfNull(item);
 
+            if (item.IsGlbModel)
+            {
+                var glbValidation = Validate(item);
+                if (!glbValidation.IsValid)
+                    throw new ArgumentException(string.Join(" ", glbValidation.Errors), nameof(item));
+            }
             if (item.ItemType == ItemKindOption.WeedDrug)
             {
                 var validation = Validate(item);
@@ -61,10 +67,20 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
                 result.Errors.Add("Item name is required.");
             if (!string.IsNullOrWhiteSpace(blueprint.ModelBundleResourcePath))
             {
-                if (string.IsNullOrWhiteSpace(blueprint.ModelPrefabName))
+                if (!blueprint.IsGlbModel && string.IsNullOrWhiteSpace(blueprint.ModelPrefabName))
                     result.Errors.Add("Select the prefab name for the 3D model bundle.");
                 if (blueprint.ItemType == ItemKindOption.WeedDrug)
                     result.Errors.Add("Native weed strains do not support custom model profiles. Use a Custom Product for a custom 3D model.");
+            }
+            if (blueprint.IsGlbModel)
+            {
+                if (blueprint.ItemType is not (ItemKindOption.CustomDrug or ItemKindOption.Buildable))
+                    result.Errors.Add("GLB models currently support Custom Products and Furniture only. Other item types require a Unity prefab bundle.");
+                if (!float.IsFinite(blueprint.ModelScale) || blueprint.ModelScale <= 0 || blueprint.ModelScale > 1000)
+                    result.Errors.Add("Model scale must be greater than zero and no larger than 1000.");
+                if (new[] { blueprint.ModelRotationX, blueprint.ModelRotationY, blueprint.ModelRotationZ,
+                    blueprint.ModelOffsetX, blueprint.ModelOffsetY, blueprint.ModelOffsetZ }.Any(value => !float.IsFinite(value) || Math.Abs(value) > 10000))
+                    result.Errors.Add("Model rotation and offset values must be finite and between -10000 and 10000.");
             }
             ValidateChemistryRecipes(result, blueprint);
             if (blueprint.ItemType == ItemKindOption.WeedDrug)
@@ -1134,7 +1150,7 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
 
         private static void GenerateModelLoader(ICodeBuilder builder, ItemBlueprint item)
         {
-            builder.AppendComment("Loads the selected GameObject prefab from an embedded Unity AssetBundle.");
+            builder.AppendComment("Loads and caches the selected embedded model.");
             builder.OpenBlock("private static GameObject? LoadModelPrefab()");
             builder.OpenBlock("if (_modelPrefab != null)");
             builder.AppendLine("return _modelPrefab;");
@@ -1145,17 +1161,36 @@ namespace Schedule1ModdingTool.Services.CodeGeneration.Item
             builder.AppendLine("var suffix = \".\" + path.Replace('\\\\', '/').Replace('/', '.');");
             builder.AppendLine("var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(name => name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));");
             builder.OpenBlock("if (resourceName == null)");
-            builder.AppendLine("MelonLogger.Warning($\"Model bundle '{path}' is not embedded in the mod.\");");
+            builder.AppendLine("MelonLogger.Warning($\"Model '{path}' is not embedded in the mod.\");");
             builder.AppendLine("return null;");
             builder.CloseBlock();
-            builder.AppendLine($"_modelPrefab = AssetLoader.EasyLoad<GameObject>(resourceName, \"{CodeFormatter.EscapeString(item.ModelPrefabName)}\", assembly);");
+            if (item.IsGlbModel)
+            {
+                builder.AppendLine("using var stream = assembly.GetManifestResourceStream(resourceName);");
+                builder.AppendLine("if (stream == null) return null;");
+                builder.AppendLine("using var bytes = new System.IO.MemoryStream();");
+                builder.AppendLine("stream.CopyTo(bytes);");
+                builder.AppendLine("var imported = new S1MAPI.Gltf.GltfImporter().ImportAnimations(false).ImportSkins(false).ImportBlendShapes(false).ImportCameras(false).LoadGlb(bytes.ToArray());");
+                builder.AppendLine("if (imported == null) return null;");
+                builder.AppendLine("_modelPrefab = new GameObject(\"GLB model template\");");
+                builder.AppendLine("_modelPrefab.SetActive(false);");
+                builder.AppendLine("UnityEngine.Object.DontDestroyOnLoad(_modelPrefab);");
+                builder.AppendLine("imported.transform.SetParent(_modelPrefab.transform, false);");
+                builder.AppendLine($"imported.transform.localScale = Vector3.one * {CodeFormatter.FormatFloat(item.ModelScale)}f;");
+                builder.AppendLine($"imported.transform.localRotation = Quaternion.Euler({CodeFormatter.FormatFloat(item.ModelRotationX)}f, {CodeFormatter.FormatFloat(item.ModelRotationY)}f, {CodeFormatter.FormatFloat(item.ModelRotationZ)}f);");
+                builder.AppendLine($"imported.transform.localPosition = new Vector3({CodeFormatter.FormatFloat(item.ModelOffsetX)}f, {CodeFormatter.FormatFloat(item.ModelOffsetY)}f, {CodeFormatter.FormatFloat(item.ModelOffsetZ)}f);");
+            }
+            else
+            {
+                builder.AppendLine($"_modelPrefab = AssetLoader.EasyLoad<GameObject>(resourceName, \"{CodeFormatter.EscapeString(item.ModelPrefabName)}\", assembly);");
+            }
             builder.OpenBlock("if (_modelPrefab == null)");
             builder.AppendLine($"MelonLogger.Warning(\"Prefab '{CodeFormatter.EscapeString(item.ModelPrefabName)}' was not found in model bundle '{CodeFormatter.EscapeString(item.ModelBundleResourcePath)}'.\");");
             builder.CloseBlock();
             builder.AppendLine("return _modelPrefab;");
             builder.CloseBlock();
             builder.OpenBlock("catch (Exception ex)");
-            builder.AppendLine("MelonLogger.Warning($\"Failed to load model bundle: {ex.Message}\");");
+            builder.AppendLine("MelonLogger.Warning($\"Failed to load model: {ex.Message}\");");
             builder.AppendLine("return null;");
             builder.CloseBlock();
             builder.CloseBlock();

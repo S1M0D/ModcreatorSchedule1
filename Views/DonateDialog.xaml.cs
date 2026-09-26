@@ -38,6 +38,13 @@ namespace Schedule1ModdingTool.Views
                 ProfilePicturePath = GetProfilePicturePath("Estonia.png"),
                 KoFiUrl = "https://ko-fi.com/estonla"
             });
+
+            Contributors.Add(new Contributor
+            {
+                Name = "SirTidez",
+                ProfilePicturePath = GetProfilePicturePath("SirTidez.png"),
+                KoFiUrl = "https://ko-fi.com/sirtidez"
+            });
         }
 
         private string GetProfilePicturePath(string filename)

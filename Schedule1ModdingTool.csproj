@@ -69,6 +69,8 @@
     <Resource Include="Resources\Contributors\IfBars.png" />
     <None Remove="Resources\Contributors\Estonia.png" />
     <Resource Include="Resources\Contributors\Estonia.png" />
+    <None Remove="Resources\Contributors\SirTidez.png" />
+    <Resource Include="Resources\Contributors\SirTidez.png" />
   </ItemGroup>
 
 </Project>

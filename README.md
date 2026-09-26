@@ -87,3 +87,4 @@ This project is still in active development.
 
 - [Estonia](https://ko-fi.com/estonla)
 - [Bars](https://ko-fi.com/ifbars)
+- [SirTidez](https://ko-fi.com/sirtidez)

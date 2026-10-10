@@ -19,6 +19,24 @@ public class GlbIntegrationTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AcceptsSpecularMaterialWithCoreFallback(bool markedRequired)
+    {
+        using var stream = Triangle(root =>
+        {
+            root["extensionsUsed"] = new JArray("KHR_materials_specular");
+            if (markedRequired)
+                root["extensionsRequired"] = new JArray("KHR_materials_specular");
+            root["materials"]![0]!["extensions"] = new JObject
+            {
+                ["KHR_materials_specular"] = new JObject { ["specularFactor"] = 0.5 }
+            };
+        });
+        GlbValidationService.Validate(stream);
+    }
+
+    [Theory]
     [InlineData("non-indexed", "indexed")]
     [InlineData("missing-material", "material")]
     [InlineData("empty-scene", "mesh instances")]

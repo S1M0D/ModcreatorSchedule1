@@ -1,4 +1,18 @@
-# ModCreator Schedule 1 - 1.0.7-beta
+# Patch notes
+
+## Unreleased
+
+### Added
+
+- Added direct GLB model imports for supported furniture and custom products. Imported models are embedded in generated mods and loaded through S1MAPI, without converting them to Unity AssetBundles.
+- Added an offline 3D model preview for GLB files, plus scale, rotation, and position controls for supported items.
+
+### Fixed
+
+- GLB imports now accept `KHR_materials_specular` instead of rejecting the entire model. The offline preview can show the extension; the game runtime uses the model's base material and may show simpler specular highlights.
+- Compressed geometry, external assets, animation, and unsupported extensions remain rejected with export guidance.
+
+## 1.0.7-beta
 
 Version 1.0.7-beta adds drug authoring, production recipes, and a project-wide 3D model library to ModCreator Schedule 1. The editor still generates a normal C# mod project using S1API, so you can inspect and extend the generated code after building it.
 

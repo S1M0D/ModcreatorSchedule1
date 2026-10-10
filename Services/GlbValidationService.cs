@@ -9,6 +9,15 @@ public static class GlbValidationService
 {
     public const int MaximumFileBytes = 64 * 1024 * 1024;
 
+    // S1MAPI can load the core metallic/roughness material when these optional
+    // appearance parameters are present. Its runtime importer may omit their
+    // additional visual effect, but mesh data and base materials still load.
+    private static readonly HashSet<string> CompatibleMaterialExtensions = new(StringComparer.Ordinal)
+    {
+        "KHR_materials_emissive_strength",
+        "KHR_materials_specular"
+    };
+
     public static void ValidateFile(string path)
     {
         using var stream = File.OpenRead(path);
@@ -63,8 +72,8 @@ public static class GlbValidationService
             (long?)buffers[0]["byteLength"] is not > 0 || (long)buffers[0]["byteLength"]! > binaryLength)
             throw new InvalidDataException("Export one GLB with all geometry and textures embedded; external buffers are unsupported.");
         foreach (var extension in (root["extensionsUsed"] as JArray ?? new JArray()).Concat(root["extensionsRequired"] as JArray ?? new JArray()))
-            if ((string?)extension != "KHR_materials_emissive_strength")
-                throw new InvalidDataException($"GLB extension '{extension}' is not supported by this import profile. Export without compression or optional material extensions.");
+            if (extension.Type != JTokenType.String || !CompatibleMaterialExtensions.Contains((string)extension!))
+                throw new InvalidDataException($"GLB extension '{extension}' is not supported by this import profile. Export without compression or unsupported extensions.");
         if ((root["skins"] as JArray)?.Count > 0 || (root["animations"] as JArray)?.Count > 0)
             throw new InvalidDataException("This version supports static models. Export without skins or animation.");
 

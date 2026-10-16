@@ -12,6 +12,7 @@ public partial class GlbPreviewWindow : Window
 {
     private readonly string _modelPath;
     private readonly ItemBlueprint? _item;
+    private readonly QuestProject? _project;
     private readonly string _previewDirectory = Path.Combine(Path.GetTempPath(), "Schedule1ModdingTool", "GlbPreview", Guid.NewGuid().ToString("N"));
     private bool _closed;
 
@@ -25,18 +26,19 @@ public partial class GlbPreviewWindow : Window
             var modelRoot = Path.GetFullPath(Path.Combine(projectDirectory, "Models")) + Path.DirectorySeparatorChar;
             if (!path.StartsWith(modelRoot, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The model must be inside this project's Models folder.");
-            new GlbPreviewWindow(path, item) { Owner = owner }.ShowDialog();
+            new GlbPreviewWindow(path, item, project) { Owner = owner }.ShowDialog();
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, "Model preview", MessageBoxButton.OK, MessageBoxImage.Warning); }
     }
 
-    public GlbPreviewWindow(string modelPath, ItemBlueprint? item = null)
+    public GlbPreviewWindow(string modelPath, ItemBlueprint? item = null, QuestProject? project = null)
     {
         InitializeComponent();
         _modelPath = modelPath;
         _item = item;
+        _project = project;
         DataContext = item;
-        ModelName.Text = Path.GetFileName(modelPath);
+        ModelName.Text = item == null ? Path.GetFileName(modelPath) : $"{Path.GetFileName(modelPath)} - {item.DisplayName}";
         PlacementPanel.Visibility = item == null ? Visibility.Collapsed : Visibility.Visible;
         if (item != null) item.PropertyChanged += ItemChanged;
         Loaded += InitializePreview;
@@ -109,13 +111,24 @@ public partial class GlbPreviewWindow : Window
         }));
     }
 
+    private void SavePlacement_Click(object sender, RoutedEventArgs e)
+    {
+        if (_project == null || string.IsNullOrWhiteSpace(_project.FilePath)) return;
+        try
+        {
+            _project.SaveToFile(_project.FilePath);
+            PlacementStatus.Text = "Placement saved to project.";
+        }
+        catch (Exception ex) { PlacementStatus.Text = $"Could not save project: {ex.Message}"; }
+    }
+
     private void ClosePreview(object? sender, EventArgs e)
     {
         _closed = true;
         if (_item != null) _item.PropertyChanged -= ItemChanged;
         Viewer.Dispose();
         try { if (Directory.Exists(_previewDirectory)) Directory.Delete(_previewDirectory, recursive: true); }
-        catch (IOException) { /* WebView2 may briefly retain a handle after disposal. */ }
+        catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }
 }

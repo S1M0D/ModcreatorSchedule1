@@ -23,7 +23,7 @@ The tool currently focuses on these authoring workflows:
 - Project resources
   - embedded assets, icons, textures, and generated mod resource packaging
 - 3D Models
-  - project library for GLB models and Unity AssetBundles; offline interactive GLB preview with placement controls
+  - project library for GLB models and Unity AssetBundles; offline GLB viewer and scene editor
 - Live helper workflows
   - connector-assisted game launch, runtime catalog access, and in-editor help via `?` explanations on complex fields
 
@@ -59,9 +59,13 @@ Custom products use S1API presentation profiles for loose, held, stored, station
 
 For **Custom Products** and **Furniture**, you can import a `.glb` directly. Use **Preview GLB** in the model library to inspect it, or **Preview and adjust GLB** in an item's model picker to edit uniform scale, XYZ rotation (degrees), and XYZ offset (metres). The viewer supports orbit, zoom, pan, framing, and wireframe. Placement changes are saved with the item and applied inside a model wrapper by the generated mod. Preview lighting approximates materials; game lighting can differ.
 
+For a composition, click **Open scene editor** on the **3D Models** page, or **Add to scene** on a GLB card. Add library GLBs or basic shapes, select them in the viewport or scene collection, and use the Move, Rotate, and Scale gizmos or numeric fields. Use **Snap**, **World/Local** axes, front/right/top views, orthographic projection, grid visibility, and **Undo/Redo** while arranging objects. The eye in the scene collection hides an object from preview and export. You can rename, recolor, duplicate, copy/paste, reset transforms, delete, frame, and inspect objects in wireframe. **Save scene** stores the editable object list in the `.s1proj` file. **Export GLB** creates a new model in the library; select that exported model on a Custom Product or Furniture item to use it in a mod. Closing a changed scene offers Save, Discard, and Cancel. This is a static scene composition editor, with simple shapes and object transforms rather than full mesh sculpting.
+
+To adjust one item's model, click **Preview and adjust GLB** in its **3D Model** tab. Edit scale, rotation, and offset in the offline preview, then click **Save placement to project**. The scene editor also works offline and does not require the game.
+
 The preview runs locally using bundled Three.js and requires [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/). No model uploads or CDN downloads are used. A missing preview runtime does not prevent import or export. AssetBundle previews are not included.
 
-GLB imports currently require glTF 2.0, a maximum 64 MB file, one scene with all model nodes, one embedded binary buffer, indexed triangle meshes, dense float positions/normals/tangents/one UV set, consistent attributes across a mesh's material slots, explicit materials, and embedded PNG/JPEG images. The editor checks these requirements again during export. Animation, skinning, morph targets, sparse or quantized attributes, vertex colours, compressed geometry/textures, external files, and extensions other than `KHR_materials_emissive_strength` are rejected. This conservative profile targets the existing MAPI 2.0.1 loader; it does not yet enable unreleased importer changes.
+GLB imports currently require glTF 2.0, a maximum 64 MB file, one scene with all model nodes, one embedded binary buffer, indexed triangle meshes, dense float positions/normals/tangents/one UV set, consistent attributes across a mesh's material slots, explicit materials, and embedded PNG/JPEG images. The editor checks these requirements again during export. Animation, skinning, morph targets, sparse or quantized attributes, vertex colours, compressed geometry/textures, external files, and extensions other than `KHR_materials_emissive_strength` and `KHR_materials_specular` are rejected. This conservative profile targets the existing MAPI 2.0.1 loader; it does not yet enable unreleased importer changes.
 
 Generated GLB mods require [S1MAPI](https://github.com/ifBars/S1MAPI) 2.0.1 or a compatible newer version in addition to S1API. Install `S1MAPI_Mono.dll` for Mono or `S1MAPI_Il2cpp.dll` for IL2CPP in the game's `UserLibs` folder before building. The generated project first checks the `UserLibs` folder belonging to the selected runtime assembly directory, then the selected game folder, and copies the dependency into its build output; an advanced command-line build can override `S1MapiPath`. Only projects with items using GLB models gain this dependency. See the generated `GLB-DEPENDENCY.md` for distribution instructions. Existing bundle projects retain their loading path and saved fields.
 

@@ -13,4 +13,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1" PrivateAssets="all" />
     <ProjectReference Include="..\Schedule1ModdingTool.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Fixtures\scene-editor-two-objects.glb" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

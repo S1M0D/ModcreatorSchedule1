@@ -18,7 +18,9 @@
             </StackPanel>
             <StackPanel>
                 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsGlbModel}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                <Button Content="Preview and adjust GLB" Click="PreviewModel_Click" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                <WrapPanel Margin="0,12,0,0">
+                    <Button Content="Preview and adjust GLB" Click="PreviewModel_Click" Style="{StaticResource IconButtonStyle}" HorizontalAlignment="Left" Margin="0,0,8,0"/>
+                </WrapPanel>
                 <TextBlock Text="GLB models support Custom Products and Furniture. Install the matching S1MAPI runtime in the game's UserLibs folder before building." Foreground="{StaticResource DimTextBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
             </StackPanel>
             <Button Content="Clear model" Click="ClearModel_Click" Style="{StaticResource IconButtonStyle}"

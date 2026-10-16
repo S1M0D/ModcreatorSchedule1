@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun build ./viewer.js --outdir ./dist --minify --target browser"
+    "build": "bun build ./viewer.js ./scene-editor.js --outdir ./dist --minify --target browser"
   },
   "dependencies": {
     "three": "0.186.1"

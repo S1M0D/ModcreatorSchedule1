@@ -102,10 +102,6 @@
       <HintPath>$(ManagedPath)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>$(ManagedPath)\UnityEngine.AssetBundleModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(ManagedPath)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>

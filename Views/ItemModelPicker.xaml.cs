@@ -18,6 +18,9 @@ namespace Schedule1ModdingTool.Views
         }
 
         private void PreviewModel_Click(object sender, System.Windows.RoutedEventArgs e)
+            => OpenModelPreview();
+
+        private void OpenModelPreview()
         {
             var owner = System.Windows.Window.GetWindow(this);
             if (DataContext is ItemBlueprint item && owner?.DataContext is Schedule1ModdingTool.ViewModels.MainViewModel viewModel)

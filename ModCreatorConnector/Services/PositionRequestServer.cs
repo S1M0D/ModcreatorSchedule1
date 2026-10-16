@@ -22,7 +22,6 @@ namespace ModCreatorConnector.Services
     public class PositionRequestServer : IDisposable
     {
         private const string PipeName = "Schedule1ModCreator_Position";
-
         private class PositionRequest
         {
             [JsonProperty("request")]
@@ -33,6 +32,7 @@ namespace ModCreatorConnector.Services
 
             [JsonProperty("applicationType")]
             public string? ApplicationType { get; set; }
+
         }
 
         private NamedPipeServerStream? _pipeServer;

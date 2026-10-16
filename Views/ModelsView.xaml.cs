@@ -1,6 +1,8 @@
 using Schedule1ModdingTool.Models;
 using Schedule1ModdingTool.ViewModels;
 using System.Windows;
+using System.Windows.Controls;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace Schedule1ModdingTool.Views
 {
@@ -12,6 +14,18 @@ namespace Schedule1ModdingTool.Views
         {
             if (sender is Button { DataContext: ModelAsset model } && DataContext is MainViewModel viewModel)
                 GlbPreviewWindow.ShowModel(Window.GetWindow(this), viewModel.CurrentProject, model.RelativePath);
+        }
+
+        private void OpenSceneEditor_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel viewModel)
+                GlbSceneEditorWindow.ShowEditor(Window.GetWindow(this), viewModel.CurrentProject);
+        }
+
+        private void AddToScene_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button { DataContext: ModelAsset { IsGlb: true } model } && DataContext is MainViewModel viewModel)
+                GlbSceneEditorWindow.ShowEditor(Window.GetWindow(this), viewModel.CurrentProject, model);
         }
 
         private void PrefabName_LostFocus(object sender, RoutedEventArgs e)

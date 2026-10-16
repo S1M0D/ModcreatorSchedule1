@@ -105,6 +105,18 @@ namespace Schedule1ModdingTool.Models
         [JsonProperty("models")]
         public ObservableCollection<ModelAsset> Models { get; } = new ObservableCollection<ModelAsset>();
 
+        private ModelSceneDocument _modelScene = new();
+
+        [JsonProperty("modelScene")]
+        public ModelSceneDocument ModelScene
+        {
+            get => _modelScene;
+            set
+            {
+                if (SetProperty(ref _modelScene, value ?? new ModelSceneDocument())) MarkAsModified();
+            }
+        }
+
         [JsonProperty("folders")]
         public ObservableCollection<ModFolder> Folders { get; } = new ObservableCollection<ModFolder>();
 

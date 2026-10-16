@@ -9,9 +9,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <Version>1.0.7-beta</Version>
-    <AssemblyVersion>1.0.7.0</AssemblyVersion>
-    <FileVersion>1.0.7.0</FileVersion>
+    <Version>1.0.8</Version>
+    <AssemblyVersion>1.0.8.0</AssemblyVersion>
+    <FileVersion>1.0.8.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -79,12 +79,14 @@
     <EmbeddedResource Remove="Schedule1ModdingTool.Tests\**" />
     <None Remove="Schedule1ModdingTool.Tests\**" />
     <Content Include="ModelPreview\index.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="ModelPreview\scene-editor.html" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="ModelPreview\dist\viewer.js" Link="ModelPreview\viewer.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="ModelPreview\dist\scene-editor.js" Link="ModelPreview\scene-editor.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="ModelPreview\THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="BuildModelPreview" BeforeTargets="PrepareForBuild"
-          Inputs="ModelPreview\viewer.js;ModelPreview\package.json;ModelPreview\bun.lock"
-          Outputs="ModelPreview\dist\viewer.js">
+          Inputs="ModelPreview\viewer.js;ModelPreview\scene-editor.js;ModelPreview\package.json;ModelPreview\bun.lock"
+          Outputs="ModelPreview\dist\viewer.js;ModelPreview\dist\scene-editor.js">
     <Exec WorkingDirectory="ModelPreview" Command="bun install --frozen-lockfile" />
     <Exec WorkingDirectory="ModelPreview" Command="bun run build" />
   </Target>

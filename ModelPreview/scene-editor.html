@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' blob:; worker-src 'none'">
+  <title>3D Scene Editor</title>
+  <style>
+    :root { color-scheme: dark; font: 12px 'Segoe UI', Arial, sans-serif; --surface: #292b2e; --raised: #34363a; --line: #414348; --muted: #9da1a8; --text: #e2e3e5; --accent: #d88b49; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; color: var(--text); background: #1d1f22; }
+    button, select, input { font: inherit; color: inherit; }
+    button { min-height: 27px; padding: 3px 9px; border: 1px solid transparent; border-radius: 3px; background: transparent; cursor: pointer; white-space: nowrap; }
+    button:hover { background: #414348; }
+    button:disabled { opacity: .38; cursor: default; }
+    button[aria-pressed="true"] { color: #fff; background: #4c4a45; border-color: #8d6d50; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+    .primary { background: #9f6334; color: white; }
+    .primary:hover { background: #b47440; }
+    .secondary { background: #3c3e42; border-color: #52545a; }
+    .muted { color: var(--muted); line-height: 1.45; }
+    .divider { width: 1px; height: 18px; background: #505258; margin: 0 4px; flex: none; }
+    .row { display: flex; align-items: center; gap: 5px; }
+    #app { display: grid; width: 100%; height: 100%; grid-template-rows: 42px 38px minmax(0, 1fr) 28px; }
+    #header { display: flex; align-items: center; gap: 12px; padding: 0 12px; border-bottom: 1px solid #191b1d; background: #25272a; }
+    #brand { font-weight: 600; font-size: 13px; letter-spacing: .02em; }
+    #header .subtle { color: var(--muted); }
+    #header .spacer { flex: 1; }
+    #header button { padding: 4px 11px; }
+    #topbar { display: flex; align-items: center; gap: 2px; padding: 0 8px; border-bottom: 1px solid #191b1d; background: #303236; overflow-x: auto; scrollbar-width: thin; }
+    #topbar .toolbar-label { padding: 0 8px 0 5px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    #workspace { display: grid; min-height: 0; grid-template-columns: 238px minmax(0, 1fr) 276px; }
+    .panel { min-height: 0; overflow-y: auto; background: var(--surface); scrollbar-color: #52545a transparent; }
+    #outliner { border-right: 1px solid #181a1d; display: flex; flex-direction: column; }
+    #inspector { border-left: 1px solid #181a1d; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; min-height: 34px; padding: 0 12px; border-bottom: 1px solid #202226; font-weight: 600; }
+    .count { font-weight: 400; color: var(--muted); }
+    .section { padding: 12px; border-bottom: 1px solid #202226; }
+    .section-title { margin: 0 0 9px; font-size: 11px; font-weight: 600; color: #b9bdc3; text-transform: uppercase; letter-spacing: .06em; }
+    #objects { min-height: 82px; }
+    #objects .object-row { display: flex; align-items: center; gap: 2px; }
+    #objects .object-row button:first-child { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+    #objects .object-row .visibility { width: 29px; min-width: 29px; padding: 2px; color: #b3b6bc; }
+    #objects .object-row button[aria-pressed="true"] { background: #604a35; border-color: transparent; }
+    #model-list { width: 100%; height: 29px; padding: 3px 7px; margin-bottom: 7px; border: 1px solid #55575c; border-radius: 3px; background: #35373b; }
+    .full { width: 100%; }
+    .shape-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+    .shape-grid button { text-align: left; }
+    #clear-scene { color: #c9aba0; }
+    #viewport { min-width: 0; min-height: 0; position: relative; background: #1c1e21; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #viewbar { position: absolute; top: 10px; right: 10px; display: flex; gap: 2px; padding: 3px; border: 1px solid #43454a; border-radius: 3px; background: #292b2ee8; }
+    #viewbar button { min-height: 24px; padding: 2px 7px; }
+    #viewport-help { position: absolute; left: 12px; bottom: 12px; padding: 5px 7px; color: #aeb1b7; background: #25272ac9; font-size: 11px; pointer-events: none; }
+    #nothing-selected { margin: 0; }
+    #name { width: 100%; height: 29px; padding: 4px 7px; margin-bottom: 4px; border: 1px solid #55575c; border-radius: 3px; background: #35373b; }
+    .transform-row { display: grid; grid-template-columns: 15px repeat(3, minmax(0, 1fr)); align-items: center; gap: 5px; margin-bottom: 5px; }
+    .transform-row .axis { font-size: 11px; color: var(--muted); }
+    .transform-row input { width: 100%; min-width: 0; height: 28px; padding: 3px 5px; border: 1px solid #505258; border-radius: 3px; background: #34363a; font-variant-numeric: tabular-nums; }
+    .transform-row input:focus { background: #3d3f43; }
+    #color { width: 100%; height: 30px; padding: 2px; border: 1px solid #505258; background: #34363a; }
+    #inspector .row button { flex: 1; }
+    #statusbar { display: flex; align-items: center; gap: 10px; padding: 0 10px; border-top: 1px solid #151719; background: #25272a; font-size: 11px; }
+    #status { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #c6c8cd; }
+    #status.error { color: #e19a90; }
+    #shortcut-hint { color: #8f939a; white-space: nowrap; }
+    @media (max-width: 1060px) { #workspace { grid-template-columns: 210px minmax(0, 1fr) 258px; } #shortcut-hint { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <span id="brand">Scene Editor</span><span class="subtle">/ 3D Models</span>
+      <span class="spacer"></span>
+      <button id="save" class="secondary" title="Save editable scene (Ctrl+S)">Save scene</button>
+      <button id="export" class="primary">Export GLB</button>
+    </header>
+    <div id="topbar" role="toolbar" aria-label="Scene tools">
+      <span class="toolbar-label">Transform</span>
+      <button id="move" aria-pressed="true" title="Move (G)">Move</button>
+      <button id="rotate" aria-pressed="false" title="Rotate (R)">Rotate</button>
+      <button id="scale" aria-pressed="false" title="Scale (S)">Scale</button>
+      <span class="divider"></span>
+      <button id="space" title="Switch world and local axes">World</button>
+      <button id="snap" aria-pressed="false" title="Snap: 0.5 units, 15 degrees, 0.1 scale">Snap</button>
+      <span class="divider"></span>
+      <button id="undo" title="Undo (Ctrl+Z)" disabled>Undo</button>
+      <button id="redo" title="Redo (Ctrl+Y)" disabled>Redo</button>
+      <span class="divider"></span>
+      <button id="frame" title="Frame selected object (F)">Frame</button>
+      <button id="wireframe" aria-pressed="false">Wireframe</button>
+      <button id="grid" aria-pressed="true">Grid</button>
+    </div>
+    <main id="workspace">
+      <aside id="outliner" class="panel">
+        <div class="panel-header">Scene collection <span id="object-count" class="count">0 objects</span></div>
+        <div class="section"><div id="objects"></div><div class="row"><button id="paste-object" class="secondary" title="Paste copied object (Ctrl+V)">Paste object</button><button id="clear-scene" title="Remove all scene objects">Clear scene</button></div></div>
+        <div class="section"><div class="section-title">Library model</div><select id="model-list" aria-label="Choose a library GLB"><option value="">Choose a library GLB</option></select><button id="add-model" class="secondary full">Add selected GLB</button></div>
+        <div class="section"><div class="section-title">Add shape</div><div class="shape-grid"><button id="add-cube" class="secondary">Cube</button><button id="add-sphere" class="secondary">Sphere</button><button id="add-cylinder" class="secondary">Cylinder</button><button id="add-cone" class="secondary">Cone</button><button id="add-plane" class="secondary">Plane</button></div></div>
+        <div class="section muted">Import GLBs on the 3D Models page, then add them here. Shapes can be combined into one exported model.</div>
+      </aside>
+      <div id="viewport">
+        <canvas aria-label="Editable 3D scene"></canvas>
+        <div id="viewbar" role="toolbar" aria-label="Camera views"><button id="view-perspective">Perspective</button><button id="view-front">Front</button><button id="view-right">Right</button><button id="view-top">Top</button><button id="view-ortho" aria-pressed="false" title="Switch perspective and orthographic projection">Ortho</button></div>
+        <div id="viewport-help">Left click select &nbsp;·&nbsp; Drag orbit &nbsp;·&nbsp; Wheel zoom &nbsp;·&nbsp; Right drag pan</div>
+      </div>
+      <aside id="inspector" class="panel">
+        <div class="panel-header">Object properties</div>
+        <div class="section"><p id="nothing-selected" class="muted">Select an object in the viewport or scene collection.</p>
+          <div id="selected-controls" hidden>
+            <div class="section-title">Name</div><input id="name" aria-label="Object name" maxlength="80">
+            <div class="section-title" style="margin-top:16px">Position</div>
+            <div class="transform-row"><span class="axis">P</span><input id="px" aria-label="Position X" type="number" step="0.1"><input id="py" aria-label="Position Y" type="number" step="0.1"><input id="pz" aria-label="Position Z" type="number" step="0.1"></div>
+            <div class="section-title" style="margin-top:14px">Rotation · degrees</div>
+            <div class="transform-row"><span class="axis">R</span><input id="rx" aria-label="Rotation X" type="number" step="5"><input id="ry" aria-label="Rotation Y" type="number" step="5"><input id="rz" aria-label="Rotation Z" type="number" step="5"></div>
+            <div class="section-title" style="margin-top:14px">Scale</div>
+            <div class="transform-row"><span class="axis">S</span><input id="sx" aria-label="Scale X" type="number" step="0.1" min="0.001"><input id="sy" aria-label="Scale Y" type="number" step="0.1" min="0.001"><input id="sz" aria-label="Scale Z" type="number" step="0.1" min="0.001"></div>
+            <div class="muted" style="margin:2px 0 12px 20px">Fields: X, Y, Z from left to right</div>
+            <div id="color-row"><div class="section-title">Shape color</div><input id="color" aria-label="Shape color" type="color" value="#d0d0d0"></div>
+          </div>
+        </div>
+        <div id="object-actions" class="section" hidden><div class="section-title">Object</div><div class="row"><button id="duplicate" class="secondary">Duplicate</button><button id="reset-transform" class="secondary">Reset transform</button></div><div class="row" style="margin-top:5px"><button id="copy-object" class="secondary">Copy</button><button id="delete" class="secondary">Delete</button></div></div>
+      </aside>
+    </main>
+    <footer id="statusbar"><span id="status" role="status">Loading scene editor...</span><span id="shortcut-hint">G Move &nbsp; R Rotate &nbsp; S Scale &nbsp; F Frame &nbsp; Ctrl+D Duplicate &nbsp; Delete Remove</span></footer>
+  </div>
+  <script type="module" src="scene-editor.js"></script>
+</body>
+</html>

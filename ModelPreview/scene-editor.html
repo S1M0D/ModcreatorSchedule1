@@ -54,6 +54,10 @@
     #viewport-help { position: absolute; left: 12px; bottom: 12px; padding: 5px 7px; color: #aeb1b7; background: #25272ac9; font-size: 11px; pointer-events: none; }
     #nothing-selected { margin: 0; }
     #name { width: 100%; height: 29px; padding: 4px 7px; margin-bottom: 4px; border: 1px solid #55575c; border-radius: 3px; background: #35373b; }
+    #export-name { width: 180px; height: 28px; padding: 4px 7px; border: 1px solid #55575c; border-radius: 3px; background: #35373b; }
+    #material-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    #material-fields label { display: grid; gap: 4px; color: var(--muted); }
+    #material-fields input { width: 100%; height: 28px; padding: 3px 5px; border: 1px solid #505258; border-radius: 3px; background: #34363a; color: var(--text); }
     .transform-row { display: grid; grid-template-columns: 15px repeat(3, minmax(0, 1fr)); align-items: center; gap: 5px; margin-bottom: 5px; }
     .transform-row .axis { font-size: 11px; color: var(--muted); }
     .transform-row input { width: 100%; min-width: 0; height: 28px; padding: 3px 5px; border: 1px solid #505258; border-radius: 3px; background: #34363a; font-variant-numeric: tabular-nums; }
@@ -72,6 +76,7 @@
     <header id="header">
       <span id="brand">Scene Editor</span><span class="subtle">/ 3D Models</span>
       <span class="spacer"></span>
+      <input id="export-name" aria-label="Exported model name" maxlength="80" value="Scene Model" title="Name for the exported GLB in the model library">
       <button id="save" class="secondary" title="Save editable scene (Ctrl+S)">Save scene</button>
       <button id="export" class="primary">Export GLB</button>
     </header>
@@ -94,9 +99,9 @@
     <main id="workspace">
       <aside id="outliner" class="panel">
         <div class="panel-header">Scene collection <span id="object-count" class="count">0 objects</span></div>
-        <div class="section"><div id="objects"></div><div class="row"><button id="paste-object" class="secondary" title="Paste copied object (Ctrl+V)">Paste object</button><button id="clear-scene" title="Remove all scene objects">Clear scene</button></div></div>
+        <div class="section"><div id="objects"></div><div class="row"><button id="paste-object" class="secondary" title="Paste copied object (Ctrl+V)">Paste object</button><button id="show-all" class="secondary" title="Show all scene objects">Show all</button><button id="clear-scene" title="Remove all scene objects">Clear</button></div></div>
         <div class="section"><div class="section-title">Library model</div><select id="model-list" aria-label="Choose a library GLB"><option value="">Choose a library GLB</option></select><button id="add-model" class="secondary full">Add selected GLB</button></div>
-        <div class="section"><div class="section-title">Add shape</div><div class="shape-grid"><button id="add-cube" class="secondary">Cube</button><button id="add-sphere" class="secondary">Sphere</button><button id="add-cylinder" class="secondary">Cylinder</button><button id="add-cone" class="secondary">Cone</button><button id="add-plane" class="secondary">Plane</button></div></div>
+        <div class="section"><div class="section-title">Add shape</div><div class="shape-grid"><button id="add-cube" class="secondary">Cube</button><button id="add-sphere" class="secondary">Sphere</button><button id="add-cylinder" class="secondary">Cylinder</button><button id="add-cone" class="secondary">Cone</button><button id="add-plane" class="secondary">Plane</button><button id="add-torus" class="secondary">Torus</button></div></div>
         <div class="section muted">Import GLBs on the 3D Models page, then add them here. Shapes can be combined into one exported model.</div>
       </aside>
       <div id="viewport">
@@ -116,10 +121,10 @@
             <div class="section-title" style="margin-top:14px">Scale</div>
             <div class="transform-row"><span class="axis">S</span><input id="sx" aria-label="Scale X" type="number" step="0.1" min="0.001"><input id="sy" aria-label="Scale Y" type="number" step="0.1" min="0.001"><input id="sz" aria-label="Scale Z" type="number" step="0.1" min="0.001"></div>
             <div class="muted" style="margin:2px 0 12px 20px">Fields: X, Y, Z from left to right</div>
-            <div id="color-row"><div class="section-title">Shape color</div><input id="color" aria-label="Shape color" type="color" value="#d0d0d0"></div>
+            <div id="material-controls"><div class="section-title">Shape material</div><input id="color" aria-label="Shape color" type="color" value="#d0d0d0"><div id="material-fields"><label>Metalness<input id="metalness" type="number" min="0" max="1" step="0.05" value="0"></label><label>Roughness<input id="roughness" type="number" min="0" max="1" step="0.05" value="0.72"></label></div></div>
           </div>
         </div>
-        <div id="object-actions" class="section" hidden><div class="section-title">Object</div><div class="row"><button id="duplicate" class="secondary">Duplicate</button><button id="reset-transform" class="secondary">Reset transform</button></div><div class="row" style="margin-top:5px"><button id="copy-object" class="secondary">Copy</button><button id="delete" class="secondary">Delete</button></div></div>
+        <div id="object-actions" class="section" hidden><div class="section-title">Object</div><div class="row"><button id="duplicate" class="secondary">Duplicate</button><button id="reset-transform" class="secondary">Reset transform</button></div><div class="row" style="margin-top:5px"><button id="ground-object" class="secondary" title="Move the lowest point of this object to Y = 0">Place on ground</button><button id="isolate-object" class="secondary" title="Hide all other objects">Isolate</button></div><div class="row" style="margin-top:5px"><button id="copy-object" class="secondary">Copy</button><button id="delete" class="secondary">Delete</button></div></div>
       </aside>
     </main>
     <footer id="statusbar"><span id="status" role="status">Loading scene editor...</span><span id="shortcut-hint">G Move &nbsp; R Rotate &nbsp; S Scale &nbsp; F Frame &nbsp; Ctrl+D Duplicate &nbsp; Delete Remove</span></footer>

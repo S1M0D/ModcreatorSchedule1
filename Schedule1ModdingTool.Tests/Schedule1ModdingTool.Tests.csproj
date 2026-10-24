@@ -14,6 +14,6 @@
     <ProjectReference Include="..\Schedule1ModdingTool.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Fixtures\scene-editor-two-objects.glb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\scene-editor-materials.glb" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

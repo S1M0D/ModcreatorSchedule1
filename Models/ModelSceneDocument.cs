@@ -26,6 +26,12 @@ public sealed class ModelSceneObject
     [JsonProperty("color")]
     public string Color { get; set; } = "#d0d0d0";
 
+    [JsonProperty("metalness")]
+    public float Metalness { get; set; }
+
+    [JsonProperty("roughness")]
+    public float Roughness { get; set; } = 0.72f;
+
     [JsonProperty("visible")]
     public bool Visible { get; set; } = true;
 

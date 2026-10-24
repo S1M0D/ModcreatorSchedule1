@@ -69,6 +69,7 @@ let historyIndex = -1;
 let restoring = false;
 let savedScene = '[]';
 let copiedObject = null;
+let missingObjectCount = 0;
 
 function status(message, error = false) {
   $('status').textContent = message;
@@ -132,16 +133,17 @@ async function loadModel(modelId) {
   try { return (await modelCache.get(modelId)).clone(true); }
   catch (error) { modelCache.delete(modelId); throw error; }
 }
-function primitive(kind, color) {
+function primitive(kind, color, metalness, roughness) {
   const geometry = {
     cube: () => new THREE.BoxGeometry(1, 1, 1),
     sphere: () => new THREE.SphereGeometry(0.5, 32, 20),
     cylinder: () => new THREE.CylinderGeometry(0.5, 0.5, 1, 32),
     cone: () => new THREE.ConeGeometry(0.5, 1, 32),
-    plane: () => new THREE.PlaneGeometry(1, 1)
+    plane: () => new THREE.PlaneGeometry(1, 1),
+    torus: () => new THREE.TorusGeometry(0.38, 0.12, 16, 48)
   }[kind]?.();
   if (!geometry) throw new Error(`Unsupported shape: ${kind}`);
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, roughness: 0.72 }));
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, metalness, roughness }));
   if (kind === 'plane') mesh.rotation.x = -Math.PI / 2;
   return mesh;
 }
@@ -150,14 +152,18 @@ async function buildObject(data) {
   const kind = data.kind || 'cube';
   const modelId = data.modelId || null;
   const color = /^#[0-9a-f]{6}$/i.test(data.color || '') ? data.color : '#d0d0d0';
+  const metalness = Number.isFinite(data.metalness) ? data.metalness : 0;
+  const roughness = Number.isFinite(data.roughness) ? data.roughness : 0.72;
   if (kind === 'model') {
     if (!library.has(modelId)) throw new Error(`A scene model is missing from the library: ${modelId}`);
     group.add(await loadModel(modelId));
-  } else group.add(primitive(kind, color));
+  } else group.add(primitive(kind, color, metalness, roughness));
   group.userData.sceneObjectId = data.id || id();
   group.userData.kind = kind;
   group.userData.modelId = modelId;
   group.userData.color = color;
+  group.userData.metalness = metalness;
+  group.userData.roughness = roughness;
   group.name = data.name || (kind === 'model' ? library.get(modelId).name : kind[0].toUpperCase() + kind.slice(1));
   group.position.fromArray(data.position || [0, 0, 0]);
   group.rotation.set(...(data.rotation || [0, 0, 0]).map(THREE.MathUtils.degToRad));
@@ -170,6 +176,7 @@ async function buildObject(data) {
   return group;
 }
 async function addObject(data, select = true) {
+  if (root.children.length >= 200) throw new Error('A scene can contain at most 200 objects.');
   const group = await buildObject(data);
   root.add(group);
   refreshOutliner();
@@ -183,6 +190,8 @@ function serialize() {
     kind: group.userData.kind,
     modelId: group.userData.modelId,
     color: group.userData.color,
+    metalness: group.userData.metalness,
+    roughness: group.userData.roughness,
     visible: group.visible,
     position: group.position.toArray().map(round),
     rotation: [group.rotation.x, group.rotation.y, group.rotation.z].map(value => round(THREE.MathUtils.radToDeg(value))),
@@ -250,8 +259,10 @@ function syncInspector() {
   for (const [key, value] of Object.entries(fields))
     if (document.activeElement !== $(key)) $(key).value = String(round(value));
   if (document.activeElement !== $('name')) $('name').value = selected.name;
-  $('color-row').hidden = selected.userData.kind === 'model';
+  $('material-controls').hidden = selected.userData.kind === 'model';
   $('color').value = selected.userData.color;
+  $('metalness').value = String(selected.userData.metalness);
+  $('roughness').value = String(selected.userData.roughness);
 }
 function frame() {
   const target = selected || root;
@@ -346,7 +357,7 @@ function disposePrimitive(group) {
 async function duplicateSelected() {
   if (!selected) return;
   const source = serialize().find(item => item.id === selected.userData.sceneObjectId);
-  const clone = await addObject({ ...source, id: id(), name: `${source.name} Copy`, position: [source.position[0] + 0.5, ...source.position.slice(1)] });
+  const clone = await addObject({ ...source, id: id(), name: `${source.name.slice(0, 75)} Copy`, position: [source.position[0] + 0.5, ...source.position.slice(1)] });
   selectObject(clone);
   markDirty();
   commitHistory();
@@ -359,7 +370,7 @@ function copySelected() {
 async function pasteObject() {
   if (!copiedObject) { status('Select and copy an object first.'); return; }
   const source = copiedObject;
-  const group = await addObject({ ...source, id: id(), name: `${source.name} Copy`, position: [source.position[0] + 0.5, source.position[1], source.position[2]] });
+  const group = await addObject({ ...source, id: id(), name: `${source.name.slice(0, 75)} Copy`, position: [source.position[0] + 0.5, source.position[1], source.position[2]] });
   selectObject(group);
   markDirty();
   commitHistory();
@@ -373,7 +384,31 @@ function resetTransform() {
   markDirty();
   commitHistory();
 }
+function placeOnGround() {
+  if (!selected) return;
+  const box = new THREE.Box3().setFromObject(selected);
+  if (box.isEmpty()) { status('This object has no geometry to place on the ground.', true); return; }
+  const nextY = selected.position.y - box.min.y;
+  if (!Number.isFinite(nextY) || Math.abs(nextY) > 10000) { status('Ground placement exceeds the scene position limit.', true); return; }
+  selected.position.y = nextY;
+  syncInspector();
+  markDirty();
+  commitHistory();
+}
+function isolateSelected() {
+  if (!selected) return;
+  for (const object of root.children) object.visible = object === selected;
+  selectionBox.visible = true;
+  refreshOutliner(); markDirty(); commitHistory();
+}
+function showAll() {
+  if (root.children.every(object => object.visible)) return;
+  for (const object of root.children) object.visible = true;
+  if (selected) selectionBox.visible = true;
+  refreshOutliner(); markDirty(); commitHistory();
+}
 async function saveScene() {
+  if (missingObjectCount) throw new Error(`${missingObjectCount} scene object(s) could not load. Restore their GLBs in the model library, then reopen the editor before saving.`);
   const savedRevision = revision;
   const objects = serialize();
   await requestHost('saveScene', { objects });
@@ -385,7 +420,10 @@ async function saveScene() {
   } else status('Scene changed while saving. Save again to keep the latest edits.');
 }
 async function exportGlb() {
-  if (exporting || !root.children.length) return;
+  if (exporting) return;
+  if (!root.children.some(object => object.visible)) { status('Show at least one object before exporting.', true); return; }
+  const exportName = $('export-name').value.trim();
+  if (!exportName || exportName.length > 80) { status('Enter a model name of 1 to 80 characters.', true); return; }
   exporting = true;
   $('export').disabled = true;
   try {
@@ -394,7 +432,7 @@ async function exportGlb() {
     const bytes = new Uint8Array(await exporter.parseAsync(root, { binary: true, trs: true, onlyVisible: true }));
     if (bytes.length > 64 * 1024 * 1024) throw new Error('The exported GLB exceeds the 64 MB model limit.');
     const exportId = id();
-    await requestHost('exportBegin', { exportId, byteLength: bytes.length });
+    await requestHost('exportBegin', { exportId, byteLength: bytes.length, name: exportName });
     const chunkSize = 128 * 1024;
     for (let offset = 0; offset < bytes.length; offset += chunkSize) {
       const part = bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length));
@@ -444,8 +482,11 @@ $('add-model').addEventListener('click', async () => {
   try { await addObject({ kind: 'model', modelId }); markDirty(); commitHistory(); }
   catch (error) { status(error.message, true); }
 });
-for (const kind of ['cube', 'sphere', 'cylinder', 'cone', 'plane'])
-  $(`add-${kind}`).addEventListener('click', async () => { await addObject({ kind }); markDirty(); commitHistory(); });
+for (const kind of ['cube', 'sphere', 'cylinder', 'cone', 'plane', 'torus'])
+  $(`add-${kind}`).addEventListener('click', async () => {
+    try { await addObject({ kind }); markDirty(); commitHistory(); }
+    catch (error) { status(error.message, true); }
+  });
 $('delete').addEventListener('click', removeSelected);
 $('clear-scene').addEventListener('click', () => {
   if (!root.children.length || !confirm('Remove every object from this scene?')) return;
@@ -459,6 +500,9 @@ $('duplicate').addEventListener('click', () => duplicateSelected().catch(error =
 $('copy-object').addEventListener('click', copySelected);
 $('paste-object').addEventListener('click', () => pasteObject().catch(error => status(error.message, true)));
 $('reset-transform').addEventListener('click', resetTransform);
+$('ground-object').addEventListener('click', placeOnGround);
+$('isolate-object').addEventListener('click', isolateSelected);
+$('show-all').addEventListener('click', showAll);
 $('save').addEventListener('click', () => saveScene().catch(error => status(`Save failed: ${error.message}`, true)));
 $('export').addEventListener('click', exportGlb);
 $('name').addEventListener('input', event => { if (!selected) return; selected.name = event.target.value.slice(0, 80); refreshOutliner(); markDirty(); });
@@ -469,6 +513,14 @@ $('color').addEventListener('input', event => {
   selected.traverse(object => { if (object.isMesh) object.material.color.set(event.target.value); });
   markDirty();
   commitHistory();
+});
+for (const field of ['metalness', 'roughness']) $(field).addEventListener('change', event => {
+  if (!selected || selected.userData.kind === 'model') return;
+  const value = Number(event.target.value);
+  if (!Number.isFinite(value) || value < 0 || value > 1) { syncInspector(); return; }
+  selected.userData[field] = value;
+  selected.traverse(object => { if (object.isMesh) object.material[field] = value; });
+  markDirty(); commitHistory();
 });
 for (const key of ['px', 'py', 'pz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz'])
   $(key).addEventListener('change', event => {
@@ -537,6 +589,7 @@ window.chrome.webview.addEventListener('message', async event => {
         try { await addObject(object, false); }
         catch (error) { skipped++; status(`Skipped ${object.name || 'object'}: ${error.message}`, true); }
       }
+      missingObjectCount = skipped;
       selectObject(root.children[0] || null);
       savedScene = JSON.stringify(message.objects || []);
       commitHistory();

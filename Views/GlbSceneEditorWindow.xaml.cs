@@ -18,6 +18,7 @@ public partial class GlbSceneEditorWindow : Window
     private readonly Dictionary<string, string> _modelCopies = new(StringComparer.Ordinal);
     private MemoryStream? _exportBuffer;
     private string? _exportId;
+    private string? _exportName;
     private int _exportExpected;
     private bool _dirty;
     private bool _closed;
@@ -180,7 +181,7 @@ public partial class GlbSceneEditorWindow : Window
                 if (!_project.Models.Any(model => model.IsGlb && model.Id == item.ModelId))
                     throw new InvalidDataException($"A GLB used by '{item.Name}' is missing from the model library.");
             }
-            else if (item.Kind is not ("cube" or "sphere" or "cylinder" or "cone" or "plane"))
+            else if (item.Kind is not ("cube" or "sphere" or "cylinder" or "cone" or "plane" or "torus"))
                 throw new InvalidDataException($"Unsupported shape: {item.Kind}");
             if (item.Position?.Length != 3 || item.Rotation?.Length != 3 || item.Scale?.Length != 3 ||
                 item.Position.Concat(item.Rotation).Any(value => !float.IsFinite(value) || Math.Abs(value) > 10000) ||
@@ -188,6 +189,9 @@ public partial class GlbSceneEditorWindow : Window
                 throw new InvalidDataException($"Invalid transform on '{item.Name}'.");
             if (!System.Text.RegularExpressions.Regex.IsMatch(item.Color ?? "", "^#[0-9a-fA-F]{6}$"))
                 throw new InvalidDataException($"Invalid color on '{item.Name}'.");
+            if (!float.IsFinite(item.Metalness) || item.Metalness < 0 || item.Metalness > 1 ||
+                !float.IsFinite(item.Roughness) || item.Roughness < 0 || item.Roughness > 1)
+                throw new InvalidDataException($"Invalid material on '{item.Name}'.");
         }
         _project.ModelScene = new ModelSceneDocument { Objects = objects };
         _project.SaveToFile(_project.FilePath);
@@ -204,7 +208,10 @@ public partial class GlbSceneEditorWindow : Window
         _exportBuffer = new MemoryStream(size);
         _exportExpected = size;
         _exportId = (string?)message["exportId"];
+        _exportName = ((string?)message["name"])?.Trim();
         if (string.IsNullOrWhiteSpace(_exportId)) throw new InvalidDataException("Missing export ID.");
+        if (string.IsNullOrWhiteSpace(_exportName) || _exportName.Length > 80 || _exportName.Any(char.IsControl))
+            throw new InvalidDataException("Give the exported model a name of 1 to 80 characters.");
         return null;
     }
 
@@ -235,7 +242,7 @@ public partial class GlbSceneEditorWindow : Window
             File.WriteAllBytes(path, _exportBuffer.ToArray());
             var asset = new ModelAsset
             {
-                DisplayName = "Scene Model " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                DisplayName = _exportName!,
                 RelativePath = Path.Combine("Models", fileName)
             };
             _project.AddModel(asset);
@@ -247,6 +254,7 @@ public partial class GlbSceneEditorWindow : Window
             _exportBuffer?.Dispose();
             _exportBuffer = null;
             _exportId = null;
+            _exportName = null;
             _exportExpected = 0;
         }
     }
